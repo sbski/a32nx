@@ -1042,11 +1042,15 @@ class CDUPerformancePage {
         if (mcdu.thrustReductionAltitudeIsPilotEntered && mcdu.accelerationAltitudeIsPilotEntered) {
             return;
         }
-        const origin = mcdu.flightPlanManager.getOrigin();
+        if (!mcdu.flightPlanService.active.originAirport) {
+            return;
+        }
+
+        const origin = mcdu.flightPlanService.active.originAirport.ident;
 
         let elevation = SimVar.GetSimVarValue("GROUND ALTITUDE", "feet");
         if (origin) {
-            elevation = await mcdu.facilityLoader.GetAirportFieldElevation(origin.icao);
+            elevation = await mcdu.facilityLoader.GetAirportFieldElevation(origin);
         }
 
         if (!mcdu.thrustReductionAltitudeIsPilotEntered) {
@@ -1071,33 +1075,24 @@ class CDUPerformancePage {
         if (mcdu.engineOutAccelerationAltitudeIsPilotEntered) {
             return;
         }
-        const origin = mcdu.flightPlanManager.getOrigin();
-        let elevation = SimVar.GetSimVarValue("GROUND ALTITUDE", "feet");
-        if (origin) {
-            elevation = await mcdu.facilityLoader.GetAirportFieldElevation(origin.icao);
-        }
 
-        const offset = +NXDataStore.get("CONFIG_ENG_OUT_ACCEL_ALT", "1500");
-        const alt = Math.round((elevation + offset) / 10) * 10;
-
-        mcdu.engineOutAccelerationAltitude = alt;
-        mcdu.engineOutAccelerationAltitudeIsPilotEntered = false;
-        SimVar.SetSimVarValue("L:A32NX_ENG_OUT_ACC_ALT", "feet", alt);
+        // FIXME move this in FMS
+        SimVar.SetSimVarValue("L:A32NX_ENG_OUT_ACC_ALT", "feet", 1500);
     }
-    // Modified to be async like above
-    // TODO: Implement ability for pilot to enter custom altitudes
-    static async UpdateThrRedAccFromDestination(mcdu) {
-        let elevation = SimVar.GetSimVarValue("GROUND ALTITUDE", "feet");
-        const destination = mcdu.flightPlanManager.getDestination();
-        if (destination) {
-            elevation = await mcdu.facilityLoader.GetAirportFieldElevation(destination.icao);
-        }
-        const alt = Math.round((elevation + 1500) / 10) * 10;
-        mcdu.thrustReductionAltitudeGoaround = alt;
-        mcdu.accelerationAltitudeGoaround = alt;
-        SimVar.SetSimVarValue("L:AIRLINER_THR_RED_ALT_GOAROUND", "Number", alt);
-        SimVar.SetSimVarValue("L:AIRLINER_ACC_ALT_GOAROUND", "Number", alt);
+    static UpdateThrRedAccFromDestination(mcdu) {
+        // let elevation = SimVar.GetSimVarValue("GROUND ALTITUDE", "feet");
+        // const destination = mcdu.flightPlanManager.getDestination();
+        // if (destination) {
+        //     elevation = await mcdu.facilityLoader.GetAirportFieldElevation(destination.icao);
+        // }
+        // const alt = Math.round((elevation + 1500) / 10) * 10;
+        // mcdu.thrustReductionAltitudeGoaround = alt;
+        // mcdu.accelerationAltitudeGoaround = alt;
 
+        // FIXME move this in FMS
+
+        SimVar.SetSimVarValue("L:AIRLINER_THR_RED_ALT_GOAROUND", "Number", 1500);
+        SimVar.SetSimVarValue("L:AIRLINER_ACC_ALT_GOAROUND", "Number", 1500);
     }
 
     static getSelectedTitleAndValue(_isPhaseActive, _isSelected, _preSel) {

@@ -39,6 +39,7 @@ import {
 } from 'msfs-geo';
 import { PILeg } from '@fmgc/guidance/lnav/legs/PI';
 import { isCourseReversalLeg } from '@fmgc/guidance/lnav/legs';
+import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { Leg } from '../legs/Leg';
 import { CFLeg } from '../legs/CF';
 import { CRLeg } from '../legs/CR';
@@ -113,11 +114,13 @@ export class PathCaptureTransition extends Transition {
         this.computedTurnDirection = TurnDirection.Either;
         this.computedTargetTrack = this.nextLeg.inboundCourse;
 
-        let prevLegTermFix: LatLongAlt | Coordinates;
+        let prevLegTermFix: Coordinates;
         if (this.previousLeg instanceof AFLeg) {
             prevLegTermFix = this.previousLeg.arcEndPoint;
+        } else if ('lat' in this.previousLeg.terminationWaypoint) {
+            prevLegTermination = this.previousLeg.terminationWaypoint;
         } else {
-            prevLegTermFix = this.previousLeg.terminationWaypoint instanceof WayPoint ? this.previousLeg.terminationWaypoint.infos.coordinates : this.previousLeg.terminationWaypoint;
+            prevLegTermFix = fixCoordinates(this.previousLeg.terminationWaypoint.location);
         }
 
         // Start the transition before the termination fix if we are reverted because of an overshoot
