@@ -404,6 +404,8 @@ export abstract class BaseFlightPlan {
     removeElementAt(index: number, insertDiscontinuity = false): boolean {
         const [segment, indexInSegment] = this.segmentPositionForIndex(index);
 
+        // TODO if clear leg before a hold, delete hold too? some other legs like this too..
+
         if (insertDiscontinuity && index > 0) {
             const previousElement = this.elementAt(index - 1);
 

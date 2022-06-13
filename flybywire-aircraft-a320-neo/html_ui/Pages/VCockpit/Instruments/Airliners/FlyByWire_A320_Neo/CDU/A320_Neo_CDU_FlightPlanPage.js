@@ -23,10 +23,10 @@ class CDUFlightPlanPage {
             mcdu.onRightInput[index] = callback;
         }
 
-        function getRunwayInfo(runway) {
+        function getRunwayInfo(/** @type {import('msfs-navdata').Runway} */ runway) {
             let runwayText, runwayAlt;
             if (runway) {
-                runwayText = Avionics.Utils.formatRunway(runway.designation);
+                runwayText = Avionics.Utils.formatRunway(runway.ident);
                 runwayAlt = (runway.elevation * 3.280).toFixed(0).toString();
             }
             return [runwayText, runwayAlt];
@@ -65,7 +65,11 @@ class CDUFlightPlanPage {
             lat: NaN,
             long: NaN
         };
-        const stats = mcdu.flightPlanService.activeOrTemporary.computeWaypointStatistics();
+
+        const targetPlan = mcdu.flightPlanService.activeOrTemporary;
+        const planAccentColor = mcdu.flightPlanService.hasTemporary ? 'yellow' : 'green';
+
+        const stats = targetPlan.computeWaypointStatistics();
         // const stats = fpm.getCurrentFlightPlan().computeWaypointStatistics(ppos);
 
         // TODO FIXME: Move from F-PLN A
@@ -89,27 +93,27 @@ class CDUFlightPlanPage {
         const fmsPseudoWaypoints = mcdu.guidanceController.currentPseudoWaypoints;
 
         // Primary F-PLAN
-        for (let i = first; i < mcdu.flightPlanService.activeOrTemporary.legCount; i++) {
+        for (let i = first; i < targetPlan.legCount; i++) {
             const pseudoWaypointsOnLeg = fmsPseudoWaypoints.filter((it) => it.displayedOnMcdu && it.alongLegIndex === i);
 
             if (pseudoWaypointsOnLeg) {
                 waypointsAndMarkers.push(...pseudoWaypointsOnLeg.map((pwp) => ({ pwp, fpIndex: i })));
             }
 
-            const wp = mcdu.flightPlanService.activeOrTemporary.allLegs[i];
+            const wp = targetPlan.allLegs[i];
 
             if (wp.isDiscontinuity) {
                 waypointsAndMarkers.push({ marker: Markers.FPLN_DISCONTINUITY, fpIndex: i});
                 continue;
             }
 
-            if (i >= mcdu.flightPlanService.activeOrTemporary.activeLegIndex && wp.type === 14 /* HM */) {
+            if (i >= targetPlan.activeLegIndex && wp.type === 14 /* HM */) {
                 waypointsAndMarkers.push({ holdResumeExit: wp, fpIndex: i });
             }
 
             waypointsAndMarkers.push({ wp, fpIndex: i});
 
-            if (i === mcdu.flightPlanService.activeOrTemporary.destinationLegIndex) {
+            if (i === targetPlan.destinationLegIndex) {
                 waypointsAndMarkers.push({ marker: Markers.END_OF_FPLN, fpIndex: i});
                 // TODO: Rewrite once alt fpln exists
                 waypointsAndMarkers.push({ marker: Markers.NO_ALTN_FPLN, fpIndex: i});
@@ -146,9 +150,9 @@ class CDUFlightPlanPage {
 
             const {wp, pwp, marker, holdResumeExit, fpIndex} = waypointsAndMarkers[winI];
 
-            const wpPrev = mcdu.flightPlanService.activeOrTemporary.maybeElementAt(fpIndex - 1);
-            const wpNext = mcdu.flightPlanService.activeOrTemporary.maybeElementAt(fpIndex + 1);
-            const wpActive = (fpIndex >= mcdu.flightPlanService.activeOrTemporary.activeLegIndex);
+            const wpPrev = targetPlan.maybeElementAt(fpIndex - 1);
+            const wpNext = targetPlan.maybeElementAt(fpIndex + 1);
+            const wpActive = (fpIndex >= targetPlan.activeLegIndex);
 
             // Bearing/Track
             const bearingTrack = "";
@@ -185,24 +189,28 @@ class CDUFlightPlanPage {
                 let timeCell = "----[s-text]";
                 if (ident !== "MANUAL") {
                     if (isFlying) {
-                        if (fpIndex === mcdu.flightPlanService.activeOrTemporary.destinationLegIndex || isFinite(wp.liveUTCTo) || isFinite(wp.waypointReachedAt)) {
-                            time = (fpIndex === mcdu.flightPlanService.activeOrTemporary.destinationLegIndex || wpActive || ident === "(DECEL)") ? stats.get(fpIndex).etaFromPpos : wp.waypointReachedAt;
+                        if (fpIndex === targetPlan.destinationLegIndex || isFinite(wp.liveUTCTo) || isFinite(wp.waypointReachedAt)) {
+                            time = (fpIndex === targetPlan.destinationLegIndex || wpActive || ident === "(DECEL)") ? stats.get(fpIndex).etaFromPpos : wp.waypointReachedAt;
                             timeCell = `${FMCMainDisplay.secondsToUTC(time)}[s-text]`;
                         }
                     } else {
-                        if (fpIndex === mcdu.flightPlanService.activeOrTemporary.destinationLegIndex || isFinite(wp.liveETATo)) {
-                            time = (fpIndex === mcdu.flightPlanService.activeOrTemporary.destinationLegIndex || wpActive || ident === "(DECEL)") ? stats.get(fpIndex).timeFromPpos : 0;
+                        if (fpIndex === targetPlan.destinationLegIndex || isFinite(wp.liveETATo)) {
+                            time = (fpIndex === targetPlan.destinationLegIndex || wpActive || ident === "(DECEL)") ? stats.get(fpIndex).timeFromPpos : 0;
                             timeCell = `${FMCMainDisplay.secondsTohhmm(time)}[s-text]`;
                         }
                     }
                 }
 
                 // Color
-                let color = "green";
-                if (mcdu.flightPlanService.hasTemporary) {
-                    color = "yellow";
-                } else if (fpIndex === mcdu.flightPlanService.activeOrTemporary.activeLegIndex) {
+                let color;
+                if (fpIndex === targetPlan.activeLegIndex) {
                     color = "white";
+                } else {
+                    if (!mcdu.flightPlanService.hasTemporary && fpIndex >= targetPlan.firstMissedApproachLeg) {
+                        color = 'cyan';
+                    } else {
+                        color = planAccentColor;
+                    }
                 }
 
                 // Fix Header
@@ -233,7 +241,7 @@ class CDUFlightPlanPage {
 
                 // Active waypoint is live distance, others are distances in the flight plan
                 // TODO FIXME: actually use the correct prediction
-                if (fpIndex === mcdu.flightPlanService.activeOrTemporary.activeLegIndex) {
+                if (fpIndex === targetPlan.activeLegIndex) {
                     distance = stats.get(fpIndex).distanceFromPpos.toFixed(0);
                 } else {
                     distance = stats.get(fpIndex).distanceInFP.toFixed(0);
@@ -258,11 +266,11 @@ class CDUFlightPlanPage {
                 const hasAltConstraint = wp.legAltitudeDescription > 0 && wp.legAltitudeDescription < 6;
                 let altitudeConstraint = "-----";
                 let altPrefix = "\xa0";
-                if (fpIndex === mcdu.flightPlanService.activeOrTemporary.destinationLegIndex) {
+                if (fpIndex === targetPlan.destinationLegIndex) {
                     // Only for destination waypoint, show runway elevation.
                     altColor = "white";
                     spdColor = "white";
-                    const [rwTxt, rwAlt] = getRunwayInfo(mcdu.flightPlanService.activeOrTemporary.destinationRunway);
+                    const [rwTxt, rwAlt] = getRunwayInfo(targetPlan.destinationRunway);
                     if (rwTxt && rwAlt) {
                         altPrefix = "{magenta}*{end}";
                         ident += rwTxt;
@@ -271,8 +279,8 @@ class CDUFlightPlanPage {
                     }
                     altitudeConstraint = altitudeConstraint.padStart(5,"\xa0");
 
-                } else if (wp === mcdu.flightPlanService.activeOrTemporary.originAirport && fpIndex === 0) {
-                    const [rwTxt, rwAlt] = getRunwayInfo(mcdu.flightPlanService.activeOrTemporary.originRunway);
+                } else if (wp === targetPlan.originAirport && fpIndex === 0) {
+                    const [rwTxt, rwAlt] = getRunwayInfo(targetPlan.originRunway);
                     if (rwTxt && rwAlt) {
                         ident += rwTxt;
                         altitudeConstraint = rwAlt;
@@ -289,7 +297,7 @@ class CDUFlightPlanPage {
                     altColor = "white";
                 }
 
-                if (fpIndex !== mcdu.flightPlanService.activeOrTemporary.destinationLegIndex) {
+                if (fpIndex !== targetPlan.destinationLegIndex) {
                     timeColor = color;
                 } else {
                     timeColor = "white";
@@ -322,7 +330,7 @@ class CDUFlightPlanPage {
                     isOverfly: isOverfly,
                 };
 
-                if (fpIndex !== mcdu.flightPlanService.activeOrTemporary.destinationLegIndex) {
+                if (fpIndex !== targetPlan.destinationLegIndex) {
                     addLskAt(rowI,
                         (value) => {
                             if (value === "") {
@@ -365,7 +373,7 @@ class CDUFlightPlanPage {
                     addLskAt(rowI, () => mcdu.getDelaySwitchPage(),
                         (value, scratchpadCallback) => {
                             if (value === "") {
-                                CDULateralRevisionPage.ShowPage(mcdu, mcdu.flightPlanService.activeOrTemporary.destinationAirport, fpIndex);
+                                CDULateralRevisionPage.ShowPage(mcdu, targetPlan.destinationAirport, fpIndex);
                             } else if (value.length > 0) {
                                 mcdu.insertWaypoint(value, fpIndex, (success) => {
                                     if (!success) {
@@ -425,8 +433,8 @@ class CDUFlightPlanPage {
                     }, !mcdu.flightPlanService.hasTemporary);
                 });
             } else if (holdResumeExit) {
-                const isActive = fpIndex === mcdu.flightPlanService.activeOrTemporary.activeLegIndex;
-                const isNext = fpIndex === (mcdu.flightPlanService.activeOrTemporary.activeLegIndex + 1);
+                const isActive = fpIndex === targetPlan.activeLegIndex;
+                const isNext = fpIndex === (targetPlan.activeLegIndex + 1);
                 let color = "green";
                 if (mcdu.flightPlanService.hasTemporary) {
                     color = "yellow";
@@ -562,9 +570,9 @@ class CDUFlightPlanPage {
         } else {
             let destCell = "----";
             let destinationRunway = null;
-            if (mcdu.flightPlanService.activeOrTemporary.destinationAirport) {
-                destCell = mcdu.flightPlanService.activeOrTemporary.destinationAirport.ident;
-                destinationRunway = mcdu.flightPlanService.activeOrTemporary.destinationRunway;
+            if (targetPlan.destinationAirport) {
+                destCell = targetPlan.destinationAirport.ident;
+                destinationRunway = targetPlan.destinationRunway;
                 if (destinationRunway) {
                     destCell += Avionics.Utils.formatRunway(destinationRunway.ident);
                 }
@@ -573,8 +581,8 @@ class CDUFlightPlanPage {
             let destDistCell = "---";
             let destEFOBCell = "---";
 
-            if (mcdu.flightPlanService.activeOrTemporary.destinationAirport) {
-                const destStats = stats.get(mcdu.flightPlanService.activeOrTemporary.legCount - 1);
+            if (targetPlan.destinationAirport) {
+                const destStats = stats.get(targetPlan.legCount - 1);
                 destDistCell = destStats.distanceFromPpos.toFixed(0);
                 destEFOBCell = (NXUnits.kgToUser(mcdu.getDestEFOB(isFlying))).toFixed(1);
                 if (isFlying) {
@@ -592,12 +600,12 @@ class CDUFlightPlanPage {
 
             addLskAt(5, () => mcdu.getDelaySwitchPage(),
                 () => {
-                    CDULateralRevisionPage.ShowPage(mcdu, mcdu.flightPlanService.activeOrTemporary.destinationLeg, mcdu.flightPlanService.activeOrTemporary.legCount - 1);
+                    CDULateralRevisionPage.ShowPage(mcdu, targetPlan.destinationLeg, targetPlan.legCount - 1);
                 });
 
             addRskAt(5, () => mcdu.getDelaySwitchPage(),
                 () => {
-                    CDUVerticalRevisionPage.ShowPage(mcdu, mcdu.flightPlanService.activeOrTemporary.destinationLeg);
+                    CDUVerticalRevisionPage.ShowPage(mcdu, targetPlan.destinationLeg);
                 });
         }
 
@@ -647,7 +655,8 @@ class CDUFlightPlanPage {
     }
 
     static clearWaypoint(mcdu, fpIndex, offset, scratchpadCallback) {
-        if (fpIndex <= mcdu.flightPlanManager.getActiveWaypointIndex()) {
+        // TODO maybe move this to FMS logic ?
+        if (fpIndex <= mcdu.flightPlanService.activeLegIndex) {
             // 22-72-00:67
             // Stop clearing TO or FROM waypoints when NAV is engaged
             if (mcdu.navModeEngaged()) {
@@ -656,10 +665,14 @@ class CDUFlightPlanPage {
                 return;
             }
         }
-        // TODO if clear leg before a hold, delete hold too? some other legs like this too..
-        mcdu.removeWaypoint(fpIndex, () => {
-            CDUFlightPlanPage.ShowPage(mcdu, offset);
-        }, !mcdu.flightPlanManager.isCurrentFlightPlanTemporary());
+
+        try {
+            mcdu.flightPlanService.deleteElementAt(fpIndex);
+        } catch (_) {
+            mcdu.setScratchpadMessage(NXSystemMessages.notAllowed);
+        }
+
+        CDUFlightPlanPage.ShowPage(mcdu, offset);
     }
 }
 

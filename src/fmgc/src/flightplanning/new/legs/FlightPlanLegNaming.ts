@@ -16,7 +16,7 @@ export function procedureLegIdentAndAnnotation(procedureLeg: ProcedureLeg, proce
     case LegType.AF:
         return [
             procedureLeg.waypoint.ident,
-            `${Math.round(procedureLeg.rho).toString().padStart(2, '0')} ${procedureLeg.recommendedNavaid.ident.substring(0, 3)}`,
+            `${Math.round(procedureLeg.rho).toString().padStart(2, ' ')} ${procedureLeg.recommendedNavaid.ident.substring(0, 3)}`,
         ];
     case LegType.CF:
         return [
@@ -30,7 +30,7 @@ export function procedureLegIdentAndAnnotation(procedureLeg: ProcedureLeg, proce
     case LegType.RF:
         return [
             procedureLeg.waypoint.ident,
-            `${Math.round(procedureLeg.length).toString().padStart(2, '0')} ARC`,
+            `${Math.round(procedureLeg.length).toString().padStart(2, ' ')} ARC`,
         ];
     case LegType.CA:
     case LegType.FA:

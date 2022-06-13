@@ -1528,7 +1528,7 @@ class FMCMainDisplay extends BaseAirliners {
                         currentClbConstraint = Math.min(currentClbConstraint, Math.round(wp.legAltitude1));
                         break;
                     default:
-                        // not constraining
+                    // not constraining
                 }
             } else if (wp.additionalData.constraintType === 2 /* DES */) {
                 switch (wp.legAltitudeDescription) {
@@ -1540,7 +1540,7 @@ class FMCMainDisplay extends BaseAirliners {
                         currentDesConstraint = Math.max(currentDesConstraint, Math.round(wp.legAltitude2));
                         break;
                     default:
-                        // not constraining
+                    // not constraining
                 }
             }
             const profilePoint = this.managedProfile.get(index);
@@ -2866,13 +2866,28 @@ class FMCMainDisplay extends BaseAirliners {
     }
 
     eraseTemporaryFlightPlan(callback = EmptyCallback.Void) {
-        this.flightPlanManager.setCurrentFlightPlanIndex(0, () => {
-            this.flightPlanManager.deleteFlightPlan(FlightPlans.Temporary);
+        if (this.flightPlanService.hasTemporary) {
+            this.flightPlanService.temporaryDelete();
+
             SimVar.SetSimVarValue("L:FMC_FLIGHT_PLAN_IS_TEMPORARY", "number", 0);
             SimVar.SetSimVarValue("L:MAP_SHOW_TEMPORARY_FLIGHT_PLAN", "number", 0);
             this.tempFpPendingAutoTune = false;
             callback();
-        });
+        }
+    }
+
+    insertTemporaryFlightPlan(callback = EmptyCallback.Void) {
+        if (this.flightPlanService.hasTemporary) {
+            this.flightPlanService.temporaryInsert();
+
+            SimVar.SetSimVarValue("L:FMC_FLIGHT_PLAN_IS_TEMPORARY", "number", 0);
+            SimVar.SetSimVarValue("L:MAP_SHOW_TEMPORARY_FLIGHT_PLAN", "number", 0);
+            if (this.tempFpPendingAutoTune) {
+                this.clearAutotunedIls();
+                this.tempFpPendingAutoTune = false;
+            }
+            callback();
+        }
     }
 
     //-----------------------------------------------------------------------------------

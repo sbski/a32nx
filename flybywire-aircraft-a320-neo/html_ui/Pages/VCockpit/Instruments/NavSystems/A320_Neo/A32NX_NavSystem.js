@@ -59,6 +59,22 @@ class NavSystem extends BaseInstrument {
         this.currNavigationDatabaseService = Fmgc.NavigationDatabaseService;
         this.navigationDatabase = new Fmgc.NavigationDatabase(Fmgc.NavigationDatabaseBackend.Navigraph);
         this.currNavigationDatabaseService.activeDatabase = this.navigationDatabase;
+
+        new Promise(async (resolve) => {
+            await this.currFlightPlanService.newCityPair('NZQN', 'NZWN', 'NZAA');
+
+            await this.currFlightPlanService.setOriginRunway('RW05');
+            await this.currFlightPlanService.setDepartureProcedure('ANPO3A');
+
+            await this.currFlightPlanService.setDestinationRunway('RW16');
+            await this.currFlightPlanService.setApproach('D16');
+            await this.currFlightPlanService.setApproachVia('WITBY');
+            await this.currFlightPlanService.setArrival('DOGA4B');
+
+            console.log('Dev flight plan inserted.');
+
+            resolve();
+        });
     }
     get flightPhaseManager() {
         return this.currFlightPhaseManager;

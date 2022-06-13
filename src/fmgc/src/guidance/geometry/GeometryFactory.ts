@@ -25,6 +25,14 @@ import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { VMLeg } from '@fmgc/guidance/lnav/legs/VM';
 import { RFLeg } from '@fmgc/guidance/lnav/legs/RF';
 
+function getFacilities(): typeof Facilities {
+    return window.Facilities ?? {
+        getMagVar(_lat: Degrees, _long: Degrees): Degrees {
+            return 0;
+        },
+    };
+}
+
 export namespace GeometryFactory {
     export function createFromFlightPlan(plan: BaseFlightPlan, doGenerateTransitions = true): Geometry {
         const legs = new Map<number, Leg>();
@@ -45,7 +53,7 @@ export namespace GeometryFactory {
             if (element.isXF()) {
                 const fixLocation = element.terminationWaypoint().location;
 
-                runningMagvar = Facilities.getMagVar(fixLocation.lat, fixLocation.lon);
+                runningMagvar = getFacilities().getMagVar(fixLocation.lat, fixLocation.lon);
             }
 
             let nextGeometryLeg;
@@ -87,7 +95,7 @@ export namespace GeometryFactory {
             if (planLeg.isDiscontinuity === false && planLeg.isXF()) {
                 const fixLocation = planLeg.terminationWaypoint().location;
 
-                runningMagvar = Facilities.getMagVar(fixLocation.lat, fixLocation.lon);
+                runningMagvar = getFacilities().getMagVar(fixLocation.lat, fixLocation.lon);
             }
 
             let nextLeg: Leg;
@@ -282,7 +290,7 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
     //     break;
     case LegType.FM:
     case LegType.VM: {
-        return new VMLeg(trueCourse, trueCourse, editableData, SegmentType.Departure);
+        return new VMLeg(trueCourse, editableData, SegmentType.Departure);
     }
     case LegType.VR:
         break;

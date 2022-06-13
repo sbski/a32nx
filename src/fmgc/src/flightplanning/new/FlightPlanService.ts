@@ -236,14 +236,6 @@ export class FlightPlanService {
         return this.flightPlanManager.get(finalIndex).removeElementAt(index);
     }
 
-    private static ensureTemporaryExists() {
-        if (this.hasTemporary) {
-            return;
-        }
-
-        this.flightPlanManager.copy(FlightPlanIndex.Active, FlightPlanIndex.Temporary);
-    }
-
     static nextWaypoint(atIndex: number, waypoint: Waypoint, planIndex = FlightPlanIndex.Active) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
@@ -252,6 +244,18 @@ export class FlightPlanService {
         const leg = FlightPlanLeg.fromEnrouteWaypoint(plan.enrouteSegment, waypoint);
 
         this.flightPlanManager.get(finalIndex).insertElementAfter(atIndex, leg);
+    }
+
+    static activeLegIndex(): number {
+        return this.active.activeLegIndex;
+    }
+
+    private static ensureTemporaryExists() {
+        if (this.hasTemporary) {
+            return;
+        }
+
+        this.flightPlanManager.copy(FlightPlanIndex.Active, FlightPlanIndex.Temporary);
     }
 
     // static insertDirectTo(directTo: DirectTo): Promise<void> {
