@@ -5126,6 +5126,10 @@ class FMCMainDisplay extends BaseAirliners {
         return this.thrustReductionAltitude;
     }
 
+    getOriginTransitionAltitude() {
+        return this.flightPlanManager.getOriginTransitionAltitude();
+    }
+
     getCruiseAltitude() {
         return this.cruiseFlightLevel * 100;
     }
