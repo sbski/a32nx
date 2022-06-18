@@ -258,8 +258,6 @@ const SymbolMarker: FC<SymbolMarkerProps> = memo(({ ident, x, y, endX, endY, arc
     // todo airport as well if in flightplan
     if (type & NdSymbolTypeFlags.Runway) {
         colour = 'White';
-    } else if (type & NdSymbolTypeFlags.MissedApproach) {
-        colour = 'Cyan';
     } else if (type & NdSymbolTypeFlags.ActiveLegTermination) {
         colour = 'White';
     } else if (type & NdSymbolTypeFlags.Tuned) {
@@ -312,7 +310,7 @@ const SymbolMarker: FC<SymbolMarkerProps> = memo(({ ident, x, y, endX, endY, arc
     if (constraints) {
         let constraintY = 17;
         elements.push(...constraints.map((t) => (
-            <text x={13.5} y={constraintY += 17} className="Magenta shadow" fontSize={20}>{t}</text>
+            <text x={13.5} y={constraintY += 17} className="shadow Magenta" fontSize={20}>{t}</text>
         )));
     }
 
@@ -396,7 +394,7 @@ const SymbolMarker: FC<SymbolMarkerProps> = memo(({ ident, x, y, endX, endY, arc
                 <circle cx={0} cy={0} r={12} strokeWidth={1.8} className="shadow" />
                 <circle cx={0} cy={0} r={12} strokeWidth={1.5} className="White" />
 
-                <text x={2.5} y={2} className="White shadow" textAnchor="middle" dominantBaseline="middle" fontSize={21}>1</text>
+                <text x={2.5} y={2} className="shadow White" textAnchor="middle" dominantBaseline="middle" fontSize={21}>1</text>
             </>,
         );
     } else if (type & (NdSymbolTypeFlags.PwpCdaFlap2)) {
@@ -406,7 +404,7 @@ const SymbolMarker: FC<SymbolMarkerProps> = memo(({ ident, x, y, endX, endY, arc
                 <circle cx={0} cy={0} r={12} strokeWidth={1.8} className="shadow" />
                 <circle cx={0} cy={0} r={12} strokeWidth={1.5} className="White" />
 
-                <text x={1} y={2} className="White shadow" textAnchor="middle" dominantBaseline="middle" fontSize={21}>2</text>
+                <text x={1} y={2} className="shadow White" textAnchor="middle" dominantBaseline="middle" fontSize={21}>2</text>
             </>,
         );
     } else if (type & (NdSymbolTypeFlags.PwpDecel)) {
@@ -416,7 +414,7 @@ const SymbolMarker: FC<SymbolMarkerProps> = memo(({ ident, x, y, endX, endY, arc
                 <circle cx={0} cy={0} r={13} strokeWidth={1.6} className="shadow" />
                 <circle cx={0} cy={0} r={12} strokeWidth={1.5} className="Magenta" />
 
-                <text x={1.5} y={2} className="Magenta shadow" strokeWidth={1} textAnchor="middle" dominantBaseline="middle" fontSize={22}>D</text>
+                <text x={1.5} y={2} className="shadow Magenta" strokeWidth={1} textAnchor="middle" dominantBaseline="middle" fontSize={22}>D</text>
             </>,
         );
     }
