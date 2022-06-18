@@ -132,6 +132,10 @@ export abstract class BaseFlightPlan {
         return accumulator - 1;
     }
 
+    get lastLegIndex() {
+        return this.legCount - 1;
+    }
+
     hasElement(index: number): boolean {
         return index >= 0 && index < this.allLegs.length;
     }

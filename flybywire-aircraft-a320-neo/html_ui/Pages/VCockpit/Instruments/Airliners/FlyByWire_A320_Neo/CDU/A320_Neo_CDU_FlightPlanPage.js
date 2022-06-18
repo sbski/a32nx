@@ -26,7 +26,7 @@ class CDUFlightPlanPage {
         function getRunwayInfo(/** @type {import('msfs-navdata').Runway} */ runway) {
             let runwayText, runwayAlt;
             if (runway) {
-                runwayText = Avionics.Utils.formatRunway(runway.ident);
+                runwayText = runway.ident.substring(2);
                 runwayAlt = (runway.elevation * 3.280).toFixed(0).toString();
             }
             return [runwayText, runwayAlt];
@@ -113,7 +113,7 @@ class CDUFlightPlanPage {
 
             waypointsAndMarkers.push({ wp, fpIndex: i});
 
-            if (i === targetPlan.destinationLegIndex) {
+            if (i === targetPlan.lastLegIndex) {
                 waypointsAndMarkers.push({ marker: Markers.END_OF_FPLN, fpIndex: i});
                 // TODO: Rewrite once alt fpln exists
                 waypointsAndMarkers.push({ marker: Markers.NO_ALTN_FPLN, fpIndex: i});
@@ -266,7 +266,7 @@ class CDUFlightPlanPage {
                 const hasAltConstraint = wp.legAltitudeDescription > 0 && wp.legAltitudeDescription < 6;
                 let altitudeConstraint = "-----";
                 let altPrefix = "\xa0";
-                if (fpIndex === targetPlan.destinationLegIndex) {
+                if (fpIndex === targetPlan.destinationLegIndex && wp.isDiscontinuity === false && wp.definition.waypointDescriptor === 3 /* Runway */) {
                     // Only for destination waypoint, show runway elevation.
                     altColor = "white";
                     spdColor = "white";
@@ -279,7 +279,7 @@ class CDUFlightPlanPage {
                     }
                     altitudeConstraint = altitudeConstraint.padStart(5,"\xa0");
 
-                } else if (wp === targetPlan.originAirport && fpIndex === 0) {
+                } else if (wp === targetPlan.originAirport && fpIndex === 0 && wp.isDiscontinuity === false && wp.definition.waypointDescriptor === 3 /* Runway */) {
                     const [rwTxt, rwAlt] = getRunwayInfo(targetPlan.originRunway);
                     if (rwTxt && rwAlt) {
                         ident += rwTxt;
@@ -569,12 +569,11 @@ class CDUFlightPlanPage {
             });
         } else {
             let destCell = "----";
-            let destinationRunway = null;
             if (targetPlan.destinationAirport) {
                 destCell = targetPlan.destinationAirport.ident;
-                destinationRunway = targetPlan.destinationRunway;
-                if (destinationRunway) {
-                    destCell += Avionics.Utils.formatRunway(destinationRunway.ident);
+
+                if (targetPlan.destinationRunway) {
+                    destCell += getRunwayInfo(targetPlan.destinationRunway)[0];
                 }
             }
             let destTimeCell = "----";
