@@ -20,12 +20,6 @@ export class OriginSegment extends FlightPlanSegment {
 
     public runway?: Runway;
 
-    constructor(
-        flightPlan: BaseFlightPlan,
-    ) {
-        super(flightPlan);
-    }
-
     get originAirport() {
         return this.airport;
     }

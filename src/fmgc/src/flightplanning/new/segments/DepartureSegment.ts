@@ -17,12 +17,6 @@ export class DepartureSegment extends FlightPlanSegment {
 
     allLegs: FlightPlanLeg[] = []
 
-    constructor(
-        flightPlan: BaseFlightPlan,
-    ) {
-        super(flightPlan);
-    }
-
     async setDepartureProcedure(procedureIdent: string | undefined) {
         if (procedureIdent === undefined) {
             this.originDeparture = undefined;

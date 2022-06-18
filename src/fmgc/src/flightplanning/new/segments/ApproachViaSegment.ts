@@ -20,12 +20,6 @@ export class ApproachViaSegment extends FlightPlanSegment {
         return this.approachVia;
     }
 
-    constructor(
-        flightPlan: BaseFlightPlan,
-    ) {
-        super(flightPlan);
-    }
-
     setApproachVia(transitionIdent: string | undefined) {
         if (transitionIdent === undefined) {
             this.approachVia = undefined;

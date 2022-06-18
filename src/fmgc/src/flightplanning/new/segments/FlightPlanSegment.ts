@@ -25,7 +25,7 @@ export abstract class FlightPlanSegment {
      */
     strung = false
 
-    protected constructor(
+    constructor(
         protected readonly flightPlan: BaseFlightPlan,
     ) {
     }

@@ -17,12 +17,6 @@ export class ApproachSegment extends FlightPlanSegment {
 
     private approach: Approach | undefined
 
-    constructor(
-        flightPlan: BaseFlightPlan,
-    ) {
-        super(flightPlan);
-    }
-
     get approachProcedure() {
         return this.approach;
     }

@@ -21,12 +21,6 @@ export class ArrivalSegment extends FlightPlanSegment {
         return this.arrival;
     }
 
-    constructor(
-        flightPlan: BaseFlightPlan,
-    ) {
-        super(flightPlan);
-    }
-
     async setArrivalProcedure(procedureIdent: string | undefined) {
         if (procedureIdent === undefined) {
             this.arrival = undefined;

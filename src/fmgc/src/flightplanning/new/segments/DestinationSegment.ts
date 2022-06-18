@@ -18,12 +18,6 @@ export class DestinationSegment extends FlightPlanSegment {
 
     private airport: Airport;
 
-    constructor(
-        flightPlan: BaseFlightPlan,
-    ) {
-        super(flightPlan);
-    }
-
     public get destinationAirport() {
         return this.airport;
     }

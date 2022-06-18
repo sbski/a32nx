@@ -20,12 +20,6 @@ export class ArrivalRunwayTransitionSegment extends FlightPlanSegment {
         return this.arrivalRunwayTransition;
     }
 
-    constructor(
-        flightPlan: BaseFlightPlan,
-    ) {
-        super(flightPlan);
-    }
-
     setArrivalRunwayTransition(transition: ProcedureTransition, legs: FlightPlanElement[]) {
         this.allLegs.length = 0;
         this.allLegs.push(...legs);

@@ -20,12 +20,6 @@ export class ArrivalEnrouteTransitionSegment extends FlightPlanSegment {
         return this.arrivalEnrouteTransition;
     }
 
-    constructor(
-        flightPlan: BaseFlightPlan,
-    ) {
-        super(flightPlan);
-    }
-
     setArrivalEnrouteTransition(transitionIdent: string | undefined) {
         if (transitionIdent === undefined) {
             this.arrivalEnrouteTransition = undefined;

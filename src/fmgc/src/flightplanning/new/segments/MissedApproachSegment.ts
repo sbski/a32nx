@@ -13,12 +13,6 @@ export class MissedApproachSegment extends FlightPlanSegment {
 
     allLegs: FlightPlanElement[] = []
 
-    constructor(
-        flightPlan: BaseFlightPlan,
-    ) {
-        super(flightPlan);
-    }
-
     setMissedApproachLegs(legs: FlightPlanElement[]) {
         this.allLegs.length = 0;
         this.allLegs.push(...legs);
