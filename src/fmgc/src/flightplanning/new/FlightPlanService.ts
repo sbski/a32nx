@@ -246,7 +246,7 @@ export class FlightPlanService {
         this.flightPlanManager.get(finalIndex).insertElementAfter(atIndex, leg);
     }
 
-    static activeLegIndex(): number {
+    static get activeLegIndex(): number {
         return this.active.activeLegIndex;
     }
 
