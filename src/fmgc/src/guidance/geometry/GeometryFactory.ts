@@ -26,7 +26,11 @@ import { VMLeg } from '@fmgc/guidance/lnav/legs/VM';
 import { RFLeg } from '@fmgc/guidance/lnav/legs/RF';
 
 function getFacilities(): typeof Facilities {
-    return window.Facilities ?? {
+    if ('Facilities' in window) {
+        return Facilities;
+    }
+
+    return {
         getMagVar(_lat: Degrees, _long: Degrees): Degrees {
             return 0;
         },
