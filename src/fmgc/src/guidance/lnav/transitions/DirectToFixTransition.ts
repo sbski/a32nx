@@ -18,6 +18,7 @@ import { PathVector, PathVectorType } from '@fmgc/guidance/lnav/PathVector';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { TurnDirection } from '@fmgc/types/fstypes/FSEnums';
 import { bearingTo, distanceTo, placeBearingDistance } from 'msfs-geo';
+import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { CILeg } from '../legs/CI';
 import {
     arcDistanceToGo,
