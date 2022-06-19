@@ -344,7 +344,7 @@ class CDUFlightPlanPage {
                                     CDULateralRevisionPage.ShowPage(mcdu, wp, fpIndex);
                                     break;
                                 case FMCMainDisplay.clrValue:
-                                    CDUFlightPlanPage.clearWaypoint(mcdu, fpIndex, offset, scratchpadCallback);
+                                    CDUFlightPlanPage.clearElement(mcdu, fpIndex, offset, scratchpadCallback);
                                     break;
                                 case FMCMainDisplay.ovfyValue:
                                     if (wp.additionalData.overfly) {
@@ -414,14 +414,11 @@ class CDUFlightPlanPage {
                     isOverfly: false,
                 };
             } else if (marker) {
-
                 // Marker
                 scrollWindow[rowI] = waypointsAndMarkers[winI];
                 addLskAt(rowI, 0, (value, scratchpadCallback) => {
                     if (value === FMCMainDisplay.clrValue) {
-                        mcdu.clearDiscontinuity(fpIndex, () => {
-                            CDUFlightPlanPage.ShowPage(mcdu, offset);
-                        }, !mcdu.flightPlanService.hasTemporary);
+                        CDUFlightPlanPage.clearElement(mcdu, fpIndex, offset, scratchpadCallback);
                         return;
                     }
 
@@ -461,8 +458,7 @@ class CDUFlightPlanPage {
 
                 addLskAt(rowI, 0, (value, scratchpadCallback) => {
                     if (value === FMCMainDisplay.clrValue) {
-                        CDUFlightPlanPage.clearWaypoint(mcdu, fpIndex, offset, scratchpadCallback);
-                        return;
+                        CDUFlightPlanPage.clearElement(mcdu, fpIndex, offset, scratchpadCallback);
                     }
 
                     CDUHoldAtPage.ShowPage(mcdu, fpIndex);
@@ -653,7 +649,13 @@ class CDUFlightPlanPage {
         ]);
     }
 
-    static clearWaypoint(mcdu, fpIndex, offset, scratchpadCallback) {
+    static clearElement(mcdu, fpIndex, offset, scratchpadCallback) {
+        if (mcdu.flightPlanService.hasTemporary) {
+            mcdu.setScratchpadMessage(NXSystemMessages.notAllowed);
+            scratchpadCallback();
+            return;
+        }
+
         // TODO maybe move this to FMS logic ?
         if (fpIndex <= mcdu.flightPlanService.activeLegIndex) {
             // 22-72-00:67
@@ -667,8 +669,10 @@ class CDUFlightPlanPage {
 
         try {
             mcdu.flightPlanService.deleteElementAt(fpIndex);
-        } catch (_) {
-            mcdu.setScratchpadMessage(NXSystemMessages.notAllowed);
+        } catch (e) {
+            console.error(e);
+            mcdu.setScratchpadMessage(NXFictionalMessages.internalError);
+            scratchpadCallback();
         }
 
         CDUFlightPlanPage.ShowPage(mcdu, offset);
