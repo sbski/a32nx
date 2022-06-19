@@ -82,6 +82,8 @@ export class DestinationSegment extends FlightPlanSegment {
             if (lastApproachLegIsRunway) {
                 this.allLegs.push(FlightPlanLeg.fromAirportAndRunway(this, approachName, this.airport, this.runway));
             }
+        } else if (this.airport) {
+            this.allLegs.push(FlightPlanLeg.fromAirportAndRunway(this, '', this.airport));
         }
 
         this.flightPlan.availableApproaches = await loadAllApproaches(this.destinationAirport);
