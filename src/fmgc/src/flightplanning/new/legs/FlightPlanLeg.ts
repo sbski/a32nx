@@ -17,7 +17,7 @@ export class FlightPlanLeg {
     type: LegType
 
     private constructor(
-        public readonly segment: FlightPlanSegment,
+        public segment: FlightPlanSegment,
         public readonly definition: FlightPlanLegDefinition,
         public readonly ident: string,
         public annotation: string,

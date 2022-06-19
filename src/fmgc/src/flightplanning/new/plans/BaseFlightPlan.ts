@@ -406,6 +406,10 @@ export abstract class BaseFlightPlan {
     }
 
     removeElementAt(index: number, insertDiscontinuity = false): boolean {
+        if (index < 0) {
+            throw new Error('[FMS/FPM] Tried to remove element for out-of-bounds index');
+        }
+
         const [segment, indexInSegment] = this.segmentPositionForIndex(index);
 
         // TODO if clear leg before a hold, delete hold too? some other legs like this too..
@@ -424,6 +428,7 @@ export abstract class BaseFlightPlan {
 
         this.incrementVersion();
 
+        this.adjustIFLegs();
         this.redistributeLegsAt(index + 1);
 
         this.incrementVersion();
@@ -681,7 +686,7 @@ export abstract class BaseFlightPlan {
             const prevElement = elements[i - 1];
             const element = elements[i];
 
-            // IF -> TF is no discontinuity before
+            // IF -> TF if no discontinuity before and element present
             if (element && element.isDiscontinuity === false && element.type === LegType.IF) {
                 if (prevElement && prevElement.isDiscontinuity === true) {
                     continue;
@@ -690,7 +695,7 @@ export abstract class BaseFlightPlan {
                 element.type = LegType.TF;
             }
 
-            // TF -> IF if  no element or discontinuity before
+            // TF -> IF if no element or discontinuity before
             if (element && element.isDiscontinuity === false && element.type !== LegType.IF) {
                 if (!prevElement || (prevElement && prevElement.isDiscontinuity === true)) {
                     element.type = LegType.IF;
