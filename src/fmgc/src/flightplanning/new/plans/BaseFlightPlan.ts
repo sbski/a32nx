@@ -186,12 +186,12 @@ export abstract class BaseFlightPlan {
     public computeWaypointStatistics(): Map<number, WaypointStats> {
         const stats = new Map<number, WaypointStats>();
 
-        for (const element of this.allLegs) {
+        for (let i = 0; i < this.allLegs.length; i++) {
+            const element = this.allLegs[i];
+
             if (element.isDiscontinuity === true) {
                 continue;
             }
-
-            const index = this.allLegs.findIndex((it) => it.isDiscontinuity === false && it.ident === element.ident);
 
             const data = {
                 ident: element.ident,
@@ -203,7 +203,7 @@ export abstract class BaseFlightPlan {
                 magneticVariation: 0,
             };
 
-            stats.set(index, data);
+            stats.set(i, data);
         }
 
         return stats;
