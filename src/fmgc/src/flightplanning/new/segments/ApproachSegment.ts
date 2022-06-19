@@ -55,6 +55,7 @@ export class ApproachSegment extends FlightPlanSegment {
         const mappedMissedApproachLegs = matchingProcedure.missedLegs.map((leg) => FlightPlanLeg.fromProcedureLeg(this.flightPlan.missedApproachSegment, leg, matchingProcedure.ident));
         this.flightPlan.missedApproachSegment.setMissedApproachLegs(mappedMissedApproachLegs);
 
+        this.flightPlan.rebuildArrivalAndApproachSegments();
         this.flightPlan.restring();
 
         this.flightPlan.availableApproachVias = matchingProcedure.transitions;

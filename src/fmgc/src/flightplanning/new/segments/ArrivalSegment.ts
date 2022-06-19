@@ -58,6 +58,7 @@ export class ArrivalSegment extends FlightPlanSegment {
         const mappedRunwayTransitionLegs = matchingRunwayTransition?.legs?.map((leg) => FlightPlanLeg.fromProcedureLeg(this, leg, matchingArrival.ident)) ?? [];
         this.flightPlan.arrivalRunwayTransitionSegment.setArrivalRunwayTransition(matchingRunwayTransition, mappedRunwayTransitionLegs);
 
+        this.flightPlan.rebuildArrivalAndApproachSegments();
         this.flightPlan.restring();
     }
 

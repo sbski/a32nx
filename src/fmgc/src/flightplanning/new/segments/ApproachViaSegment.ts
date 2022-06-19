@@ -48,6 +48,7 @@ export class ApproachViaSegment extends FlightPlanSegment {
         this.allLegs.push(...mappedApproachViaLegs);
         this.strung = false;
 
+        this.flightPlan.rebuildArrivalAndApproachSegments();
         this.flightPlan.restring();
     }
 

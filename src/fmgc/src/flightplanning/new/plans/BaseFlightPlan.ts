@@ -704,4 +704,8 @@ export abstract class BaseFlightPlan {
             }
         }
     }
+
+    rebuildArrivalAndApproachSegments() {
+        this.destinationSegment.refresh();
+    }
 }

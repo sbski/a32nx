@@ -27,6 +27,7 @@ export class ArrivalRunwayTransitionSegment extends FlightPlanSegment {
 
         this.arrivalRunwayTransition = transition;
 
+        this.flightPlan.rebuildArrivalAndApproachSegments();
         this.flightPlan.restring();
     }
 

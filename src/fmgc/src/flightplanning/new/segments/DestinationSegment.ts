@@ -36,6 +36,7 @@ export class DestinationSegment extends FlightPlanSegment {
 
         this.flightPlan.availableDestinationRunways = await loadAllRunways(this.destinationAirport);
 
+        // TODO do we clear arrival/via/approach ...?
         await this.refresh();
 
         this.flightPlan.availableArrivals = await loadAllArrivals(this.destinationAirport);
@@ -68,22 +69,15 @@ export class DestinationSegment extends FlightPlanSegment {
         await this.refresh();
     }
 
-    private async refresh() {
+    async refresh() {
         this.allLegs.length = 0;
 
         const approach = this.flightPlan.approach;
 
-        if (this.airport && approach) {
-            const approachName = approach.ident ?? '';
-
-            const lastApproachLeg = approach.legs[approach.legs.length - 1];
-            const lastApproachLegIsRunway = lastApproachLeg.waypointDescriptor === WaypointDescriptor.Runway;
-
-            if (lastApproachLegIsRunway) {
-                this.allLegs.push(FlightPlanLeg.fromAirportAndRunway(this, approachName, this.airport, this.runway));
-            }
-        } else if (this.airport) {
+        if (this.airport && !approach) {
             this.allLegs.push(FlightPlanLeg.fromAirportAndRunway(this, '', this.airport));
+        } else {
+            this.allLegs.length = 0;
         }
 
         this.flightPlan.availableApproaches = await loadAllApproaches(this.destinationAirport);
