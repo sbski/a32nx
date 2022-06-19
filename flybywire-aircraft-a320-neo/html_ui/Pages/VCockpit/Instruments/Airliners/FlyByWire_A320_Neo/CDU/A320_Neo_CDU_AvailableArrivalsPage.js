@@ -48,7 +48,7 @@ class CDUAvailableArrivalsPage {
         const targetPlan = mcdu.flightPlanService.activeOrTemporary;
         const isTemporary = mcdu.flightPlanService.hasTemporary;
 
-        const selectedStarIdent = targetPlan.arrival.ident;
+        const selectedStarIdent = targetPlan.arrival ? targetPlan.arrival.ident : undefined;
         const selectedTransitionIdent = targetPlan.arrivalEnrouteTransition ? targetPlan.arrivalEnrouteTransition.ident : undefined;
 
         const flightPlanAccentColor = isTemporary ? "yellow" : "green";
