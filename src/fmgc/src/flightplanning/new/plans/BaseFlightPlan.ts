@@ -566,6 +566,7 @@ export abstract class BaseFlightPlan {
             for (const element of toInsertInEnroute) {
                 if (element.isDiscontinuity === false) {
                     element.annotation = 'TRUNC A';
+                    element.segment = this.enrouteSegment;
                 }
             }
 
