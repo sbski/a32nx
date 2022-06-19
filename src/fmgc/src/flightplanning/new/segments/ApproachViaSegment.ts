@@ -6,7 +6,7 @@
 import { ProcedureTransition } from 'msfs-navdata';
 import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanSegment';
 import { FlightPlanElement, FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
-import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
+import { BaseFlightPlan, FlightPlanQueuedOperation } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
 
 export class ApproachViaSegment extends FlightPlanSegment {
@@ -20,7 +20,7 @@ export class ApproachViaSegment extends FlightPlanSegment {
         return this.approachVia;
     }
 
-    setApproachVia(transitionIdent: string | undefined) {
+    async setApproachVia(transitionIdent: string | undefined): Promise<void> {
         if (transitionIdent === undefined) {
             this.approachVia = undefined;
             this.allLegs.length = 0;
@@ -48,8 +48,8 @@ export class ApproachViaSegment extends FlightPlanSegment {
         this.allLegs.push(...mappedApproachViaLegs);
         this.strung = false;
 
-        this.flightPlan.rebuildArrivalAndApproachSegments();
-        this.flightPlan.restring();
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.RebuildArrivalAndApproach);
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
     clone(forPlan: BaseFlightPlan): ApproachViaSegment {

@@ -7,7 +7,7 @@ import { Departure } from 'msfs-navdata';
 import { FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanSegment';
 import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
-import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
+import { BaseFlightPlan, FlightPlanQueuedOperation } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 import { NavigationDatabaseService } from '../NavigationDatabaseService';
 
 export class DepartureSegment extends FlightPlanSegment {
@@ -57,7 +57,7 @@ export class DepartureSegment extends FlightPlanSegment {
         const mappedRunwayTransitionLegs = runwayTransition?.legs?.map((leg) => FlightPlanLeg.fromProcedureLeg(this, leg, matchingProcedure.ident)) ?? [];
         await this.flightPlan.departureRunwayTransitionSegment.setOriginRunwayTransitionSegment(runwayTransition, mappedRunwayTransitionLegs);
 
-        this.flightPlan.restring();
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
     clone(forPlan: BaseFlightPlan): DepartureSegment {

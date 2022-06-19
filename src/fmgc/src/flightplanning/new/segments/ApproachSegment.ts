@@ -6,7 +6,7 @@
 import { Approach, WaypointDescriptor } from 'msfs-navdata';
 import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanSegment';
 import { FlightPlanElement, FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
-import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
+import { BaseFlightPlan, FlightPlanQueuedOperation } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
 import { NavigationDatabaseService } from '../NavigationDatabaseService';
 
@@ -22,6 +22,8 @@ export class ApproachSegment extends FlightPlanSegment {
     }
 
     async setApproachProcedure(procedureIdent: string | undefined) {
+        const oldApproachName = this.flightPlan.approach?.ident;
+
         const db = NavigationDatabaseService.activeDatabase.backendDatabase;
 
         if (procedureIdent === undefined) {
@@ -29,7 +31,7 @@ export class ApproachSegment extends FlightPlanSegment {
             this.approach = undefined;
             this.allLegs = this.createLegSet([]);
 
-            this.flightPlan.restring();
+            this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
 
             return;
         }
@@ -55,10 +57,15 @@ export class ApproachSegment extends FlightPlanSegment {
         const mappedMissedApproachLegs = matchingProcedure.missedLegs.map((leg) => FlightPlanLeg.fromProcedureLeg(this.flightPlan.missedApproachSegment, leg, matchingProcedure.ident));
         this.flightPlan.missedApproachSegment.setMissedApproachLegs(mappedMissedApproachLegs);
 
-        this.flightPlan.rebuildArrivalAndApproachSegments();
-        this.flightPlan.restring();
+        // Clear flight plan approach via if the new approach is different
+        if (oldApproachName !== matchingProcedure.ident) {
+            await this.flightPlan.approachViaSegment.setApproachVia(undefined);
+        }
 
         this.flightPlan.availableApproachVias = matchingProcedure.transitions;
+
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.RebuildArrivalAndApproach);
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
     createLegSet(approachLegs: FlightPlanElement[]): FlightPlanElement[] {

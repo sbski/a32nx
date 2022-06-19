@@ -6,7 +6,7 @@
 import { Arrival } from 'msfs-navdata';
 import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanSegment';
 import { FlightPlanElement, FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
-import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
+import { BaseFlightPlan, FlightPlanQueuedOperation } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
 import { NavigationDatabaseService } from '../NavigationDatabaseService';
 
@@ -58,8 +58,8 @@ export class ArrivalSegment extends FlightPlanSegment {
         const mappedRunwayTransitionLegs = matchingRunwayTransition?.legs?.map((leg) => FlightPlanLeg.fromProcedureLeg(this, leg, matchingArrival.ident)) ?? [];
         this.flightPlan.arrivalRunwayTransitionSegment.setArrivalRunwayTransition(matchingRunwayTransition, mappedRunwayTransitionLegs);
 
-        this.flightPlan.rebuildArrivalAndApproachSegments();
-        this.flightPlan.restring();
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.RebuildArrivalAndApproach);
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
     clone(forPlan: BaseFlightPlan): ArrivalSegment {

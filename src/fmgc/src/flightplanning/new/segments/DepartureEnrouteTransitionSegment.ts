@@ -7,7 +7,7 @@ import { ProcedureTransition } from 'msfs-navdata';
 import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanSegment';
 import { FlightPlanElement, FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
-import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
+import { BaseFlightPlan, FlightPlanQueuedOperation } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 
 export class DepartureEnrouteTransitionSegment extends FlightPlanSegment {
     class = SegmentClass.Departure
@@ -48,7 +48,7 @@ export class DepartureEnrouteTransitionSegment extends FlightPlanSegment {
         this.allLegs.push(...mappedOriginEnrouteTransitionLegs);
         this.strung = false;
 
-        this.flightPlan.restring();
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
     clone(forPlan: BaseFlightPlan): DepartureEnrouteTransitionSegment {
