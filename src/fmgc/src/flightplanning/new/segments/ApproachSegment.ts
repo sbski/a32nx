@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { Approach, WaypointDescriptor } from 'msfs-navdata';
+import { Approach, Runway, WaypointDescriptor } from 'msfs-navdata';
 import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanSegment';
 import { FlightPlanElement, FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { BaseFlightPlan, FlightPlanQueuedOperation } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
@@ -54,6 +54,24 @@ export class ApproachSegment extends FlightPlanSegment {
         this.allLegs = this.createLegSet(matchingProcedure.legs.map((leg) => FlightPlanLeg.fromProcedureLeg(this, leg, matchingProcedure.ident)));
         this.strung = false;
 
+        // Try to set destination runway automatically TODO this info should be provided by msfs-navdata
+
+        const lastElement = this.allLegs[this.allLegs.length - 1];
+
+        if (lastElement.isDiscontinuity === false) {
+            const runwayByLastLeg = this.findRunwayFromRunwayLeg(lastElement);
+
+            if (runwayByLastLeg) {
+                await this.flightPlan.destinationSegment.setDestinationRunway(runwayByLastLeg.ident);
+            } else {
+                const runwayByIdent = this.findRunwayFromApproachIdent(matchingProcedure.ident, this.flightPlan.availableDestinationRunways);
+
+                if (runwayByIdent) {
+                    await this.flightPlan.destinationSegment.setDestinationRunway(runwayByIdent.ident);
+                }
+            }
+        }
+
         const mappedMissedApproachLegs = matchingProcedure.missedLegs.map((leg) => FlightPlanLeg.fromProcedureLeg(this.flightPlan.missedApproachSegment, leg, matchingProcedure.ident));
         this.flightPlan.missedApproachSegment.setMissedApproachLegs(mappedMissedApproachLegs);
 
@@ -89,7 +107,7 @@ export class ApproachSegment extends FlightPlanSegment {
             if (lastLeg && lastLeg.isDiscontinuity === false && lastLeg.waypointDescriptor === WaypointDescriptor.Runway) {
                 legs.push(...approachLegs.slice(0, approachLegs.length - 1));
 
-                const runway = this.flightPlan.availableDestinationRunways.find((it) => it.ident === lastLeg.ident);
+                const runway = this.findRunwayFromRunwayLeg(lastLeg);
 
                 if (lastLeg?.isDiscontinuity === false && lastLeg.waypointDescriptor === WaypointDescriptor.Runway) {
                     const mappedLeg = FlightPlanLeg.fromAirportAndRunway(this, this.approachProcedure?.ident ?? '', airport, runway);
@@ -102,6 +120,24 @@ export class ApproachSegment extends FlightPlanSegment {
         }
 
         return legs;
+    }
+
+    private findRunwayFromRunwayLeg(leg: FlightPlanLeg): Runway | undefined {
+        return this.flightPlan.availableDestinationRunways.find((it) => it.ident === leg.ident);
+    }
+
+    private findRunwayFromApproachIdent(ident: string, runwaySet: Runway[]): Runway | undefined {
+        const runwaySpecificApproachPrefixes = /[ILDRV]/;
+
+        const ident0 = ident.substring(0, 1);
+        const ident1 = ident.substring(1, 2);
+        if (ident0.match(runwaySpecificApproachPrefixes) && ident1.match(/\d/)) {
+            const rwyNumber = ident.substring(1, 3);
+
+            return runwaySet.find((it) => it.ident === `RW${rwyNumber}`);
+        }
+
+        return undefined;
     }
 
     clone(forPlan: BaseFlightPlan): ApproachSegment {
