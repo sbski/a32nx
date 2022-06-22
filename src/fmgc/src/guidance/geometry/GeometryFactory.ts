@@ -24,6 +24,7 @@ import { legMetadataFromFlightPlanLeg } from '@fmgc/guidance/lnav/legs';
 import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { VMLeg } from '@fmgc/guidance/lnav/legs/VM';
 import { RFLeg } from '@fmgc/guidance/lnav/legs/RF';
+import { HALeg, HFLeg, HMLeg } from '../lnav/legs/HX';
 
 function getFacilities(): typeof Facilities {
     if ('Facilities' in window) {
@@ -201,7 +202,7 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
         throw new Error('[FMS/Geometry] Cannot create non-IF geometry leg after discontinuity');
     }
 
-    const editableData = legMetadataFromFlightPlanLeg(flightPlanLeg);
+    const metadata = legMetadataFromFlightPlanLeg(flightPlanLeg);
 
     const trueCourse = flightPlanLeg.definition.magneticCourse + runningMagvar;
     const trueTheta = flightPlanLeg.definition.theta + runningMagvar;
@@ -213,21 +214,21 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
         const navaid = 'vorLocation' in recommendedNavaid ? recommendedNavaid.vorLocation : recommendedNavaid.location;
         const rho = flightPlanLeg.definition.rho;
 
-        return new AFLeg(waypoint, fixCoordinates(navaid), rho, trueTheta, trueCourse, editableData, SegmentType.Departure);
+        return new AFLeg(waypoint, fixCoordinates(navaid), rho, trueTheta, trueCourse, metadata, SegmentType.Departure);
     }
     case LegType.CA:
     case LegType.FA:
     case LegType.VA: {
         const altitude = flightPlanLeg.definition.altitude1;
 
-        return new CALeg(trueCourse, altitude, editableData, SegmentType.Departure);
+        return new CALeg(trueCourse, altitude, metadata, SegmentType.Departure);
     }
     case LegType.CD:
         break;
     case LegType.CF: {
         const fix = flightPlanLeg.terminationWaypoint();
 
-        return new CFLeg(fix, trueCourse, editableData, SegmentType.Departure);
+        return new CFLeg(fix, trueCourse, metadata, SegmentType.Departure);
     }
     case LegType.CI:
     case LegType.VI: {
@@ -235,36 +236,38 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
             throw new Error('[FMS/Geometry] Cannot make a CI leg without the next geometry leg being defined');
         }
 
-        return new CILeg(trueCourse, nextGeometryLeg, editableData, SegmentType.Departure);
+        return new CILeg(trueCourse, nextGeometryLeg, metadata, SegmentType.Departure);
     }
     case LegType.CR:
         break;
-    case LegType.HA:
-    case LegType.HF:
-    case LegType.HM:
+    case LegType.HA: {
+        const waypoint = flightPlanLeg.terminationWaypoint();
+
+        return new HALeg(waypoint, metadata, SegmentType.Departure);
+    }
+    case LegType.HF: {
+        const waypoint = flightPlanLeg.terminationWaypoint();
+
+        return new HFLeg(waypoint, metadata, SegmentType.Departure);
+    }
+    case LegType.HM: {
+        const waypoint = flightPlanLeg.terminationWaypoint();
+
+        return new HMLeg(waypoint, metadata, SegmentType.Departure);
+    }
     case LegType.DF: {
         const waypoint = flightPlanLeg.terminationWaypoint();
 
-        return new DFLeg(waypoint, editableData, SegmentType.Departure);
+        return new DFLeg(waypoint, metadata, SegmentType.Departure);
     }
-    // case LegType.FA:
-    //     break;
     case LegType.FC:
         break;
     case LegType.FD:
         break;
-        // case LegType.FM:
-        //     break;
-    // case LegType.HA:
-    //     break;
-    // case LegType.HF:
-    //     break;
-    // case LegType.HM:
-    //     break;
     case LegType.IF: {
         const waypoint = flightPlanLeg.terminationWaypoint();
 
-        return new IFLeg(waypoint, editableData, SegmentType.Departure);
+        return new IFLeg(waypoint, metadata, SegmentType.Departure);
     }
     case LegType.PI:
         break;
@@ -281,20 +284,16 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
         const center = flightPlanLeg.definition.arcCentreFix;
 
         if (legType === LegType.RF) {
-            return new RFLeg(prevWaypoint, waypoint, fixCoordinates(center.location), editableData, SegmentType.Departure);
+            return new RFLeg(prevWaypoint, waypoint, fixCoordinates(center.location), metadata, SegmentType.Departure);
         }
 
-        return new TFLeg(prevWaypoint, waypoint, editableData, SegmentType.Departure);
+        return new TFLeg(prevWaypoint, waypoint, metadata, SegmentType.Departure);
     }
-    // case LegType.VA:
-    //     break;
     case LegType.VD:
         break;
-    // case LegType.VI:
-    //     break;
     case LegType.FM:
     case LegType.VM: {
-        return new VMLeg(trueCourse, editableData, SegmentType.Departure);
+        return new VMLeg(trueCourse, metadata, SegmentType.Departure);
     }
     case LegType.VR:
         break;

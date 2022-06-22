@@ -141,7 +141,7 @@ export class FlightPlan extends BaseFlightPlan {
         return null;
     }
 
-    private removeRange(start: number, end: number) {
+    public removeRange(start: number, end: number) { // TODO not sure this should be public
         const [startSegment, indexInStartSegment] = this.getIndexInSegment(start);
         const [endSegment, indexInEndSegment] = this.getIndexInSegment(end);
 

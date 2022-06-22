@@ -118,7 +118,7 @@ export class PathCaptureTransition extends Transition {
         if (this.previousLeg instanceof AFLeg) {
             prevLegTermFix = this.previousLeg.arcEndPoint;
         } else if ('lat' in this.previousLeg.terminationWaypoint) {
-            prevLegTermination = this.previousLeg.terminationWaypoint;
+            prevLegTermFix = this.previousLeg.terminationWaypoint;
         } else {
             prevLegTermFix = fixCoordinates(this.previousLeg.terminationWaypoint.location);
         }
@@ -132,8 +132,8 @@ export class PathCaptureTransition extends Transition {
 
             // If we are inbound of a TF leg, we use getIntermediatePoint in order to get more accurate results
             if ('from' in this.previousLeg) {
-                const start = this.previousLeg.from.infos.coordinates;
-                const end = this.previousLeg.to.infos.coordinates;
+                const start = fixCoordinates(this.previousLeg.from.location);
+                const end = fixCoordinates(this.previousLeg.to.location);
                 const length = distanceTo(start, end);
 
                 const ratio = (length - this.tad) / length;
@@ -227,7 +227,7 @@ export class PathCaptureTransition extends Transition {
             // If we are inbound of a TF leg, we use the TF leg ref fix for our small circle intersect in order to get
             // more accurate results
             if ('from' in this.nextLeg) {
-                const intersects = smallCircleGreatCircleIntersection(turnCenter, radius, this.nextLeg.from.infos.coordinates, this.nextLeg.outboundCourse);
+                const intersects = smallCircleGreatCircleIntersection(turnCenter, radius, fixCoordinates(this.nextLeg.from.location), this.nextLeg.outboundCourse);
 
                 if (intersects) {
                     const [one, two] = intersects;
@@ -329,7 +329,7 @@ export class PathCaptureTransition extends Transition {
             const intersections = placeBearingIntersection(
                 finalTurningPoint,
                 Avionics.Utils.clampAngle(targetTrack + courseChange),
-                this.nextLeg.from.infos.coordinates,
+                fixCoordinates(this.nextLeg.from.location),
                 this.nextLeg.outboundCourse,
             );
 

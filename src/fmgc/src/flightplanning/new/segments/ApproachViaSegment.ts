@@ -30,7 +30,7 @@ export class ApproachViaSegment extends FlightPlanSegment {
         const { approach } = this.flightPlan;
 
         if (!approach) {
-            throw new Error('[FMS/FPM] Cannot set arrival approach via without approach');
+            throw new Error('[FMS/FPM] Cannot set approach via without approach');
         }
 
         const approachVias = approach.transitions;

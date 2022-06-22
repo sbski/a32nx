@@ -6,7 +6,7 @@
 import { FlightPlanIndex, FlightPlanManager } from '@fmgc/flightplanning/new/FlightPlanManager';
 import { A380FpmConfig, FpmConfig } from '@fmgc/flightplanning/new/FpmConfig';
 import { FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
-import { Waypoint } from 'msfs-navdata';
+import { Location, Waypoint } from 'msfs-navdata';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
 
 export class FlightPlanService {
@@ -244,6 +244,27 @@ export class FlightPlanService {
         const leg = FlightPlanLeg.fromEnrouteWaypoint(plan.enrouteSegment, waypoint);
 
         this.flightPlanManager.get(finalIndex).insertElementAfter(atIndex, leg);
+    }
+
+    static directTo(ppos: Location, trueTrack: Degrees, waypoint: Waypoint, planIndex = FlightPlanIndex.Active) {
+        const magVar = Facilities.getMagVar(ppos.lat, ppos.lon);
+
+        const finalIndex = this.prepareDestructiveModification(planIndex);
+
+        const plan = this.flightPlanManager.get(finalIndex);
+
+        const targetLeg = plan.allLegs.find((it) => it.isDiscontinuity === false && it.terminatesWithWaypoint(waypoint));
+        const targetLegIndex = plan.allLegs.findIndex((it) => it === targetLeg);
+        const turningPoint = FlightPlanLeg.turningPoint(plan.enrouteSegment, ppos);
+        const turnStart = FlightPlanLeg.directToTurnStart(plan.enrouteSegment, ppos, (720 + trueTrack - (magVar)) % 360);
+
+        // Remove all legs before target
+
+        // TODO maybe encapsulate this behaviour in BaseFlightPlan
+        plan.removeRange(this.activeLegIndex, targetLegIndex);
+
+        plan.insertElementAfter(this.activeLegIndex - 1, turningPoint);
+        plan.insertElementAfter(this.activeLegIndex, turnStart);
     }
 
     static get activeLegIndex(): number {

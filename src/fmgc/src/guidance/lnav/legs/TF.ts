@@ -12,7 +12,7 @@ import { Coordinates } from '@fmgc/flightplanning/data/geo';
 import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { courseToFixDistanceToGo, fixToFixGuidance, getIntermediatePoint } from '@fmgc/guidance/lnav/CommonGeometry';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
-import { Waypoint } from 'msfs-navdata';
+import { Waypoint, WaypointDescriptor } from 'msfs-navdata';
 import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { bearingTo } from 'msfs-geo';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
@@ -45,6 +45,11 @@ export class TFLeg extends XFLeg {
             fixCoordinates(this.from.location),
             fixCoordinates(this.to.location),
         );
+
+        // Do not display on map if this is an airport or runway leg
+        const { waypointDescriptor } = this.metadata.flightPlanLegDefinition;
+
+        this.displayedOnMap = waypointDescriptor !== WaypointDescriptor.Airport && waypointDescriptor !== WaypointDescriptor.Runway;
     }
 
     get inboundCourse(): DegreesTrue {

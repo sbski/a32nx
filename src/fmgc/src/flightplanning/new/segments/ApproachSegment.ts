@@ -77,8 +77,8 @@ export class ApproachSegment extends FlightPlanSegment {
         if (approachLegs.length === 0 && this.flightPlan.destinationAirport && this.flightPlan.destinationSegment.destinationRunway) {
             const cf = FlightPlanLeg.destinationExtendedCenterline(
                 this,
-                this.flightPlan.destinationSegment.destinationAirport,
-                this.flightPlan.destinationSegment.destinationRunway,
+                airport,
+                runway,
             );
 
             legs.push(cf);
@@ -88,6 +88,8 @@ export class ApproachSegment extends FlightPlanSegment {
 
             if (lastLeg && lastLeg.isDiscontinuity === false && lastLeg.waypointDescriptor === WaypointDescriptor.Runway) {
                 legs.push(...approachLegs.slice(0, approachLegs.length - 1));
+
+                const runway = this.flightPlan.availableDestinationRunways.find((it) => it.ident === lastLeg.ident);
 
                 if (lastLeg?.isDiscontinuity === false && lastLeg.waypointDescriptor === WaypointDescriptor.Runway) {
                     const mappedLeg = FlightPlanLeg.fromAirportAndRunway(this, this.approachProcedure?.ident ?? '', airport, runway);

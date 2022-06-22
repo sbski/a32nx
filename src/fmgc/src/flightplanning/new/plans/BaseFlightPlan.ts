@@ -29,6 +29,7 @@ import { ArrivalRunwayTransitionSegment } from '@fmgc/flightplanning/new/segment
 import { ApproachViaSegment } from '@fmgc/flightplanning/new/segments/ApproachViaSegment';
 import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
 import { WaypointStats } from '@fmgc/flightplanning/data/flightplan';
+import { procedureLegIdentAndAnnotation } from '@fmgc/flightplanning/new/legs/FlightPlanLegNaming';
 
 export enum FlightPlanQueuedOperation {
     Restring,
@@ -334,6 +335,7 @@ export abstract class BaseFlightPlan {
         await this.arrivalSegment.setArrivalProcedure(undefined);
         await this.approachSegment.setApproachProcedure(undefined);
 
+        await this.flushOperationQueue();
         this.incrementVersion();
     }
 
@@ -341,8 +343,11 @@ export abstract class BaseFlightPlan {
         return this.originSegment.originRunway;
     }
 
-    setOriginRunway(runwayIdent: string) {
-        return this.originSegment.setOriginRunway(runwayIdent).then(() => this.incrementVersion());
+    async setOriginRunway(runwayIdent: string) {
+        await this.originSegment.setOriginRunway(runwayIdent);
+
+        await this.flushOperationQueue();
+        this.incrementVersion();
     }
 
     get departureRunwayTransition(): ProcedureTransition {
@@ -355,6 +360,9 @@ export abstract class BaseFlightPlan {
 
     async setDeparture(procedureIdent: string | undefined) {
         await this.departureSegment.setDepartureProcedure(procedureIdent).then(() => this.incrementVersion());
+
+        await this.flushOperationQueue();
+        this.incrementVersion();
     }
 
     get departureEnrouteTransition(): ProcedureTransition {
@@ -688,6 +696,13 @@ export abstract class BaseFlightPlan {
 
             if (bothXf) {
                 if (element.terminatesWithWaypoint(lastLegInFirst.terminationWaypoint())) {
+                    // Transfer leg type from lastLegInFirst definition onto element
+                    element.type = lastLegInFirst.definition.type;
+                    Object.assign(element.definition, lastLegInFirst.definition);
+
+                    // FIXME carry procedure ident from second segment
+                    [element.ident, element.annotation] = procedureLegIdentAndAnnotation(element.definition, '');
+
                     first.allLegs.pop();
                     cutBefore = i;
                     break;
@@ -696,13 +711,13 @@ export abstract class BaseFlightPlan {
 
             const xfToFx = lastLegInFirst.isXF() && element.isFX();
 
-            if (xfToFx) {
-                cutBefore = 0;
+            if (xfToFx && lastLegInFirst.terminatesWithWaypoint(element.terminationWaypoint())) {
+                cutBefore = i;
                 break;
             }
         }
 
-        // If not matching leg is found, insert a discontinuity (if there isn't one already) at the end of the first segment
+        // If no matching leg is found, insert a discontinuity (if there isn't one already) at the end of the first segment
         if (cutBefore === -1) {
             if (lastElementInFirst.isDiscontinuity === false) {
                 first.allLegs.push({ isDiscontinuity: true });
@@ -735,16 +750,20 @@ export abstract class BaseFlightPlan {
             const prevElement = elements[i - 1];
             const element = elements[i];
 
-            // IF -> TF if no discontinuity before and element present
+            // IF -> XX if no discontinuity before, and element present
             if (element && element.isDiscontinuity === false && element.type === LegType.IF) {
                 if (prevElement && prevElement.isDiscontinuity === true) {
                     continue;
                 }
 
-                element.type = LegType.TF;
+                if (element.definition.type === LegType.IF) {
+                    element.type = LegType.TF;
+                } else {
+                    element.type = element.definition.type;
+                }
             }
 
-            // TF -> IF if no element or discontinuity before
+            // XX -> IF if no element, or discontinuity before
             if (element && element.isDiscontinuity === false && element.type !== LegType.IF) {
                 if (!prevElement || (prevElement && prevElement.isDiscontinuity === true)) {
                     element.type = LegType.IF;
@@ -762,18 +781,38 @@ export abstract class BaseFlightPlan {
         this.arrivalAndApproachSegmentsBeingRebuilt = true;
 
         if (this.approach) {
+            const previousSegment = this.previousSegment(this.approachSegment);
+            if (previousSegment) {
+                previousSegment.strung = false;
+            }
+
             await this.approachSegment.setApproachProcedure(this.approach.ident);
         }
 
         if (this.approachVia) {
+            const previousSegment = this.previousSegment(this.approachViaSegment);
+            if (previousSegment) {
+                previousSegment.strung = false;
+            }
+
             await this.approachViaSegment.setApproachVia(this.approachVia.ident);
         }
 
         if (this.arrival) {
+            const previousSegment = this.previousSegment(this.arrivalSegment);
+            if (previousSegment) {
+                previousSegment.strung = false;
+            }
+
             await this.arrivalSegment.setArrivalProcedure(this.arrival.ident);
         }
 
         if (this.arrivalEnrouteTransition) {
+            const previousSegment = this.previousSegment(this.arrivalEnrouteTransitionSegment);
+            if (previousSegment) {
+                previousSegment.strung = false;
+            }
+
             await this.arrivalEnrouteTransitionSegment.setArrivalEnrouteTransition(this.arrivalEnrouteTransition.ident);
         }
 

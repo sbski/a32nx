@@ -3,23 +3,33 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { Airport, LegType, ProcedureLeg, Runway, Waypoint, WaypointArea, WaypointDescriptor } from 'msfs-navdata';
+import {
+    Airport,
+    LegType,
+    Location,
+    ProcedureLeg,
+    Runway,
+    Waypoint,
+    WaypointArea,
+    WaypointDescriptor,
+} from 'msfs-navdata';
 import { FlightPlanLegDefinition } from '@fmgc/flightplanning/new/legs/FlightPlanLegDefinition';
 import { procedureLegIdentAndAnnotation } from '@fmgc/flightplanning/new/legs/FlightPlanLegNaming';
 import { WaypointFactory } from '@fmgc/flightplanning/new/waypoints/WaypointFactory';
 import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanSegment';
 import { MathUtils } from '@shared/MathUtils';
+import { EnrouteSegment } from '@fmgc/flightplanning/new/segments/EnrouteSegment';
 
 /**
  * A leg in a flight plan. Not to be confused with a geometry leg or a procedure leg
  */
 export class FlightPlanLeg {
-    type: LegType
+    type: LegType;
 
     private constructor(
         public segment: FlightPlanSegment,
         public readonly definition: FlightPlanLegDefinition,
-        public readonly ident: string,
+        public ident: string,
         public annotation: string,
         public readonly airwayIdent: string | undefined,
         public readonly rnp: number | undefined,
@@ -49,11 +59,17 @@ export class FlightPlanLeg {
         return legType === LegType.FA || legType === LegType.FC || legType === LegType.FD || legType === LegType.FM;
     }
 
+    isHX() {
+        const legType = this.definition.type;
+
+        return legType === LegType.HA || legType === LegType.HF || legType === LegType.HM;
+    }
+
     /**
      * Returns the termination waypoint is this is an XF leg, `null` otherwise
      */
     terminationWaypoint(): Waypoint | null {
-        if (!this.isXF()) {
+        if (!this.isXF() && !this.isFX() && !this.isHX()) {
             return null;
         }
 
@@ -72,6 +88,23 @@ export class FlightPlanLeg {
 
         // FIXME use databaseId when tracer fixes it
         return this.definition.waypoint.ident === waypoint.ident && this.definition.waypoint.icaoCode === waypoint.icaoCode;
+    }
+
+    static turningPoint(segment: EnrouteSegment, location: Location): FlightPlanLeg {
+        return new FlightPlanLeg(segment, {
+            type: LegType.IF,
+            overfly: false,
+            waypoint: WaypointFactory.fromLocation('T-P', location),
+        }, 'T-P', '', undefined, undefined, false);
+    }
+
+    static directToTurnStart(segment: EnrouteSegment, location: Location, bearing: DegreesTrue): FlightPlanLeg {
+        return new FlightPlanLeg(segment, {
+            type: LegType.FD,
+            overfly: false,
+            waypoint: WaypointFactory.fromWaypointLocationAndDistanceBearing('', location, 0.1, bearing),
+            length: 0.1 * 1852, // 0.1 NM in metres
+        }, '', '', undefined, undefined, false);
     }
 
     static fromProcedureLeg(segment: FlightPlanSegment, procedureLeg: ProcedureLeg, procedureIdent: string): FlightPlanLeg {

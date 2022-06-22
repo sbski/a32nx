@@ -5,8 +5,7 @@
 
 import { Leg } from '@fmgc/guidance/lnav/legs/Leg';
 import { Coordinates } from '@fmgc/flightplanning/data/geo';
-import { Guidable } from '@fmgc/guidance/Guidable';
-import { Waypoint } from 'msfs-navdata';
+import { Waypoint, WaypointDescriptor } from 'msfs-navdata';
 import { distanceTo } from 'msfs-geo';
 import { PointSide, sideOfPointOnCourseToFix } from '@fmgc/guidance/lnav/CommonGeometry';
 import { fixCoordinates } from '@fmgc/flightplanning/new/utils';

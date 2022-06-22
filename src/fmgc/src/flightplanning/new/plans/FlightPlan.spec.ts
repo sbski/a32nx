@@ -45,7 +45,7 @@ describe('a base flight plan', () => {
         expect(fpLeg.ident).toEqual('NOSUS');
         expect(fp.allLegs[5].isDiscontinuity).toBeTruthy();
 
-        expect(fp.allLegs).toHaveLength(24);
+        expect(fp.allLegs).toHaveLength(23);
     });
 
     describe('deleting legs', () => {
@@ -186,7 +186,7 @@ describe('a base flight plan', () => {
         });
     });
 
-    it('connects segments by merging TF -> XF legs', async () => {
+    it('connects segments by merging TF -> FX legs with the same waypoint', async () => {
         const fp = FlightPlan.empty();
 
         await fp.setDestinationAirport('EGLL');
@@ -202,6 +202,32 @@ describe('a base flight plan', () => {
         expect(assertNotDiscontinuity(leg4).type).toBe(LegType.TF);
         expect(assertNotDiscontinuity(leg5).ident).toBe('LAM/11');
         expect(assertNotDiscontinuity(leg5).type).toBe(LegType.FD);
+    });
+
+    it('does not connect segments by merging TF -> FX legs with a different waypoint', async () => {
+        const fp = FlightPlan.empty();
+
+        await fp.setOriginAirport('EGLL');
+        await fp.setOriginRunway('RW09L');
+        await fp.setDeparture('CPT4K');
+
+        await fp.setDestinationAirport('EGCC');
+        await fp.setDestinationRunway('RW23R');
+        await fp.setApproach('D23R');
+
+        await fp.setApproachVia('MCT');
+
+        const leg5 = fp.allLegs[5];
+        const leg6 = fp.allLegs[6];
+        const leg7 = fp.allLegs[7];
+
+        // This approach has an FC leg on MCT - we must not connect TF(CPT) to it
+
+        expect(assertNotDiscontinuity(leg5).ident).toBe('CPT');
+        expect(assertNotDiscontinuity(leg5).type).toBe(LegType.TF);
+        assertDiscontinuity(leg6);
+        expect(assertNotDiscontinuity(leg7).ident).toBe('MCT');
+        expect(assertNotDiscontinuity(leg7).type).toBe(LegType.IF);
     });
 
     describe('plan info', () => {

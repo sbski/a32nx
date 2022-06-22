@@ -9,6 +9,10 @@ import { FlightPlanIndex } from '@fmgc/flightplanning/new/FlightPlanManager';
 import { loadSingleWaypoint } from '@fmgc/flightplanning/new/segments/enroute/WaypointLoading';
 import { assertDiscontinuity, assertNotDiscontinuity } from '@fmgc/flightplanning/new/test/LegUtils';
 import { setupNavigraphDatabase } from '@fmgc/flightplanning/new/test/Database';
+import { placeBearingDistance } from 'msfs-geo';
+import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
+import { dumpFlightPlan } from '@fmgc/flightplanning/new/test/FlightPlan';
+import { FmgcFlightPhase } from '@shared/flightphase';
 
 if (!globalThis.fetch) {
     globalThis.fetch = fetch;
@@ -88,6 +92,32 @@ describe('the flight plan service', () => {
                 const leg6 = assertNotDiscontinuity(FlightPlanService.active.allLegs[6]);
 
                 expect(leg6.ident).toEqual('DULPA');
+            });
+        });
+
+        describe('direct to', () => {
+            beforeEach(async () => {
+                await FlightPlanService.newCityPair('CYYZ', 'CYVR');
+
+                await FlightPlanService.setOriginRunway('RW06R');
+                await FlightPlanService.setDepartureProcedure('AVSEP6');
+
+                FlightPlanService.temporaryInsert();
+            });
+
+            test('a normal direct to', async () => {
+                const runway = FlightPlanService.active.originRunway;
+                const runwayLeg = assertNotDiscontinuity(FlightPlanService.active.originSegment.allLegs[0]);
+
+                const ppos = placeBearingDistance(fixCoordinates(runwayLeg.definition.waypoint.location), runway.bearing, 0.5);
+
+                const targetWaypoint = await loadSingleWaypoint('NUGOP', 'WCY    NUGOP');
+
+                FlightPlanService.directTo({ lat: ppos.lat, lon: ppos.long }, runway.bearing, targetWaypoint);
+
+                FlightPlanService.temporaryInsert();
+
+                console.log(dumpFlightPlan(FlightPlanService.active));
             });
         });
     });

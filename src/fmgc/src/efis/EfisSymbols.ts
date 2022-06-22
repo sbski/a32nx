@@ -370,7 +370,7 @@ export class EfisSymbols {
                     //     }
                     // }
 
-                    if (!wp.isXF() || !withinEditArea(fixCoordinates(wp.terminationWaypoint().location))) {
+                    if ((!wp.isXF() && !wp.isHX()) || !withinEditArea(fixCoordinates(wp.terminationWaypoint().location))) {
                         continue;
                     }
 
@@ -391,7 +391,7 @@ export class EfisSymbols {
                         } else {
                             type |= NdSymbolTypeFlags.CourseReversalRight;
                         }
-                        direction = wp.additionalData.course;
+                        direction = wp.definition.magneticCourse;
                     }
 
                     if (i >= activeFp.firstMissedApproachLeg) {
@@ -452,7 +452,7 @@ export class EfisSymbols {
                     if (withinEditArea(fixCoordinates(runway.thresholdLocation))) {
                         upsertSymbol({
                             databaseId: airport.databaseId,
-                            ident: `${airport.ident}${Avionics.Utils.formatRunway(runway.ident)}`,
+                            ident: `${airport.ident}${runway.ident.substring(2)}`,
                             location: fixCoordinates(runway.thresholdLocation),
                             direction: runway.bearing,
                             length: runway.length / MathUtils.DIV_FEET_TO_NAUTICAL_MILES, // type definition says this is in metres, but this is actually in feet... :SCkittybonk2:

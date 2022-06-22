@@ -104,7 +104,8 @@ export abstract class FlightPlanSegment {
     }
 
     insertNecessaryDiscontinuities() {
-        for (let i = 0; i < this.allLegs.length; i++) {
+        // We do not consider the last leg as we do not want to insert a discontinuity at the end of the flight plan
+        for (let i = 0; i < this.allLegs.length - 1; i++) {
             const element = this.allLegs[i];
             const nextElement = this.allLegs[i + 1];
 

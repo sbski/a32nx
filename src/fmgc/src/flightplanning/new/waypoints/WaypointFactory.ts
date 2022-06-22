@@ -10,6 +10,19 @@ import { runwayIdent } from '@fmgc/flightplanning/new/legs/FlightPlanLegNaming';
 
 export namespace WaypointFactory {
 
+    export function fromLocation(
+        ident: string,
+        location: Location,
+    ): Waypoint {
+        return {
+            databaseId: `X      ${ident.padEnd(5, ' ')}`,
+            icaoCode: '  ',
+            area: WaypointArea.Enroute,
+            ident,
+            location,
+        };
+    }
+
     export function fromWaypointLocationAndDistanceBearing(
         ident: string,
         location: Location,

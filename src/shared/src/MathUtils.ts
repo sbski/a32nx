@@ -72,6 +72,15 @@ export class MathUtils {
        return diff;
    }
 
+   public static clampAngle(angle: number): Degrees {
+       let startAngle = angle;
+
+       while (startAngle > 360.0) startAngle -= 360.0;
+       while (startAngle < -360.0) startAngle += 360.0;
+
+       return startAngle;
+   }
+
    public static adjustAngleForTurnDirection(angle: Degrees, turnDirection: TurnDirection) {
        let ret = angle;
 
