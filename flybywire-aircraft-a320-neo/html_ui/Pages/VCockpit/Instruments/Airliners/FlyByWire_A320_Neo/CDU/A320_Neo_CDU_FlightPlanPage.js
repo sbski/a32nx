@@ -270,10 +270,9 @@ class CDUFlightPlanPage {
                     // Only for destination waypoint, show runway elevation.
                     altColor = "white";
                     spdColor = "white";
-                    const [rwTxt, rwAlt] = getRunwayInfo(targetPlan.destinationRunway);
-                    if (rwTxt && rwAlt) {
+                    const [, rwAlt] = getRunwayInfo(targetPlan.destinationRunway);
+                    if (rwAlt) {
                         altPrefix = "{magenta}*{end}";
-                        ident += rwTxt;
                         altitudeConstraint = (Math.round((parseInt(rwAlt) + 50) / 10) * 10).toString();
                         altColor = color;
                     }
