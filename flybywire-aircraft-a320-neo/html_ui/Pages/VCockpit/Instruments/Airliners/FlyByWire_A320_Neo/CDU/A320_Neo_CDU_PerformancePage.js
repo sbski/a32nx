@@ -28,21 +28,25 @@ class CDUPerformancePage {
             }
         };
 
+        // TODO SEC F-PLN
+        const targetPlan = mcdu.flightPlanService.active;
+
         let titleColor = "white";
         if (mcdu.flightPhaseManager.phase === FmgcFlightPhases.TAKEOFF) {
             titleColor = "green";
         }
 
         // check if we even have an airport
-        const hasOrigin = !!mcdu.flightPlanManager.getOrigin();
+        const hasOrigin = !!targetPlan.originAirport;
 
         // runway
         let runway = "";
         let hasRunway = false;
         if (hasOrigin) {
-            const runwayObj = mcdu.flightPlanManager.getOriginRunway();
+            const runwayObj = targetPlan.originRunway;
+
             if (runwayObj) {
-                runway = Avionics.Utils.formatRunway(runwayObj.designation);
+                runway = runwayObj.ident.substring(2);
                 hasRunway = true;
             }
         }
