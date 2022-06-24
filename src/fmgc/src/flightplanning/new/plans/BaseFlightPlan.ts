@@ -780,41 +780,13 @@ export abstract class BaseFlightPlan {
 
         this.arrivalAndApproachSegmentsBeingRebuilt = true;
 
-        if (this.approach) {
-            const previousSegment = this.previousSegment(this.approachSegment);
-            if (previousSegment) {
-                previousSegment.strung = false;
-            }
+        await this.approachSegment.setApproachProcedure(this.approach.ident);
 
-            await this.approachSegment.setApproachProcedure(this.approach.ident);
-        }
+        await this.approachViaSegment.setApproachVia(this.approachVia.ident);
 
-        if (this.approachVia) {
-            const previousSegment = this.previousSegment(this.approachViaSegment);
-            if (previousSegment) {
-                previousSegment.strung = false;
-            }
+        await this.arrivalSegment.setArrivalProcedure(this.arrival.ident);
 
-            await this.approachViaSegment.setApproachVia(this.approachVia.ident);
-        }
-
-        if (this.arrival) {
-            const previousSegment = this.previousSegment(this.arrivalSegment);
-            if (previousSegment) {
-                previousSegment.strung = false;
-            }
-
-            await this.arrivalSegment.setArrivalProcedure(this.arrival.ident);
-        }
-
-        if (this.arrivalEnrouteTransition) {
-            const previousSegment = this.previousSegment(this.arrivalEnrouteTransitionSegment);
-            if (previousSegment) {
-                previousSegment.strung = false;
-            }
-
-            await this.arrivalEnrouteTransitionSegment.setArrivalEnrouteTransition(this.arrivalEnrouteTransition.ident);
-        }
+        await this.arrivalEnrouteTransitionSegment.setArrivalEnrouteTransition(this.arrivalEnrouteTransition.ident);
 
         await this.destinationSegment.refresh();
     }
