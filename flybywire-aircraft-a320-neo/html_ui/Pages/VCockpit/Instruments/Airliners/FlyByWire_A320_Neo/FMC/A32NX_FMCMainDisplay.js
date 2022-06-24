@@ -38,9 +38,6 @@ class FMCMainDisplay extends BaseAirliners {
         this.perfApprTemp = undefined;
         this.perfApprWindHeading = undefined;
         this.perfApprWindSpeed = undefined;
-        this.v1Speed = undefined;
-        this.vRSpeed = undefined;
-        this.v2Speed = undefined;
         this._v1Checked = undefined;
         this._vRChecked = undefined;
         this._v2Checked = undefined;
@@ -343,9 +340,6 @@ class FMCMainDisplay extends BaseAirliners {
         this.perfApprTemp = NaN;
         this.perfApprWindHeading = NaN;
         this.perfApprWindSpeed = NaN;
-        this.v1Speed = undefined;
-        this.vRSpeed = undefined;
-        this.v2Speed = undefined;
         this._v1Checked = true;
         this._vRChecked = true;
         this._v2Checked = true;
@@ -2955,7 +2949,7 @@ class FMCMainDisplay extends BaseAirliners {
         }
         this.removeMessageFromQueue(NXSystemMessages.checkToData.text);
         this._v1Checked = true;
-        this.v1Speed = v;
+        this.flightPlanService.active.performanceData.v1.set(v);
         SimVar.SetSimVarValue("L:AIRLINER_V1_SPEED", "Knots", this.v1Speed).then(() => {
             this.vSpeedDisagreeCheck();
         });
@@ -2979,7 +2973,7 @@ class FMCMainDisplay extends BaseAirliners {
         }
         this.removeMessageFromQueue(NXSystemMessages.checkToData.text);
         this._vRChecked = true;
-        this.vRSpeed = v;
+        this.flightPlanService.active.performanceData.vr.set(v);
         SimVar.SetSimVarValue("L:AIRLINER_VR_SPEED", "Knots", this.vRSpeed).then(() => {
             this.vSpeedDisagreeCheck();
         });
@@ -3003,7 +2997,7 @@ class FMCMainDisplay extends BaseAirliners {
         }
         this.removeMessageFromQueue(NXSystemMessages.checkToData.text);
         this._v2Checked = true;
-        this.v2Speed = v;
+        this.flightPlanService.active.performanceData.v2.set(v);
         SimVar.SetSimVarValue("L:AIRLINER_V2_SPEED", "Knots", this.v2Speed).then(() => {
             this.vSpeedDisagreeCheck();
         });

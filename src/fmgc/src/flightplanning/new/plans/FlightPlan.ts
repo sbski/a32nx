@@ -9,6 +9,7 @@ import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanS
 import { AlternateFlightPlan } from '@fmgc/flightplanning/new/plans/AlternateFlightPlan';
 import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 import { FlightPlanElement } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
+import { FlightPlanPerformanceData } from '@fmgc/flightplanning/new/plans/performance/FlightPlanPerformanceData';
 
 export class FlightPlan extends BaseFlightPlan {
     static empty(): FlightPlan {
@@ -23,6 +24,11 @@ export class FlightPlan extends BaseFlightPlan {
      * Alternate flight plan associated with this flight plan
      */
     alternateFlightPlan = new AlternateFlightPlan(this);
+
+    /**
+     * Performance data for this flight plan
+     */
+    performanceData = new FlightPlanPerformanceData();
 
     clone(): FlightPlan {
         const newPlan = FlightPlan.empty();
