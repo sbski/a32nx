@@ -112,6 +112,11 @@ export class ApproachSegment extends FlightPlanSegment {
                 if (lastLeg?.isDiscontinuity === false && lastLeg.waypointDescriptor === WaypointDescriptor.Runway) {
                     const mappedLeg = FlightPlanLeg.fromAirportAndRunway(this, this.approachProcedure?.ident ?? '', airport, runway);
 
+                    if (approachLegs.length > 1) {
+                        mappedLeg.type = lastLeg.type;
+                        Object.assign(lastLeg.definition, lastLeg.definition);
+                    }
+
                     legs.push(mappedLeg);
                 }
             } else {
