@@ -51,6 +51,10 @@ export abstract class BaseFlightPlan {
 
     activeLegIndex = 1;
 
+    get activeLeg(): FlightPlanElement {
+        return this.allLegs[this.activeLegIndex];
+    }
+
     sequence() {
         this.activeLegIndex++;
     }
