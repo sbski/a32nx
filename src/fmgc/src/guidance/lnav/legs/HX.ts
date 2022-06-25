@@ -13,7 +13,6 @@ import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { EntryState, HoldEntryTransition } from '@fmgc/guidance/lnav/transitions/HoldEntryTransition';
 import { AltitudeDescriptor, TurnDirection, Waypoint } from 'msfs-navdata';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { PathVector, PathVectorType } from '../PathVector';
 
 interface HxGeometry {

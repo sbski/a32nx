@@ -14,11 +14,12 @@ import { distanceTo } from 'msfs-geo';
 import { FlowEventSync } from '@shared/FlowEventSync';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { FlightPlanService } from '@fmgc/flightplanning/new/FlightPlanService';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
-import { Airport, LegType, Runway, WaypointDescriptor } from 'msfs-navdata';
+import { Airport, AltitudeDescriptor, LegType, Runway, WaypointDescriptor } from 'msfs-navdata';
 import { MathUtils } from '@shared/MathUtils';
+import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
 import { RunwaySurface, VorType } from '../types/fstypes/FSEnums';
 import { NearbyFacilities } from './NearbyFacilities';
+import { NavigationDatabase } from '@fmgc/NavigationDatabase';
 
 export class EfisSymbols {
     private blockUpdate = false;
@@ -95,21 +96,21 @@ export class EfisSymbols {
 
         let planCentre = FlightPlanService.active.elementAt(planCentreIndex);
 
-        if (planCentre.isDiscontinuity === true) {
+        if (planCentre?.isDiscontinuity === true) {
             planCentre = FlightPlanService.active.elementAt(Math.max(0, (planCentreIndex - 1)));
         }
 
-        if (planCentre.isDiscontinuity === true) {
+        if (planCentre?.isDiscontinuity === true) {
             throw new Error('bruh');
         }
 
-        const termination = planCentre.terminationWaypoint()?.location;
+        const termination = planCentre?.terminationWaypoint()?.location;
 
         if (termination) {
             this.lastPlanCentre = termination;
         }
 
-        const planCentreChanged = termination?.lat !== this.lastPlanCentre?.lat || termination?.lon !== this.lastPlanCentre?.lon;
+        const planCentreChanged = termination?.lat !== this.lastPlanCentre?.lat || termination?.long !== this.lastPlanCentre?.long;
 
         const activeFp = FlightPlanService.active;
         // TODO temp f-pln
@@ -163,8 +164,8 @@ export class EfisSymbols {
                     return true;
                 }
 
-                const dist = Avionics.Utils.computeGreatCircleDistance(mode === Mode.PLAN ? fixCoordinates(termination) : ppos, ll);
-                let bearing = Avionics.Utils.computeGreatCircleHeading(mode === Mode.PLAN ? fixCoordinates(termination) : ppos, ll);
+                const dist = Avionics.Utils.computeGreatCircleDistance(mode === Mode.PLAN ? termination : ppos, ll);
+                let bearing = Avionics.Utils.computeGreatCircleHeading(mode === Mode.PLAN ? termination : ppos, ll);
                 if (mode !== Mode.PLAN) {
                     bearing = Avionics.Utils.clampAngle(bearing - trueHeading);
                 }
@@ -317,7 +318,7 @@ export class EfisSymbols {
                         const cutIdent = leg.ident.substring(0, 4).padEnd(5, ' ');
                         const id = (Math.random() * 10_000_000).toString().substring(0, 5);
 
-                        const location = 'lat' in leg.terminationWaypoint ? leg.terminationWaypoint : fixCoordinates(leg.terminationWaypoint.location);
+                        const location = 'lat' in leg.terminationWaypoint ? leg.terminationWaypoint : leg.terminationWaypoint.location;
 
                         upsertSymbol({
                             databaseId: `X${id}${cutIdent}`,
@@ -370,7 +371,7 @@ export class EfisSymbols {
                     //     }
                     // }
 
-                    if ((!wp.isXF() && !wp.isHX()) || !withinEditArea(fixCoordinates(wp.terminationWaypoint().location))) {
+                    if ((!wp.isXF() && !wp.isHX()) || !withinEditArea(wp.terminationWaypoint().location)) {
                         continue;
                     }
 
@@ -391,7 +392,7 @@ export class EfisSymbols {
                         } else {
                             type |= NdSymbolTypeFlags.CourseReversalRight;
                         }
-                        direction = wp.definition.magneticCourse;
+                        direction = wp.definition.magneticCourse; // TODO true
                     }
 
                     if (i >= activeFp.firstMissedApproachLeg) {
@@ -403,36 +404,36 @@ export class EfisSymbols {
                         type |= NdSymbolTypeFlags.ConstraintUnknown;
                     }
 
-                    // TODO port over
-                    // if (efisOption === EfisOption.Constraints) {
-                    //     const descent = wp.segment.class === SegmentClass.Arrival;
-                    //     switch (wp.definition.altitudeDescriptor) {
-                    //     case 1:
-                    //         constraints.push(formatConstraintAlt(wp.definition.altitude1, descent));
-                    //         break;
-                    //     case 2:
-                    //         constraints.push(formatConstraintAlt(wp.definition.altitude1, descent, '+'));
-                    //         break;
-                    //     case 3:
-                    //         constraints.push(formatConstraintAlt(wp.definition.altitude1, descent, '-'));
-                    //         break;
-                    //     case 4:
-                    //         constraints.push(formatConstraintAlt(wp.definition.altitude1, descent, '-'));
-                    //         constraints.push(formatConstraintAlt(wp.definition.altitude2, descent, '+'));
-                    //         break;
-                    //     default:
-                    //         break;
-                    //     }
-                    //
-                    //     if (wp.definition.speed > 0) {
-                    //         constraints.push(formatConstraintSpeed(wp.definition.speed));
-                    //     }
-                    // }
+                    if (efisOption === EfisOption.Constraints) {
+                        const descent = wp.segment.class === SegmentClass.Arrival;
+                        switch (wp.definition.altitudeDescriptor) {
+                        case AltitudeDescriptor.AtAlt1:
+                            constraints.push(formatConstraintAlt(wp.definition.altitude1, descent));
+                            break;
+                        case AltitudeDescriptor.AtOrAboveAlt1:
+                            constraints.push(formatConstraintAlt(wp.definition.altitude1, descent, '+'));
+                            break;
+                        case AltitudeDescriptor.AtOrBelowAlt1:
+                            constraints.push(formatConstraintAlt(wp.definition.altitude1, descent, '-'));
+                            break;
+                        case AltitudeDescriptor.BetweenAlt1Alt2:
+                            constraints.push(formatConstraintAlt(wp.definition.altitude1, descent, '-'));
+                            constraints.push(formatConstraintAlt(wp.definition.altitude2, descent, '+'));
+                            break;
+                        default:
+                            // FIXME do the rest
+                            break;
+                        }
+
+                        if (wp.definition.speed > 0) {
+                            constraints.push(formatConstraintSpeed(wp.definition.speed));
+                        }
+                    }
 
                     upsertSymbol({
                         databaseId: wp.terminationWaypoint().databaseId,
                         ident: wp.ident,
-                        location: fixCoordinates(wp.terminationWaypoint().location),
+                        location: wp.terminationWaypoint().location,
                         type,
                         constraints: constraints.length > 0 ? constraints : undefined,
                         direction,
@@ -449,21 +450,21 @@ export class EfisSymbols {
                     continue;
                 }
                 if (runway) {
-                    if (withinEditArea(fixCoordinates(runway.thresholdLocation))) {
+                    if (withinEditArea(runway.thresholdLocation)) {
                         upsertSymbol({
                             databaseId: airport.databaseId,
-                            ident: `${airport.ident}${runway.ident.substring(2)}`,
-                            location: fixCoordinates(runway.thresholdLocation),
+                            ident: NavigationDatabase.formatLongRunwayIdent(airport.ident, runway.ident),
+                            location: runway.thresholdLocation,
                             direction: runway.bearing,
-                            length: runway.length / MathUtils.DIV_FEET_TO_NAUTICAL_MILES, // type definition says this is in metres, but this is actually in feet... :SCkittybonk2:
+                            length: runway.length / MathUtils.DIV_METRES_TO_NAUTICAL_MILES,
                             type: NdSymbolTypeFlags.Runway,
                         });
                     }
-                } else if (withinEditArea(fixCoordinates(airport.location))) {
+                } else if (withinEditArea(airport.location)) {
                     upsertSymbol({
                         databaseId: airport.databaseId,
                         ident: airport.ident,
-                        location: fixCoordinates(airport.location),
+                        location: airport.location,
                         type: NdSymbolTypeFlags.Airport,
                     });
                 }

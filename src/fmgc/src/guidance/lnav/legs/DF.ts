@@ -12,7 +12,6 @@ import { courseToFixDistanceToGo, fixToFixGuidance } from '@fmgc/guidance/lnav/C
 import { Transition } from '@fmgc/guidance/lnav/Transition';
 import { Leg } from '@fmgc/guidance/lnav/legs/Leg';
 import { bearingTo } from 'msfs-geo';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { Waypoint } from 'msfs-navdata';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { PathVector, PathVectorType } from '../PathVector';
@@ -50,7 +49,7 @@ export class DFLeg extends XFLeg {
 
         bearing = Avionics.Utils.clampAngle(bearing);
 
-        const coordinates = fixCoordinates(this.fix.location);
+        const coordinates = this.fix.location;
 
         return Avionics.Utils.bearingDistanceToCoordinates(
             bearing,
@@ -99,11 +98,11 @@ export class DFLeg extends XFLeg {
     }
 
     get inboundCourse(): Degrees {
-        return bearingTo(this.start, fixCoordinates(this.fix.location));
+        return bearingTo(this.start, this.fix.location);
     }
 
     get outboundCourse(): Degrees {
-        return bearingTo(this.start, fixCoordinates(this.fix.location));
+        return bearingTo(this.start, this.fix.location);
     }
 
     getDistanceToGo(ppos: Coordinates): NauticalMiles {
@@ -111,7 +110,7 @@ export class DFLeg extends XFLeg {
     }
 
     getGuidanceParameters(ppos: Coordinates, trueTrack: Degrees, _tas: Knots): GuidanceParameters | undefined {
-        return fixToFixGuidance(ppos, trueTrack, this.start, fixCoordinates(this.fix.location));
+        return fixToFixGuidance(ppos, trueTrack, this.start, this.fix.location);
     }
 
     getNominalRollAngle(_gs: Knots): Degrees {

@@ -15,7 +15,6 @@ import { SegmentType } from '@fmgc/flightplanning/FlightPlanSegment';
 import { IFLeg } from '@fmgc/guidance/lnav/legs/IF';
 import { CALeg } from '@fmgc/guidance/lnav/legs/CA';
 import { AFLeg } from '@fmgc/guidance/lnav/legs/AF';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { CFLeg } from '@fmgc/guidance/lnav/legs/CF';
 import { CILeg } from '@fmgc/guidance/lnav/legs/CI';
 import { TransitionPicker } from '@fmgc/guidance/lnav/TransitionPicker';
@@ -58,6 +57,7 @@ export namespace GeometryFactory {
             if (element.isXF()) {
                 const fixLocation = element.terminationWaypoint().location;
 
+                // TODO very sussy... declination/variation does not work like this for terminal procedures
                 runningMagvar = getFacilities().getMagVar(fixLocation.lat, fixLocation.lon);
             }
 
@@ -100,6 +100,7 @@ export namespace GeometryFactory {
             if (planLeg.isDiscontinuity === false && planLeg.isXF()) {
                 const fixLocation = planLeg.terminationWaypoint().location;
 
+                // TODO very sussy... declination/variation does not work like this for terminal procedures
                 runningMagvar = getFacilities().getMagVar(fixLocation.lat, fixLocation.lon);
             }
 
@@ -211,10 +212,10 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
     case LegType.AF: {
         const waypoint = flightPlanLeg.terminationWaypoint();
         const recommendedNavaid = flightPlanLeg.definition.recommendedNavaid;
-        const navaid = 'vorLocation' in recommendedNavaid ? recommendedNavaid.vorLocation : recommendedNavaid.location;
+        const navaid = recommendedNavaid.location;
         const rho = flightPlanLeg.definition.rho;
 
-        return new AFLeg(waypoint, fixCoordinates(navaid), rho, trueTheta, trueCourse, metadata, SegmentType.Departure);
+        return new AFLeg(waypoint, navaid, rho, trueTheta, trueCourse, metadata, SegmentType.Departure);
     }
     case LegType.CA:
     case LegType.FA:
@@ -284,7 +285,7 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
         const center = flightPlanLeg.definition.arcCentreFix;
 
         if (legType === LegType.RF) {
-            return new RFLeg(prevWaypoint, waypoint, fixCoordinates(center.location), metadata, SegmentType.Departure);
+            return new RFLeg(prevWaypoint, waypoint, center.location, metadata, SegmentType.Departure);
         }
 
         return new TFLeg(prevWaypoint, waypoint, metadata, SegmentType.Departure);

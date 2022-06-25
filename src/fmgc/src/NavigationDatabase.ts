@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { Airport, Database, ExternalBackend, MsfsBackend, Waypoint } from 'msfs-navdata';
+import { Airport, Approach, ApproachType, Database, ExternalBackend, MsfsBackend, Waypoint } from 'msfs-navdata';
 
 /**
  * The backend for a navigation database
@@ -39,5 +39,67 @@ export class NavigationDatabase {
 
     async searchFix(ident: string): Promise<Waypoint[]> {
         return this.backendDatabase.getWaypoints([ident]);
+    }
+
+    private static approachSuffix(approach: Approach): string {
+        if (approach.multipleIndicator.length < 1) {
+            return approach.runwayIdent;
+        }
+
+        return `${approach.runwayIdent.padEnd(3, '-')}${approach.multipleIndicator}`;
+    }
+
+    static formatLongApproachIdent(approach: Approach): string {
+        let suffix = this.approachSuffix(approach);
+
+        switch (approach.type) {
+        case ApproachType.LocBackcourse: // TODO confirm
+        case ApproachType.Loc:
+            return `LOC${suffix}`;
+        case ApproachType.VorDme:
+        case ApproachType.Vor:
+        case ApproachType.Vortac:
+        case ApproachType.Tacan: // TODO confirm
+            return `VOR${suffix}`;
+        case ApproachType.Fms:
+        case ApproachType.Gps:
+        case ApproachType.Rnav:
+            return `RNAV${suffix}`;
+        case ApproachType.Igs:
+            return `IGS${suffix}`;
+        case ApproachType.Ils:
+            return `ILS${suffix}`;
+        case ApproachType.Gls:
+            return `GLS${suffix}`;
+        case ApproachType.Mls:
+        case ApproachType.MlsTypeA:
+        case ApproachType.MlsTypeBC:
+            return `MLS${suffix}`;
+        case ApproachType.Ndb:
+        case ApproachType.NdbDme:
+            return `NDB${suffix}`;
+        case ApproachType.Sdf:
+            return `SDF${suffix}`;
+        case ApproachType.Lda:
+            return `LDA${suffix}`;
+        default:
+            return `???${suffix}`;
+        }
+    }
+
+    static formatShortApproachIdent(approach: Approach): string {
+        const ident = this.formatLongApproachIdent(approach);
+        if (ident.startsWith('RNAV')) {
+            return `RNV${ident.substring(4)}`;
+        }
+        return ident;
+    }
+
+    static formatLongRunwayIdent(airportIdent: string, runwayIdent: string): string {
+        return `${airportIdent}${this.formatShortRunwayIdent(runwayIdent)}`;
+    }
+
+    static formatShortRunwayIdent(runwayIdent: string): string {
+        return runwayIdent.substring(2);
     }
 }

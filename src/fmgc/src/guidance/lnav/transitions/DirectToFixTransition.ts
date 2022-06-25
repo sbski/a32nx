@@ -18,7 +18,6 @@ import { PathVector, PathVectorType } from '@fmgc/guidance/lnav/PathVector';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { TurnDirection } from '@fmgc/types/fstypes/FSEnums';
 import { bearingTo, distanceTo, placeBearingDistance } from 'msfs-geo';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { CILeg } from '../legs/CI';
 import {
     arcDistanceToGo,
@@ -106,7 +105,7 @@ export class DirectToFixTransition extends Transition {
         const termFix = this.previousLeg.getPathEndPoint();
 
         // FIXME fix for FX legs
-        const nextFix = fixCoordinates(this.nextLeg.fix.location);
+        const nextFix = this.nextLeg.fix.location;
 
         this.radius = (gs ** 2 / (Constants.G * tan(maxBank(tas, true))) / 6997.84) * LnavConfig.TURN_RADIUS_FACTOR;
 

@@ -220,6 +220,7 @@ class FMCDataManager {
             routes: 0,
             runways: 0,
             waypoints: this.numberOfStoredWaypoints(),
+            total: this.numberOfStoredWaypoints(),
         };
     }
 

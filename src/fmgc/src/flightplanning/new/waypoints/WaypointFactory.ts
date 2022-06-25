@@ -5,7 +5,6 @@
 
 import { Airport, Location, Runway, Waypoint, WaypointArea } from 'msfs-navdata';
 import { placeBearingDistance } from 'msfs-geo';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { runwayIdent } from '@fmgc/flightplanning/new/legs/FlightPlanLegNaming';
 
 export namespace WaypointFactory {
@@ -29,7 +28,7 @@ export namespace WaypointFactory {
         distance: NauticalMiles,
         bearing: DegreesTrue,
     ): Waypoint {
-        const loc = placeBearingDistance(fixCoordinates(location), bearing, distance);
+        const loc = placeBearingDistance(location, bearing, distance);
 
         const point: Location = { lat: loc.lat, lon: loc.long };
 

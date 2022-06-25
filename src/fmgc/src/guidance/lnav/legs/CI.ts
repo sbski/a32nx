@@ -13,7 +13,6 @@ import { Leg } from '@fmgc/guidance/lnav/legs/Leg';
 import { IFLeg } from '@fmgc/guidance/lnav/legs/IF';
 import { DmeArcTransition } from '@fmgc/guidance/lnav/transitions/DmeArcTransition';
 import { FixedRadiusTransition } from '@fmgc/guidance/lnav/transitions/FixedRadiusTransition';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { distanceTo } from 'msfs-geo';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { PathVector, PathVectorType } from '../PathVector';
@@ -48,10 +47,8 @@ export class CILeg extends Leg {
 
     getPathStartPoint(): Coordinates | undefined {
         if (this.inboundGuidable instanceof IFLeg) {
-            return fixCoordinates(this.inboundGuidable.fix.location);
-        }
-
-        if (this.inboundGuidable && this.inboundGuidable.isComputed) {
+            return this.inboundGuidable.fix.location;
+        } if (this.inboundGuidable && this.inboundGuidable.isComputed) {
             return this.inboundGuidable.getPathEndPoint();
         }
 

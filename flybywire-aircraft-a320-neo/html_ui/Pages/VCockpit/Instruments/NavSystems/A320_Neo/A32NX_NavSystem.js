@@ -34,6 +34,7 @@ class NavSystem extends BaseInstrument {
         this.reversionaryMode = false;
         this.alwaysUpdateList = new Array();
         this.accumulatedDeltaTime = 0;
+        this.navDatabaseBackend = Fmgc.NavigationDatabaseBackend.Msfs;
     }
     // TODO: DEPRECATE
     // get flightPlanManager() {
@@ -49,6 +50,8 @@ class NavSystem extends BaseInstrument {
         this.contextualMenuElements = this.getChildById("ContextualMenuElements");
         this.menuSlider = this.getChildById("SliderMenu");
         this.menuSliderCursor = this.getChildById("SliderMenuCursor");
+
+        // FIXME all this stuff should not go in NavSystem... or stuff like the FCU should stop using NavSystem
         // this.currFlightPlanManager = new Fmgc.FlightPlanManager(this); // TODO: DEPRECATE
         // this.currFlightPlan = new Fmgc.ManagedFlightPlan(); // TODO: DEPRECATE
         this.currFlightPhaseManager = Fmgc.getFlightPhaseManager();
@@ -57,10 +60,13 @@ class NavSystem extends BaseInstrument {
         this.currFlightPlanService.createFlightPlans();
 
         this.currNavigationDatabaseService = Fmgc.NavigationDatabaseService;
-        this.navigationDatabase = new Fmgc.NavigationDatabase(Fmgc.NavigationDatabaseBackend.Navigraph);
-        this.currNavigationDatabaseService.activeDatabase = this.navigationDatabase;
 
-        new Promise(async (resolve) => {
+        NXDataStore.getAndSubscribe('FBW_NAVDB_BACKEND', (key, value) => {
+            this.navigationDatabase = new Fmgc.NavigationDatabase(parseInt(value));
+            this.currNavigationDatabaseService.activeDatabase = this.navigationDatabase;
+        }, Fmgc.NavigationDatabaseBackend.Msfs.toString());
+
+        /*new Promise(async (resolve) => {
             await this.currFlightPlanService.newCityPair('NZQN', 'NZWN', 'NZAA');
 
             await this.currFlightPlanService.setOriginRunway('RW05');
@@ -74,7 +80,7 @@ class NavSystem extends BaseInstrument {
             console.log('Dev flight plan inserted.');
 
             resolve();
-        });
+        });*/
     }
     get flightPhaseManager() {
         return this.currFlightPhaseManager;

@@ -9,6 +9,8 @@ export class MathUtils {
 
     static DIV_FEET_TO_NAUTICAL_MILES = 6076.12;
 
+    static DIV_METRES_TO_NAUTICAL_MILES = 1852;
+
    private static optiPow10 = [];
 
    public static fastToFixed(val: number, fraction: number): string {

@@ -12,7 +12,6 @@ import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { Guidable } from '@fmgc/guidance/Guidable';
 import { Leg } from '@fmgc/guidance/lnav/legs/Leg';
 import { Waypoint, WaypointDescriptor } from 'msfs-navdata';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 
 export class IFLeg extends XFLeg {
     constructor(
@@ -35,11 +34,11 @@ export class IFLeg extends XFLeg {
     }
 
     getPathStartPoint(): Coordinates | undefined {
-        return fixCoordinates(this.fix.location);
+        return this.fix.location;
     }
 
     getPathEndPoint(): Coordinates | undefined {
-        return fixCoordinates(this.fix.location);
+        return this.fix.location;
     }
 
     recomputeWithParameters(_isActive: boolean, _tas: Knots, _gs: Knots, _ppos: Coordinates, _trueTrack: DegreesTrue) {

@@ -16,7 +16,6 @@ import { DmeArcTransition } from '@fmgc/guidance/lnav/transitions/DmeArcTransiti
 import { bearingTo, distanceTo } from 'msfs-geo';
 import { MathUtils } from '@shared/MathUtils';
 import { Waypoint } from 'msfs-navdata';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { IFLeg } from '@fmgc/guidance/lnav/legs/IF';
 import { PathVector, PathVectorType } from '../PathVector';
@@ -80,8 +79,8 @@ export class CFLeg extends XFLeg {
         return Avionics.Utils.bearingDistanceToCoordinates(
             inverseCourse,
             distance,
-            fixCoordinates(this.fix.location).lat,
-            fixCoordinates(this.fix.location).long,
+            this.fix.location.lat,
+            this.fix.location.long,
         );
     }
 

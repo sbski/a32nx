@@ -133,7 +133,7 @@ export class GuidanceController {
         if ('lat' in matchingGeometryLeg.terminationWaypoint) {
             termination = matchingGeometryLeg.terminationWaypoint;
         } else {
-            termination = fixCoordinates(matchingGeometryLeg.terminationWaypoint.location);
+            termination = matchingGeometryLeg.terminationWaypoint.location;
         }
 
         this.focusedWaypointCoordinates.lat = termination.lat;
@@ -177,7 +177,7 @@ export class GuidanceController {
         if (appr && appr.type !== ApproachType.Unknown) {
             const phase = getFlightPhaseManager().phase;
             if (phase > FmgcFlightPhase.Cruise || (phase === FmgcFlightPhase.Cruise /* && this.flightPlanManager.getDistanceToDestination(FlightPlans.Active) < 250) */)) {
-                apprMsg = normaliseApproachName(appr.ident);
+                apprMsg = NavigationDatabase.formatLongApproachIdent(appr);
             }
         }
 

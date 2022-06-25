@@ -13,7 +13,6 @@ import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { courseToFixDistanceToGo, fixToFixGuidance, getIntermediatePoint } from '@fmgc/guidance/lnav/CommonGeometry';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { Waypoint, WaypointDescriptor } from 'msfs-navdata';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { bearingTo } from 'msfs-geo';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { PathVector, PathVectorType } from '../PathVector';
@@ -42,10 +41,11 @@ export class TFLeg extends XFLeg {
         this.segment = segment;
         this.constraintType = WaypointConstraintType.CLB;
         this.course = bearingTo(
-            fixCoordinates(this.from.location),
-            fixCoordinates(this.to.location),
+            this.from.location,
+            this.to.location,
         );
 
+        // TODO sussy
         // Do not display on map if this is an airport or runway leg
         const { waypointDescriptor } = this.metadata.flightPlanLegDefinition;
 
@@ -53,11 +53,11 @@ export class TFLeg extends XFLeg {
     }
 
     get inboundCourse(): DegreesTrue {
-        return bearingTo(fixCoordinates(this.from.location), fixCoordinates(this.to.location));
+        return bearingTo(this.from.location, this.to.location);
     }
 
     get outboundCourse(): DegreesTrue {
-        return bearingTo(fixCoordinates(this.from.location), fixCoordinates(this.to.location));
+        return bearingTo(this.from.location, this.to.location);
     }
 
     get predictedPath(): PathVector[] {
@@ -65,7 +65,7 @@ export class TFLeg extends XFLeg {
     }
 
     getPathStartPoint(): Coordinates | undefined {
-        return this.inboundGuidable?.isComputed ? this.inboundGuidable.getPathEndPoint() : fixCoordinates(this.from.location);
+        return this.inboundGuidable?.isComputed ? this.inboundGuidable.getPathEndPoint() : this.from.location;
     }
 
     recomputeWithParameters(
@@ -114,7 +114,7 @@ export class TFLeg extends XFLeg {
     }
 
     getGuidanceParameters(ppos: Coordinates, trueTrack: Degrees): GuidanceParameters | null {
-        return fixToFixGuidance(ppos, trueTrack, fixCoordinates(this.from.location), fixCoordinates(this.to.location));
+        return fixToFixGuidance(ppos, trueTrack, this.from.location, this.to.location);
     }
 
     getNominalRollAngle(_gs: Knots): Degrees {
@@ -143,7 +143,7 @@ export class TFLeg extends XFLeg {
      * @param ppos {LatLong} the current position of the aircraft
      */
     getAircraftToLegBearing(ppos: LatLongData): number {
-        const aircraftToTerminationBearing = Avionics.Utils.computeGreatCircleHeading(ppos, fixCoordinates(this.to.location));
+        const aircraftToTerminationBearing = Avionics.Utils.computeGreatCircleHeading(ppos, this.to.location);
         const aircraftLegBearing = MathUtils.smallCrossingAngle(this.outboundCourse, aircraftToTerminationBearing);
 
         return aircraftLegBearing;
@@ -154,13 +154,13 @@ export class TFLeg extends XFLeg {
     }
 
     isAbeam(ppos: LatLongAlt): boolean {
-        const bearingAC = Avionics.Utils.computeGreatCircleHeading(fixCoordinates(this.from.location), ppos);
+        const bearingAC = Avionics.Utils.computeGreatCircleHeading(this.from.location, ppos);
         const headingAC = Math.abs(MathUtils.diffAngle(this.inboundCourse, bearingAC));
         if (headingAC > 90) {
             // if we're even not abeam of the starting point
             return false;
         }
-        const distanceAC = Avionics.Utils.computeDistance(fixCoordinates(this.from.location), ppos);
+        const distanceAC = Avionics.Utils.computeDistance(this.from.location, ppos);
         const distanceAX = Math.cos(headingAC * Avionics.Utils.DEG2RAD) * distanceAC;
         // if we're too far away from the starting point to be still abeam of the ending point
         return distanceAX <= this.distance;
