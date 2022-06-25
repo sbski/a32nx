@@ -24,7 +24,7 @@ class CDUFlightPlanPage {
         }
 
         function getRunwayInfo(/** @type {import('msfs-navdata').Runway} */ runway) {
-            return '';
+            return ['', ''];
             let runwayText, runwayAlt;
             if (runway) {
                 runwayText = runway.ident.substring(2);
