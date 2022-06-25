@@ -196,12 +196,17 @@ class CDUPerformancePage {
         let transAltCell = "";
         if (hasOrigin) {
             transAltCell = "[\xa0".padEnd(4, "\xa0") + "]";
-            if (mcdu.flightPlanManager.originTransitionAltitude !== undefined) {
-                transAltCell = `{cyan}${mcdu.flightPlanManager.originTransitionAltitude}{end}`;
-                if (mcdu.flightPlanManager.originTransitionAltitudeIsFromDb) {
+
+            const transAlt = targetPlan.performanceData.transitionAltitude.get();
+            const transAltitudeIsFromDatabase = targetPlan.performanceData.transitionAltitudeIsFromDatabase;
+
+            if (transAlt !== undefined) {
+                transAltCell = `{cyan}${transAlt}{end}`;
+                if (transAltitudeIsFromDatabase) {
                     transAltCell += "[s-text]";
                 }
             }
+
             mcdu.onLeftInput[3] = (value, scratchpadCallback) => {
                 if (mcdu.trySetTakeOffTransAltitude(value)) {
                     CDUPerformancePage.ShowTAKEOFFPage(mcdu);
