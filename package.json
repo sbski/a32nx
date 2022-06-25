@@ -17,6 +17,7 @@
     "build:presets": "cd src/presets && ./build.sh",
     "build:failures": "rollup -c src/failures/rollup.config.js",
     "build:fmgc": "rollup -c src/fmgc/rollup.config.js",
+    "watch:fmgc": "rollup -wc src/fmgc/rollup.config.js",
     "build:tcas": "rollup -c src/tcas/rollup.config.js",
     "build:pfd": "cd src/instruments/src/PFD && rollup -c",
     "build:simbridge-client": "rollup -c src/simbridge-client/rollup.config.js",
