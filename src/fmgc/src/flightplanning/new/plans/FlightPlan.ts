@@ -54,6 +54,9 @@ export class FlightPlan extends BaseFlightPlan {
         newPlan.availableApproaches = [...this.availableApproaches];
         newPlan.availableApproachVias = [...this.availableApproachVias];
 
+        newPlan.activeLegIndex = this.activeLegIndex;
+        // TODO copy performance data as well (only for SEC F-PLN)
+
         return newPlan;
     }
 
