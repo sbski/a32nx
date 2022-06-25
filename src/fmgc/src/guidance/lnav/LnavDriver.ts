@@ -20,7 +20,10 @@ import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { Coordinates } from '@fmgc/flightplanning/data/geo';
 import { FmgcFlightPhase } from '@shared/flightphase';
 import { FlightPlanService } from '@fmgc/flightplanning/new/FlightPlanService';
-import { GuidanceController, GuidanceComponent } from '@fmgc/guidance';
+import { bearingTo, distanceTo } from 'msfs-geo';
+import { MagVar } from '@shared/MagVar';
+import { GuidanceController } from '../GuidanceController';
+import { GuidanceComponent } from '../GuidanceComponent';
 
 /**
  * Represents the current turn state of the LNAV driver
@@ -350,7 +353,7 @@ export class LnavDriver implements GuidanceComponent {
 
             // Update EFIS active waypoint info
 
-            // this.updateEfisData(activeLeg, gs);
+            this.updateEfisData(activeLeg, gs);
 
             // Sequencing
 
@@ -369,14 +372,7 @@ export class LnavDriver implements GuidanceComponent {
                 const followingLeg = geometry.legs.get(activeLegIdx + 2);
 
                 if (nextLeg) {
-                    // FIXME we should stop relying on discos in the wpt objects, but for now it's fiiiiiine
-                    // Hard-coded check for TF leg after the disco for now - only case where we don't wanna
-                    // sequence this way is VM
-                    if (activeLeg instanceof XFLeg && activeLeg.fix.endsInDiscontinuity) {
-                        this.sequenceDiscontinuity(activeLeg);
-                    } else {
-                        this.sequenceLeg(activeLeg, outboundTransition);
-                    }
+                    this.sequenceLeg(activeLeg, outboundTransition);
                     geometry.onLegSequenced(activeLeg, nextLeg, followingLeg);
                 } else {
                     this.sequenceDiscontinuity(activeLeg);
@@ -410,7 +406,7 @@ export class LnavDriver implements GuidanceComponent {
      * @private
      */
     private updateEfisData(activeLeg: Leg, gs: Knots) {
-        const termination = activeLeg instanceof XFLeg ? activeLeg.fix.infos.coordinates : activeLeg.getPathEndPoint();
+        const termination = activeLeg instanceof XFLeg ? activeLeg.fix.location : activeLeg.getPathEndPoint();
 
         const efisTrueBearing = termination ? Avionics.Utils.computeGreatCircleHeading(this.ppos, termination) : -1;
         const efisBearing = termination ? A32NX_Util.trueToMagnetic(
@@ -418,8 +414,9 @@ export class LnavDriver implements GuidanceComponent {
             Facilities.getMagVar(this.ppos.lat, this.ppos.long),
         ) : -1;
 
+
         // Don't compute distance and ETA for XM legs
-        const efisDistance = activeLeg instanceof VMLeg ? -1 : Avionics.Utils.computeGreatCircleDistance(this.ppos, termination);
+        const efisDistance = activeLeg instanceof VMLeg ? -1 : distanceTo(this.ppos, termination);
         const efisEta = activeLeg instanceof VMLeg ? -1 : LnavDriver.legEta(this.ppos, gs, termination);
 
         // FIXME should be NCD if no FM position
@@ -440,7 +437,7 @@ export class LnavDriver implements GuidanceComponent {
 
         const UTC_SECONDS = Math.floor(SimVar.GetGlobalVarValue('ZULU TIME', 'seconds'));
 
-        const nauticalMilesToGo = Avionics.Utils.computeGreatCircleDistance(ppos, termination);
+        const nauticalMilesToGo = distanceTo(ppos, termination);
         const secondsToGo = (nauticalMilesToGo / Math.max(LnavConfig.DEFAULT_MIN_PREDICTED_TAS, gs)) * 3600;
 
         const eta = (UTC_SECONDS + secondsToGo) % (3600 * 24);
