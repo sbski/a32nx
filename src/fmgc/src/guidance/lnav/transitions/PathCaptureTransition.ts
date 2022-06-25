@@ -227,7 +227,7 @@ export class PathCaptureTransition extends Transition {
             // If we are inbound of a TF leg, we use the TF leg ref fix for our small circle intersect in order to get
             // more accurate results
             if ('from' in this.nextLeg) {
-                const intersects = smallCircleGreatCircleIntersection(turnCenter, radius, fixCoordinates(this.nextLeg.from.location), this.nextLeg.outboundCourse);
+                const intersects = smallCircleGreatCircleIntersection(turnCenter, radius, this.nextLeg.from.location, this.nextLeg.outboundCourse);
 
                 if (intersects) {
                     const [one, two] = intersects;
@@ -329,7 +329,7 @@ export class PathCaptureTransition extends Transition {
             const intersections = placeBearingIntersection(
                 finalTurningPoint,
                 Avionics.Utils.clampAngle(targetTrack + courseChange),
-                fixCoordinates(this.nextLeg.from.location),
+                this.nextLeg.from.location,
                 this.nextLeg.outboundCourse,
             );
 

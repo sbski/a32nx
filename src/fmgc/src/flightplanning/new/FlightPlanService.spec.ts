@@ -10,7 +10,6 @@ import { loadSingleWaypoint } from '@fmgc/flightplanning/new/segments/enroute/Wa
 import { assertDiscontinuity, assertNotDiscontinuity } from '@fmgc/flightplanning/new/test/LegUtils';
 import { setupNavigraphDatabase } from '@fmgc/flightplanning/new/test/Database';
 import { placeBearingDistance } from 'msfs-geo';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
 import { dumpFlightPlan } from '@fmgc/flightplanning/new/test/FlightPlan';
 import { FmgcFlightPhase } from '@shared/flightphase';
 
@@ -109,7 +108,7 @@ describe('the flight plan service', () => {
                 const runway = FlightPlanService.active.originRunway;
                 const runwayLeg = assertNotDiscontinuity(FlightPlanService.active.originSegment.allLegs[0]);
 
-                const ppos = placeBearingDistance(fixCoordinates(runwayLeg.definition.waypoint.location), runway.bearing, 0.5);
+                const ppos = placeBearingDistance(runwayLeg.definition.waypoint.location, runway.bearing, 0.5);
 
                 const targetWaypoint = await loadSingleWaypoint('NUGOP', 'WCY    NUGOP');
 

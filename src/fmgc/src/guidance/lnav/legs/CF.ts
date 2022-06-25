@@ -36,7 +36,7 @@ export class CFLeg extends XFLeg {
 
     getPathStartPoint(): Coordinates | undefined {
         if (this.inboundGuidable instanceof IFLeg) {
-            return fixCoordinates(this.inboundGuidable.fix.location);
+            return this.inboundGuidable.fix.location;
         }
 
         if (this.inboundGuidable instanceof Transition && this.inboundGuidable.isComputed) {
