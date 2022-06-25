@@ -129,10 +129,10 @@ class CDUAvailableDeparturesPage {
                 const runway = availableRunways[index];
                 if (runway) {
                     const selected = selectedRunway && selectedRunway.ident === runway.ident;
-                    const hasIls = false; // TODO runway.primaryILSFrequency.freqMHz > 0;
+                    const hasIls = runway.lsFrequencyChannel > 0; // TODO what if not ILS
                     rows[2 * i] = [`${selected ? "{green}{sp}" : "{cyan}{"}${runway.ident.substring(2).padEnd(3)}${hasIls ? '{small}-ILS{end}' : '{sp}{sp}{sp}{sp}'}${NXUnits.mToUser(runway.length).toFixed(0).padStart(6, '\xa0')}{small}${NXUnits.userDistanceUnit().padEnd(2)}{end}{end}`];
-                    const ilsText = hasIls ? `${WayPoint.formatIdentFromIcao(runway.primaryILSFrequency.icao).padStart(6)}/${runway.primaryILSFrequency.freqMHz.toFixed(2)}` : '';
-                    rows[2 * i + 1] = [`${selected ? "{green}" : "{cyan}"}{sp}{sp}{sp}${Utils.leadingZeros(Math.round(runway.bearing), 3)}${ilsText}{end}`];
+                    const ilsText = hasIls ? `${runway.lsIdent.padStart(6)}/${runway.lsFrequencyChannel.toFixed(2)}` : '';
+                    rows[2 * i + 1] = [`${selected ? "{green}" : "{cyan}"}{sp}{sp}{sp}${Utils.leadingZeros(Math.round(runway.magneticBearing), 3)}${ilsText}{end}`];
                     mcdu.onLeftInput[i + 1] = async () => {
                         try {
                             await mcdu.flightPlanService.setOriginRunway(runway.ident);
@@ -261,7 +261,7 @@ class CDUAvailableDeparturesPage {
             ["{sp}DEPARTURES {small}FROM{end} {green}" + airport.ident + "{sp}{sp}{sp}"],
             ["{sp}RWY", "TRANS{sp}", "{sp}SID"],
             [selectedRunwayCell + "[color]" + selectedRunwayCellColor, selectedTransCell + "[color]" + selectedTransCellColor, selectedSidCell + "[color]" + selectedSidCellColor],
-            sidSelection ? ["SIDS", "TRANS", "AVAILABLE"] : ["", "", "AVAILABLE RUNWAYS{sp}"],
+            sidSelection ? ["SIDS", "TRANS", "AVAILABLE"] : ["", "", "AVAILABLE RUNWAYS\xa0"],
             rows[0],
             rows[1],
             rows[2],
