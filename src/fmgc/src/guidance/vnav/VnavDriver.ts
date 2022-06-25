@@ -52,7 +52,7 @@ export class VnavDriver implements GuidanceComponent {
     update(deltaTime: number): void {
         this.atmosphericConditions.update();
 
-        if (this.coarsePredictionsUpdate.canUpdate(deltaTime) !== -1) {
+        if (false && this.coarsePredictionsUpdate.canUpdate(deltaTime) !== -1) {
             CoarsePredictions.updatePredictions(this.guidanceController, this.atmosphericConditions);
         }
 

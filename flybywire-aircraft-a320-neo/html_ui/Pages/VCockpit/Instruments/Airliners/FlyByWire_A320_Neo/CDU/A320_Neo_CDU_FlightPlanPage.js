@@ -24,6 +24,7 @@ class CDUFlightPlanPage {
         }
 
         function getRunwayInfo(/** @type {import('msfs-navdata').Runway} */ runway) {
+            return '';
             let runwayText, runwayAlt;
             if (runway) {
                 runwayText = runway.ident.substring(2);
@@ -265,17 +266,17 @@ class CDUFlightPlanPage {
                 // Altitude
                 const hasAltConstraint = wp.legAltitudeDescription > 0 && wp.legAltitudeDescription < 6;
                 let altitudeConstraint = "-----";
-                let altPrefix = "\xa0";
-                if (fpIndex === targetPlan.destinationLegIndex && wp.isDiscontinuity === false && wp.definition.waypointDescriptor === 3 /* Runway */) {
+                const altPrefix = "\xa0";
+                if (fpIndex === targetPlan.destinationLegIndex) {
                     // Only for destination waypoint, show runway elevation.
                     altColor = "white";
                     spdColor = "white";
-                    const [, rwAlt] = getRunwayInfo(targetPlan.destinationRunway);
-                    if (rwAlt) {
+                    /*const [rwTxt, rwAlt] = getRunwayInfo(mcdu.flightPlanService.activeOrTemporary.destinationRunway);
+                    if (rwTxt && rwAlt) {
                         altPrefix = "{magenta}*{end}";
                         altitudeConstraint = (Math.round((parseInt(rwAlt) + 50) / 10) * 10).toString();
                         altColor = color;
-                    }
+                    }*/
                     altitudeConstraint = altitudeConstraint.padStart(5,"\xa0");
 
                 } else if (wp === targetPlan.originAirport && fpIndex === 0 && wp.isDiscontinuity === false && wp.definition.waypointDescriptor === 3 /* Runway */) {

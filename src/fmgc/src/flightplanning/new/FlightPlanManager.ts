@@ -45,6 +45,7 @@ export class FlightPlanManager {
 
     deleteAll() {
         this.plans.length = 0;
+        this.plans.push(FlightPlan.empty());
     }
 
     copy(from: number, to: number) {
