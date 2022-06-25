@@ -247,7 +247,7 @@ export class FlightPlanService {
     }
 
     static directTo(ppos: Location, trueTrack: Degrees, waypoint: Waypoint, planIndex = FlightPlanIndex.Active) {
-        const magVar = Facilities.getMagVar(ppos.lat, ppos.lon);
+        const magVar = Facilities.getMagVar(ppos.lat, ppos.long);
 
         const finalIndex = this.prepareDestructiveModification(planIndex);
 

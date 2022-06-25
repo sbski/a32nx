@@ -58,7 +58,7 @@ export namespace GeometryFactory {
                 const fixLocation = element.terminationWaypoint().location;
 
                 // TODO very sussy... declination/variation does not work like this for terminal procedures
-                runningMagvar = getFacilities().getMagVar(fixLocation.lat, fixLocation.lon);
+                runningMagvar = getFacilities().getMagVar(fixLocation.lat, fixLocation.long);
             }
 
             let nextGeometryLeg;
@@ -101,7 +101,7 @@ export namespace GeometryFactory {
                 const fixLocation = planLeg.terminationWaypoint().location;
 
                 // TODO very sussy... declination/variation does not work like this for terminal procedures
-                runningMagvar = getFacilities().getMagVar(fixLocation.lat, fixLocation.lon);
+                runningMagvar = getFacilities().getMagVar(fixLocation.lat, fixLocation.long);
             }
 
             let nextLeg: Leg;
