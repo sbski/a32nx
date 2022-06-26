@@ -18,6 +18,7 @@ import { PathVector, PathVectorType } from '@fmgc/guidance/lnav/PathVector';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { TurnDirection } from '@fmgc/types/fstypes/FSEnums';
 import { bearingTo, distanceTo, placeBearingDistance } from 'msfs-geo';
+import { FDLeg } from '@fmgc/guidance/lnav/legs/FD';
 import { CILeg } from '../legs/CI';
 import {
     arcDistanceToGo,
@@ -28,8 +29,9 @@ import {
     maxBank,
 } from '../CommonGeometry';
 import { CRLeg } from '../legs/CR';
+import { CDLeg } from '../legs/CD';
 
-type PrevLeg = CALeg | /* CDLeg | */ CFLeg | CILeg | CRLeg | DFLeg | /* FALeg | FMLeg | */ HALeg | HFLeg | HMLeg | TFLeg | /* VALeg | VILeg | VDLeg | */ VMLeg; /* | VRLeg */
+type PrevLeg = CALeg | CDLeg | CFLeg | CILeg | CRLeg | DFLeg | FDLeg | /* FALeg | FMLeg | */ HALeg | HFLeg | HMLeg | TFLeg | /* VALeg | VILeg | VDLeg | */ VMLeg; /* | VRLeg */
 type NextLeg = CFLeg | DFLeg /* | FALeg | FMLeg */
 
 const tan = (input: Degrees) => Math.tan(input * (Math.PI / 180));

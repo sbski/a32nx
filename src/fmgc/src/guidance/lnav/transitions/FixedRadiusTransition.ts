@@ -19,11 +19,12 @@ import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { Geo } from '@fmgc/utils/Geo';
 import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { distanceTo } from 'msfs-geo';
+import { FDLeg } from '@fmgc/guidance/lnav/legs/FD';
 import { PathVector, PathVectorType } from '../PathVector';
 import { CFLeg } from '../legs/CF';
 
-type PrevLeg = CILeg | CFLeg | DFLeg | TFLeg;
-type NextLeg = CFLeg | /* FALeg | FMLeg | */ PILeg | TFLeg;
+type PrevLeg = CILeg | CFLeg | DFLeg | FDLeg | TFLeg;
+type NextLeg = CFLeg | FDLeg | /* FALeg | FMLeg | */ PILeg | TFLeg;
 
 const mod = (x: number, n: number) => x - Math.floor(x / n) * n;
 
@@ -240,7 +241,7 @@ export class FixedRadiusTransition extends Transition {
     private turningPoints;
 
     private computeTurningPoints(): [LatLongAlt, LatLongAlt] {
-        const { lat, long } = this.previousLeg instanceof CILeg ? this.previousLeg.intercept : this.previousLeg.fix.location;
+        const { lat, long } = this.previousLeg instanceof XFLeg ? this.previousLeg.fix.location : this.previousLeg.intercept;
 
         const inbound = Avionics.Utils.bearingDistanceToCoordinates(
             mod(this.previousLeg.outboundCourse + 180, 360),

@@ -23,6 +23,9 @@ import { legMetadataFromFlightPlanLeg } from '@fmgc/guidance/lnav/legs';
 import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { VMLeg } from '@fmgc/guidance/lnav/legs/VM';
 import { RFLeg } from '@fmgc/guidance/lnav/legs/RF';
+import { CRLeg } from '@fmgc/guidance/lnav/legs/CR';
+import { FDLeg } from '@fmgc/guidance/lnav/legs/FD';
+import { CDLeg } from '@fmgc/guidance/lnav/legs/CD';
 import { HALeg, HFLeg, HMLeg } from '../lnav/legs/HX';
 
 function getFacilities(): typeof Facilities {
@@ -205,12 +208,14 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
 
     const metadata = legMetadataFromFlightPlanLeg(flightPlanLeg);
 
+    const waypoint = flightPlanLeg.terminationWaypoint();
+    const recommendedNavaid = flightPlanLeg.definition.recommendedNavaid;
     const trueCourse = flightPlanLeg.definition.magneticCourse + runningMagvar;
     const trueTheta = flightPlanLeg.definition.theta + runningMagvar;
+    const length = flightPlanLeg.definition.length;
 
     switch (legType) {
     case LegType.AF: {
-        const waypoint = flightPlanLeg.terminationWaypoint();
         const recommendedNavaid = flightPlanLeg.definition.recommendedNavaid;
         const navaid = recommendedNavaid.location;
         const rho = flightPlanLeg.definition.rho;
@@ -219,20 +224,17 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
     }
     case LegType.CA:
     case LegType.FA:
-    case LegType.VA: {
+    case LegType.VA: { // TODO FA, VA legs in geometry
         const altitude = flightPlanLeg.definition.altitude1;
 
         return new CALeg(trueCourse, altitude, metadata, SegmentType.Departure);
     }
     case LegType.CD:
-        break;
-    case LegType.CF: {
-        const fix = flightPlanLeg.terminationWaypoint();
-
-        return new CFLeg(fix, trueCourse, metadata, SegmentType.Departure);
-    }
+        return new CDLeg(trueCourse, length, recommendedNavaid, metadata, SegmentType.Departure);
+    case LegType.CF:
+        return new CFLeg(waypoint, trueCourse, metadata, SegmentType.Departure);
     case LegType.CI:
-    case LegType.VI: {
+    case LegType.VI: { // TODO VI leg in geometry
         if (!nextGeometryLeg) {
             throw new Error('[FMS/Geometry] Cannot make a CI leg without the next geometry leg being defined');
         }
@@ -240,36 +242,22 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
         return new CILeg(trueCourse, nextGeometryLeg, metadata, SegmentType.Departure);
     }
     case LegType.CR:
-        break;
-    case LegType.HA: {
-        const waypoint = flightPlanLeg.terminationWaypoint();
-
+    case LegType.VR: // TODO VR leg in geometry
+        return new CRLeg(trueCourse, { ident: recommendedNavaid.ident, coordinates: recommendedNavaid.location, theta: trueTheta - runningMagvar }, trueTheta, metadata, SegmentType.Departure);
+    case LegType.HA:
         return new HALeg(waypoint, metadata, SegmentType.Departure);
-    }
-    case LegType.HF: {
-        const waypoint = flightPlanLeg.terminationWaypoint();
-
+    case LegType.HF:
         return new HFLeg(waypoint, metadata, SegmentType.Departure);
-    }
-    case LegType.HM: {
-        const waypoint = flightPlanLeg.terminationWaypoint();
-
+    case LegType.HM:
         return new HMLeg(waypoint, metadata, SegmentType.Departure);
-    }
-    case LegType.DF: {
-        const waypoint = flightPlanLeg.terminationWaypoint();
-
+    case LegType.DF:
         return new DFLeg(waypoint, metadata, SegmentType.Departure);
-    }
     case LegType.FC:
         break;
     case LegType.FD:
-        break;
-    case LegType.IF: {
-        const waypoint = flightPlanLeg.terminationWaypoint();
-
+        return new FDLeg(trueCourse, length, waypoint, recommendedNavaid, metadata, SegmentType.Departure);
+    case LegType.IF:
         return new IFLeg(waypoint, metadata, SegmentType.Departure);
-    }
     case LegType.PI:
         break;
     case LegType.RF:
@@ -296,8 +284,6 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
     case LegType.VM: {
         return new VMLeg(trueCourse, metadata, SegmentType.Departure);
     }
-    case LegType.VR:
-        break;
     default:
         break;
     }

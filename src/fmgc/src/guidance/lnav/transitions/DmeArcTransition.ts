@@ -18,8 +18,10 @@ import { GuidanceParameters } from '@fmgc/guidance/ControlLaws';
 import { CALeg } from '@fmgc/guidance/lnav/legs/CA';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
+import { FDLeg } from '@fmgc/guidance/lnav/legs/FD';
+import { CDLeg } from '../legs/CD';
 
-export type DmeArcTransitionPreviousLeg = AFLeg /* | CDLeg */ | CFLeg | CILeg | DFLeg | TFLeg; /* | VILeg | VDLeg */
+export type DmeArcTransitionPreviousLeg = AFLeg | CDLeg | CFLeg | CILeg | DFLeg | FDLeg | TFLeg; /* | VILeg | VDLeg */
 export type DmeArcTransitionNextLeg = AFLeg | CALeg | CFLeg /* | FALeg | FMLeg */ | TFLeg;
 
 const tan = (input: Degrees) => Math.tan(input * (Math.PI / 180));
