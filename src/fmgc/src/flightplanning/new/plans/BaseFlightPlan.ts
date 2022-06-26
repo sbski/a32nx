@@ -784,13 +784,21 @@ export abstract class BaseFlightPlan {
 
         this.arrivalAndApproachSegmentsBeingRebuilt = true;
 
-        await this.approachSegment.setApproachProcedure(this.approach.ident);
+        if (this.approach) {
+            await this.approachSegment.setApproachProcedure(this.approach.ident);
+        }
 
-        await this.approachViaSegment.setApproachVia(this.approachVia.ident);
+        if (this.approachVia) {
+            await this.approachViaSegment.setApproachVia(this.approachVia.ident);
+        }
 
-        await this.arrivalSegment.setArrivalProcedure(this.arrival.ident);
+        if (this.arrival) {
+            await this.arrivalSegment.setArrivalProcedure(this.arrival.ident);
+        }
 
-        await this.arrivalEnrouteTransitionSegment.setArrivalEnrouteTransition(this.arrivalEnrouteTransition.ident);
+        if (this.arrivalEnrouteTransition) {
+            await this.arrivalEnrouteTransitionSegment.setArrivalEnrouteTransition(this.arrivalEnrouteTransition.ident);
+        }
 
         await this.destinationSegment.refresh();
     }

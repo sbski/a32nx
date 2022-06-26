@@ -146,6 +146,7 @@ export class FlightPlanLeg {
             overfly: false,
             waypoint: runwayLeg.terminationWaypoint(),
             magneticCourse: runwayLeg.definition.magneticCourse,
+            altitude1: altitude,
         }, ident, annotation, undefined, undefined, false);
     }
 

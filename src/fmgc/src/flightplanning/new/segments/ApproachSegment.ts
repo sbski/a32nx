@@ -54,22 +54,12 @@ export class ApproachSegment extends FlightPlanSegment {
         this.allLegs = this.createLegSet(matchingProcedure.legs.map((leg) => FlightPlanLeg.fromProcedureLeg(this, leg, matchingProcedure.ident)));
         this.strung = false;
 
-        // Try to set destination runway automatically TODO this info should be provided by msfs-navdata
+        // Set plan destination runway
+        const procedureRunwayIdent = matchingProcedure.runwayIdent;
 
-        const lastElement = this.allLegs[this.allLegs.length - 1];
-
-        if (lastElement.isDiscontinuity === false) {
-            const runwayByLastLeg = this.findRunwayFromRunwayLeg(lastElement);
-
-            if (runwayByLastLeg) {
-                await this.flightPlan.destinationSegment.setDestinationRunway(runwayByLastLeg.ident);
-            } else {
-                const runwayByIdent = this.findRunwayFromApproachIdent(matchingProcedure.ident, this.flightPlan.availableDestinationRunways);
-
-                if (runwayByIdent) {
-                    await this.flightPlan.destinationSegment.setDestinationRunway(runwayByIdent.ident);
-                }
-            }
+        if (procedureRunwayIdent) {
+            // TODO temporary workaround for bug in msfs backend
+            await this.flightPlan.destinationSegment.setDestinationRunway(procedureRunwayIdent.startsWith('R') ? procedureRunwayIdent : `RW${procedureRunwayIdent}`);
         }
 
         const mappedMissedApproachLegs = matchingProcedure.missedLegs.map((leg) => FlightPlanLeg.fromProcedureLeg(this.flightPlan.missedApproachSegment, leg, matchingProcedure.ident));
