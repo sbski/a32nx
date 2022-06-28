@@ -1,5 +1,7 @@
-//  Copyright (c) 2021 FlyByWire Simulations
-//  SPDX-License-Identifier: GPL-3.0
+// Copyright (c) 2021-2022 FlyByWire Simulations
+// Copyright (c) 2021-2022 Synaptic Simulations
+//
+// SPDX-License-Identifier: GPL-3.0
 
 import { TheoreticalDescentPathCharacteristics } from '@fmgc/guidance/vnav/descent/TheoreticalDescentPath';
 import { DecelPathBuilder, DecelPathCharacteristics } from '@fmgc/guidance/vnav/descent/DecelPathBuilder';
@@ -10,6 +12,7 @@ import { RequestedVerticalMode, TargetAltitude, TargetVerticalSpeed } from '@fmg
 import { AtmosphericConditions } from '@fmgc/guidance/vnav/AtmosphericConditions';
 import { VerticalMode } from '@shared/autopilot';
 import { CoarsePredictions } from '@fmgc/guidance/vnav/CoarsePredictions';
+import { UpdateThrottler } from '@shared/UpdateThrottler';
 import { FinalAppGuidance } from '@fmgc/guidance/vnav/FinalApp';
 import { FlightPlans } from '@fmgc/flightplanning/FlightPlanManager';
 import { Geometry } from '../Geometry';
@@ -35,7 +38,7 @@ export class VnavDriver implements GuidanceComponent {
     private finalAppGuidance: FinalAppGuidance;
 
     // eslint-disable-next-line camelcase
-    private coarsePredictionsUpdate = new A32NX_Util.UpdateThrottler(5000);
+    private coarsePredictionsUpdate = new UpdateThrottler(5000);
 
     constructor(
         private readonly guidanceController: GuidanceController,

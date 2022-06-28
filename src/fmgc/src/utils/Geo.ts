@@ -34,13 +34,13 @@ export class Geo {
     static distanceToLeg(from: Coordinates, leg: Leg): NauticalMiles {
         const intersections1 = placeBearingIntersection(
             from,
-            Avionics.Utils.clampAngle(leg.outboundCourse - 90),
+            MathUtils.clampAngle(leg.outboundCourse - 90),
             leg.initialLegTermPoint,
-            Avionics.Utils.clampAngle(leg.outboundCourse - 180),
+            MathUtils.clampAngle(leg.outboundCourse - 180),
         );
 
-        const d1 = Avionics.Utils.computeGreatCircleDistance(from, intersections1[0]);
-        const d2 = Avionics.Utils.computeGreatCircleDistance(from, intersections1[1]);
+        const d1 = distanceTo(from, intersections1[0]);
+        const d2 = distanceTo(from, intersections1[1]);
 
         let legStartReference;
 
@@ -59,13 +59,13 @@ export class Geo {
 
         const intersections2 = placeBearingIntersection(
             from,
-            Avionics.Utils.clampAngle(leg.outboundCourse - 90),
+            MathUtils.clampAngle(leg.outboundCourse - 90),
             legStartReference,
-            Avionics.Utils.clampAngle(leg.outboundCourse - 180),
+            MathUtils.clampAngle(leg.outboundCourse - 180),
         );
 
-        const d3 = Avionics.Utils.computeGreatCircleDistance(from, intersections2[0]);
-        const d4 = Avionics.Utils.computeGreatCircleDistance(from, intersections2[1]);
+        const d3 = distanceTo(from, intersections2[0]);
+        const d4 = distanceTo(from, intersections2[1]);
 
         return Math.min(d1, d2, d3, d4);
     }
@@ -79,8 +79,8 @@ export class Geo {
                 bearing,
             );
 
-            const d1 = Avionics.Utils.computeGreatCircleDistance(from, intersections[0]);
-            const d2 = Avionics.Utils.computeGreatCircleDistance(from, intersections[1]);
+            const d1 = distanceTo(from, intersections[0]);
+            const d2 = distanceTo(from, intersections[1]);
 
             return d1 > d2 ? intersections[1] : intersections[0];
         }
@@ -91,9 +91,9 @@ export class Geo {
 
         const intersections1 = placeBearingIntersection(
             from,
-            Avionics.Utils.clampAngle(bearing),
+            MathUtils.clampAngle(bearing),
             'fix' in leg ? leg.fix.location : leg.getPathEndPoint(),
-            Avionics.Utils.clampAngle(leg.outboundCourse - 180),
+            MathUtils.clampAngle(leg.outboundCourse - 180),
         );
 
         const d1 = distanceTo(from, intersections1[0]);
@@ -108,13 +108,13 @@ export class Geo {
 
         const intersections2 = placeBearingIntersection(
             from,
-            Avionics.Utils.clampAngle(bearing),
+            MathUtils.clampAngle(bearing),
             leg.getPathStartPoint(),
-            Avionics.Utils.clampAngle(leg.outboundCourse - 180),
+            MathUtils.clampAngle(leg.outboundCourse - 180),
         );
 
-        const d3 = Avionics.Utils.computeGreatCircleDistance(from, intersections2[0]);
-        const d4 = Avionics.Utils.computeGreatCircleDistance(from, intersections2[1]);
+        const d3 = distanceTo(from, intersections2[0]);
+        const d4 = distanceTo(from, intersections2[1]);
 
         const smallest = Math.min(d1, d2, d3, d4);
 

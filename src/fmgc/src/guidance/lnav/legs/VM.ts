@@ -10,6 +10,7 @@ import { Leg } from '@fmgc/guidance/lnav/legs/Leg';
 import { PathVector, PathVectorType } from '@fmgc/guidance/lnav/PathVector';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { Waypoint } from 'msfs-navdata';
+import { placeBearingDistance } from 'msfs-geo';
 
 /**
  * Temporary - better solution is just to have an `InfiniteLine` vector...
@@ -44,11 +45,10 @@ export class VMLeg extends Leg {
     }
 
     getPathEndPoint(): Coordinates | undefined {
-        return Avionics.Utils.bearingDistanceToCoordinates(
+        return placeBearingDistance(
+            this.getPathStartPoint(),
             this.heading,
             VM_LEG_SIZE,
-            this.getPathStartPoint().lat,
-            this.getPathStartPoint().long,
         );
     }
 

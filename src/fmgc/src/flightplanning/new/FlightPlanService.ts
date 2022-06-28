@@ -6,8 +6,9 @@
 import { FlightPlanIndex, FlightPlanManager } from '@fmgc/flightplanning/new/FlightPlanManager';
 import { A380FpmConfig, FpmConfig } from '@fmgc/flightplanning/new/FpmConfig';
 import { FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
-import { Location, Waypoint } from 'msfs-navdata';
+import { Waypoint } from 'msfs-navdata';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
+import { Coordinates } from 'msfs-geo';
 
 export class FlightPlanService {
     private constructor() {
@@ -246,7 +247,7 @@ export class FlightPlanService {
         this.flightPlanManager.get(finalIndex).insertElementAfter(atIndex, leg);
     }
 
-    static directTo(ppos: Location, trueTrack: Degrees, waypoint: Waypoint, planIndex = FlightPlanIndex.Active) {
+    static directTo(ppos: Coordinates, trueTrack: Degrees, waypoint: Waypoint, planIndex = FlightPlanIndex.Active) {
         const magVar = Facilities.getMagVar(ppos.lat, ppos.long);
 
         const finalIndex = this.prepareDestructiveModification(planIndex);

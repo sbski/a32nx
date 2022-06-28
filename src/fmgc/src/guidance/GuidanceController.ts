@@ -22,15 +22,12 @@ import { ApproachType } from 'msfs-navdata';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
 import { LnavDriver } from './lnav/LnavDriver';
 import { FlightPlanManager } from '../flightplanning/FlightPlanManager';
-import { GuidanceManager } from './GuidanceManager';
 import { VnavDriver } from './vnav/VnavDriver';
 
 // How often the (milliseconds)
 const GEOMETRY_RECOMPUTATION_TIMER = 5_000;
 
 export class GuidanceController {
-    guidanceManager: GuidanceManager;
-
     lnavDriver: LnavDriver;
 
     vnavDriver: VnavDriver;
@@ -196,9 +193,7 @@ export class GuidanceController {
         }
     }
 
-    constructor(flightPlanManager: FlightPlanManager, guidanceManager: GuidanceManager) {
-        this.guidanceManager = guidanceManager;
-
+    constructor() {
         this.lnavDriver = new LnavDriver(this);
         this.vnavDriver = new VnavDriver(this);
         this.pseudoWaypoints = new PseudoWaypoints(this);

@@ -10,7 +10,7 @@ import { GuidanceParameters } from '@fmgc/guidance/ControlLaws';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { courseToFixDistanceToGo, courseToFixGuidance } from '@fmgc/guidance/lnav/CommonGeometry';
 import { IFLeg } from '@fmgc/guidance/lnav/legs/IF';
-import { distanceTo } from 'msfs-geo';
+import { distanceTo, placeBearingDistance } from 'msfs-geo';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { PathVector, PathVectorType } from '../PathVector';
 
@@ -135,11 +135,10 @@ export class CALeg extends Leg {
             distanceToTermination += this.extraLength;
         }
 
-        this.estimatedTermination = Avionics.Utils.bearingDistanceToCoordinates(
+        this.estimatedTermination = placeBearingDistance(
+            this.start,
             this.course,
             distanceToTermination,
-            this.start.lat,
-            this.start.long,
         );
     }
 

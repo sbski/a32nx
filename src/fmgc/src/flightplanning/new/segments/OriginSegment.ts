@@ -80,6 +80,8 @@ export class OriginSegment extends FlightPlanSegment {
                 this.allLegs.push(FlightPlanLeg.originExtendedCenterline(this, runwayLeg));
                 this.allLegs.push({ isDiscontinuity: true });
             }
+
+            this.flightPlan.availableDepartures = newRunwayCompatibleSids;
         } else {
             this.allLegs.push({ isDiscontinuity: true });
         }

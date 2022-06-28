@@ -11,6 +11,8 @@ import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { Waypoint } from 'msfs-navdata';
 import { TurnDirection } from '@fmgc/types/fstypes/FSEnums';
+import { bearingTo, distanceTo } from 'msfs-geo';
+import { MathUtils } from '@shared/MathUtils';
 import { PathVector, PathVectorType } from '../PathVector';
 
 export class RFLeg extends XFLeg {
@@ -39,23 +41,23 @@ export class RFLeg extends XFLeg {
         this.from = from;
         this.to = to;
         this.center = center;
-        this.radius = Avionics.Utils.computeGreatCircleDistance(this.center, this.to.location);
+        this.radius = distanceTo(this.center, this.to.location);
         this.segment = segment;
 
-        const bearingFrom = Avionics.Utils.computeGreatCircleHeading(this.center, this.from.location); // -90?
-        const bearingTo = Avionics.Utils.computeGreatCircleHeading(this.center, this.to.location); // -90?
+        const fromBearing = bearingTo(this.center, this.from.location); // -90?
+        const toBearing = bearingTo(this.center, this.to.location); // -90?
 
         switch (this.metadata.turnDirection) {
         case TurnDirection.Left:
             this.clockwise = false;
-            this.angle = Avionics.Utils.clampAngle(bearingFrom - bearingTo);
+            this.angle = MathUtils.clampAngle(fromBearing - toBearing);
             break;
         case TurnDirection.Right:
             this.clockwise = true;
-            this.angle = Avionics.Utils.clampAngle(bearingTo - bearingFrom);
+            this.angle = MathUtils.clampAngle(toBearing - fromBearing);
             break;
         default:
-            const angle = Avionics.Utils.diffAngle(bearingTo, bearingFrom);
+            const angle = MathUtils.diffAngle(toBearing, fromBearing);
             this.clockwise = angle > 0;
             this.angle = Math.abs(angle);
             break;
@@ -97,11 +99,11 @@ export class RFLeg extends XFLeg {
     }
 
     get inboundCourse(): Degrees {
-        return Avionics.Utils.clampAngle(Avionics.Utils.computeGreatCircleHeading(this.center, this.from.location) + (this.clockwise ? 90 : -90));
+        return MathUtils.clampAngle(bearingTo(this.center, this.from.location) + (this.clockwise ? 90 : -90));
     }
 
     get outboundCourse(): Degrees {
-        return Avionics.Utils.clampAngle(Avionics.Utils.computeGreatCircleHeading(this.center, this.to.location) + (this.clockwise ? 90 : -90));
+        return MathUtils.clampAngle(bearingTo(this.center, this.to.location) + (this.clockwise ? 90 : -90));
     }
 
     get distance(): NauticalMiles {
@@ -134,17 +136,17 @@ export class RFLeg extends XFLeg {
     }
 
     isAbeam(ppos: LatLongData): boolean {
-        const bearingPpos = Avionics.Utils.computeGreatCircleHeading(
+        const bearingPpos = bearingTo(
             this.center,
             ppos,
         );
 
-        const bearingFrom = Avionics.Utils.computeGreatCircleHeading(
+        const bearingFrom = bearingTo(
             this.center,
             this.from.location,
         );
 
-        const trackAngleError = this.clockwise ? Avionics.Utils.diffAngle(bearingFrom, bearingPpos) : Avionics.Utils.diffAngle(bearingPpos, bearingFrom);
+        const trackAngleError = this.clockwise ? MathUtils.diffAngle(bearingFrom, bearingPpos) : MathUtils.diffAngle(bearingPpos, bearingFrom);
 
         return trackAngleError >= 0;
     }

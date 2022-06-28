@@ -13,7 +13,7 @@ import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { courseToFixDistanceToGo, fixToFixGuidance, getIntermediatePoint } from '@fmgc/guidance/lnav/CommonGeometry';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { Waypoint, WaypointDescriptor } from 'msfs-navdata';
-import { bearingTo } from 'msfs-geo';
+import { bearingTo, distanceTo } from 'msfs-geo';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { PathVector, PathVectorType } from '../PathVector';
 
@@ -121,47 +121,19 @@ export class TFLeg extends XFLeg {
         return 0;
     }
 
-    /**
-     * Calculates the angle between the leg and the aircraft PPOS.
-     *
-     * This effectively returns the angle ABC in the figure shown below:
-     *
-     * ```
-     * * A
-     * |
-     * * B (TO)
-     * |\
-     * | \
-     * |  \
-     * |   \
-     * |    \
-     * |     \
-     * |      \
-     * * FROM  * C (PPOS)
-     * ```
-     *
-     * @param ppos {LatLong} the current position of the aircraft
-     */
-    getAircraftToLegBearing(ppos: LatLongData): number {
-        const aircraftToTerminationBearing = Avionics.Utils.computeGreatCircleHeading(ppos, this.to.location);
-        const aircraftLegBearing = MathUtils.smallCrossingAngle(this.outboundCourse, aircraftToTerminationBearing);
-
-        return aircraftLegBearing;
-    }
-
     getDistanceToGo(ppos: LatLongData): NauticalMiles {
         return courseToFixDistanceToGo(ppos, this.course, this.getPathEndPoint());
     }
 
     isAbeam(ppos: LatLongAlt): boolean {
-        const bearingAC = Avionics.Utils.computeGreatCircleHeading(this.from.location, ppos);
+        const bearingAC = bearingTo(this.from.location, ppos);
         const headingAC = Math.abs(MathUtils.diffAngle(this.inboundCourse, bearingAC));
         if (headingAC > 90) {
             // if we're even not abeam of the starting point
             return false;
         }
-        const distanceAC = Avionics.Utils.computeDistance(this.from.location, ppos);
-        const distanceAX = Math.cos(headingAC * Avionics.Utils.DEG2RAD) * distanceAC;
+        const distanceAC = distanceTo(this.from.location, ppos);
+        const distanceAX = Math.cos(headingAC * MathUtils.DEGREES_TO_RADIANS) * distanceAC;
         // if we're too far away from the starting point to be still abeam of the ending point
         return distanceAX <= this.distance;
     }

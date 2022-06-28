@@ -37,10 +37,6 @@ export class CILeg extends Leg {
         return this.intercept;
     }
 
-    get distanceToTermFix(): NauticalMiles {
-        return Avionics.Utils.computeGreatCircleDistance(this.getPathStartPoint(), this.intercept);
-    }
-
     get ident(): string {
         return 'INTCPT';
     }

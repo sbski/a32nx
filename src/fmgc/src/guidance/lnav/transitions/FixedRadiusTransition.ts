@@ -18,7 +18,7 @@ import { Constants } from '@shared/Constants';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { Geo } from '@fmgc/utils/Geo';
 import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
-import { distanceTo } from 'msfs-geo';
+import { bearingTo, distanceTo, placeBearingDistance } from 'msfs-geo';
 import { FDLeg } from '@fmgc/guidance/lnav/legs/FD';
 import { PathVector, PathVectorType } from '../PathVector';
 import { CFLeg } from '../legs/CF';
@@ -101,7 +101,7 @@ export class FixedRadiusTransition extends Transition {
         const finalBankAngle = Math.max(Math.min(bankAngle, maxBank(tas, true)), minBank(this.nextLeg.segment));
 
         // Turn radius
-        this.radius = ((tas ** 2 / (9.81 * Math.tan(finalBankAngle * Avionics.Utils.DEG2RAD))) / 6997.84) * LnavConfig.TURN_RADIUS_FACTOR;
+        this.radius = ((tas ** 2 / (9.81 * Math.tan(finalBankAngle * MathUtils.DEGREES_TO_RADIANS))) / 6997.84) * LnavConfig.TURN_RADIUS_FACTOR;
 
         // Turn anticipation distance
         this.tad = this.radius * Math.tan(Math.abs(this.sweepAngle / 2) * MathUtils.DEGREES_TO_RADIANS);
@@ -204,10 +204,10 @@ export class FixedRadiusTransition extends Transition {
 
         const [inbound, outbound] = turningPoints;
 
-        const inBearingAc = Avionics.Utils.computeGreatCircleHeading(inbound, ppos);
+        const inBearingAc = bearingTo(inbound, ppos);
         const inHeadingAc = Math.abs(MathUtils.diffAngle(this.previousLeg.outboundCourse, inBearingAc));
 
-        const outBearingAc = Avionics.Utils.computeGreatCircleHeading(outbound, ppos);
+        const outBearingAc = bearingTo(outbound, ppos);
         const outHeadingAc = Math.abs(MathUtils.diffAngle(this.nextLeg.inboundCourse, outBearingAc));
 
         return inHeadingAc <= 90 && outHeadingAc >= 90;
@@ -232,7 +232,7 @@ export class FixedRadiusTransition extends Transition {
         if (!this.getTurningPoints()) {
             return 0;
         }
-        return Avionics.Utils.computeGreatCircleDistance(
+        return distanceTo(
             this.previousLeg.getPathEndPoint(),
             this.getTurningPoints()[0],
         );
@@ -240,28 +240,25 @@ export class FixedRadiusTransition extends Transition {
 
     private turningPoints;
 
-    private computeTurningPoints(): [LatLongAlt, LatLongAlt] {
-        const { lat, long } = this.previousLeg instanceof XFLeg ? this.previousLeg.fix.location : this.previousLeg.intercept;
+    private computeTurningPoints(): [Coordinates, Coordinates] {
+        const coords = this.previousLeg instanceof XFLeg ? this.previousLeg.fix.location : this.previousLeg.intercept;
 
-        const inbound = Avionics.Utils.bearingDistanceToCoordinates(
+        const inbound = placeBearingDistance(
+            coords,
             mod(this.previousLeg.outboundCourse + 180, 360),
             this.tad,
-            lat,
-            long,
         );
 
-        const outbound = Avionics.Utils.bearingDistanceToCoordinates(
+        const outbound = placeBearingDistance(
+            coords,
             this.nextLeg.inboundCourse,
             this.tad,
-            lat,
-            long,
         );
 
-        this.centre = Avionics.Utils.bearingDistanceToCoordinates(
-            Avionics.Utils.clampAngle(this.previousLeg.outboundCourse + (this.clockwise ? 90 : -90)),
+        this.centre = placeBearingDistance(
+            inbound,
+            MathUtils.clampAngle(this.previousLeg.outboundCourse + (this.clockwise ? 90 : -90)),
             this.radius,
-            inbound.lat,
-            inbound.long,
         );
 
         return [inbound, outbound];

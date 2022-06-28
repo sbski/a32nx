@@ -37,7 +37,7 @@ export class AFLeg extends XFLeg {
         this.centre = navaid;
         this.radius = distanceTo(navaid, this.fix.location);
         this.terminationRadial = this.theta;
-        this.bearing = Avionics.Utils.clampAngle(bearingTo(this.centre, this.fix.location) + 90 * this.turnDirectionSign);
+        this.bearing = MathUtils.clampAngle(bearingTo(this.centre, this.fix.location) + 90 * this.turnDirectionSign);
         this.arcStartPoint = placeBearingDistance(this.centre, this.boundaryRadial, this.radius);
         this.arcEndPoint = placeBearingDistance(this.centre, this.terminationRadial, this.radius);
 
@@ -146,17 +146,17 @@ export class AFLeg extends XFLeg {
     }
 
     isAbeam(ppos: Coordinates): boolean {
-        const bearingPpos = Avionics.Utils.computeGreatCircleHeading(
+        const bearingPpos = bearingTo(
             this.centre,
             ppos,
         );
 
-        const bearingFrom = Avionics.Utils.computeGreatCircleHeading(
+        const bearingFrom = bearingTo(
             this.centre,
             this.getPathStartPoint(),
         );
 
-        const trackAngleError = this.clockwise ? Avionics.Utils.diffAngle(bearingFrom, bearingPpos) : Avionics.Utils.diffAngle(bearingPpos, bearingFrom);
+        const trackAngleError = this.clockwise ? MathUtils.diffAngle(bearingFrom, bearingPpos) : MathUtils.diffAngle(bearingPpos, bearingFrom);
 
         return trackAngleError >= 0;
     }

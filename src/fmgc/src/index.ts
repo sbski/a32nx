@@ -9,7 +9,6 @@ import { NavigationDatabase, NavigationDatabaseBackend } from './NavigationDatab
 import { FlightPlanManager } from './flightplanning/FlightPlanManager';
 import { FlightPhaseManager, getFlightPhaseManager } from './flightphase';
 import { FlightPlanAsoboSync } from './flightplanning/FlightPlanAsoboSync';
-import { GuidanceManager } from './guidance/GuidanceManager';
 import { GuidanceController } from './guidance/GuidanceController';
 import { NavRadioManager } from './radionav/NavRadioManager';
 import { EfisSymbols } from './efis/EfisSymbols';
@@ -40,7 +39,6 @@ export {
     getFlightPhaseManager,
     FlightPlanManager,
     FlightPlanAsoboSync,
-    GuidanceManager,
     GuidanceController,
     NavRadioManager,
     initFmgcLoop,

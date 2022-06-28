@@ -13,7 +13,7 @@ import { Transition } from '@fmgc/guidance/lnav/Transition';
 import { Geo } from '@fmgc/utils/Geo';
 import { FixedRadiusTransition } from '@fmgc/guidance/lnav/transitions/FixedRadiusTransition';
 import { DmeArcTransition } from '@fmgc/guidance/lnav/transitions/DmeArcTransition';
-import { bearingTo, distanceTo } from 'msfs-geo';
+import { placeBearingDistance } from 'msfs-geo';
 import { MathUtils } from '@shared/MathUtils';
 import { Waypoint } from 'msfs-navdata';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
@@ -57,7 +57,7 @@ export class CFLeg extends XFLeg {
      * @private
      */
     private estimateStartWithoutInboundTransition(): Coordinates {
-        const inverseCourse = Avionics.Utils.clampAngle(this.course + 180);
+        const inverseCourse = MathUtils.clampAngle(this.course + 180);
 
         if (this.inboundGuidable && this.inboundGuidable.isComputed) {
             const prevLegTerm = this.inboundGuidable.getPathEndPoint();
@@ -66,7 +66,7 @@ export class CFLeg extends XFLeg {
                 this.getPathEndPoint(),
                 prevLegTerm,
                 inverseCourse,
-                Avionics.Utils.clampAngle(inverseCourse + 90),
+                MathUtils.clampAngle(inverseCourse + 90),
             );
         }
 
@@ -76,11 +76,10 @@ export class CFLeg extends XFLeg {
             distance = this.outboundGuidable.tad + 0.1;
         }
 
-        return Avionics.Utils.bearingDistanceToCoordinates(
+        return placeBearingDistance(
+            this.fix.location,
             inverseCourse,
             distance,
-            this.fix.location.lat,
-            this.fix.location.long,
         );
     }
 

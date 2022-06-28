@@ -11,9 +11,10 @@ import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { courseToFixDistanceToGo, fixToFixGuidance } from '@fmgc/guidance/lnav/CommonGeometry';
 import { Transition } from '@fmgc/guidance/lnav/Transition';
 import { Leg } from '@fmgc/guidance/lnav/legs/Leg';
-import { bearingTo } from 'msfs-geo';
+import { bearingTo, placeBearingDistance } from 'msfs-geo';
 import { Waypoint } from 'msfs-navdata';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
+import { MathUtils } from '@shared/MathUtils';
 import { PathVector, PathVectorType } from '../PathVector';
 
 export class DFLeg extends XFLeg {
@@ -47,15 +48,14 @@ export class DFLeg extends XFLeg {
             bearing = this.outboundGuidable.inboundCourse + 180;
         }
 
-        bearing = Avionics.Utils.clampAngle(bearing);
+        bearing = MathUtils.clampAngle(bearing);
 
         const coordinates = this.fix.location;
 
-        return Avionics.Utils.bearingDistanceToCoordinates(
+        return placeBearingDistance(
+            coordinates,
             bearing,
             2,
-            coordinates.lat,
-            coordinates.long,
         );
     }
 

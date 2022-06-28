@@ -3,14 +3,12 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { FlightPlanManager } from '@fmgc/flightplanning/FlightPlanManager';
 import { EfisOption, Mode, NdSymbol, NdSymbolTypeFlags, RangeSetting, rangeSettings } from '@shared/NavigationDisplay';
-import { GuidanceManager } from '@fmgc/guidance/GuidanceManager';
 import { Coordinates } from '@fmgc/flightplanning/data/geo';
 import { Geometry } from '@fmgc/guidance/Geometry';
 import { GuidanceController } from '@fmgc/guidance/GuidanceController';
 import { PathVector, PathVectorType } from '@fmgc/guidance/lnav/PathVector';
-import { distanceTo } from 'msfs-geo';
+import { bearingTo, distanceTo } from 'msfs-geo';
 import { FlowEventSync } from '@shared/FlowEventSync';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { FlightPlanService } from '@fmgc/flightplanning/new/FlightPlanService';
@@ -25,8 +23,6 @@ export class EfisSymbols {
     private blockUpdate = false;
 
     private guidanceController: GuidanceController;
-
-    private guidanceManager: GuidanceManager;
 
     private nearby: NearbyFacilities;
 
@@ -50,9 +46,8 @@ export class EfisSymbols {
 
     private lastFpVersion;
 
-    constructor(flightPlanManager: FlightPlanManager, guidanceController: GuidanceController) {
+    constructor(guidanceController: GuidanceController) {
         this.guidanceController = guidanceController;
-        this.guidanceManager = guidanceController.guidanceManager;
         this.nearby = new NearbyFacilities();
     }
 
@@ -74,11 +69,12 @@ export class EfisSymbols {
         };
         const trueHeading = SimVar.GetSimVarValue('PLANE HEADING DEGREES TRUE', 'degrees');
 
-        const pposChanged = Avionics.Utils.computeDistance(this.lastPpos, ppos) > 2;
+        // TODO planar distance in msfs-geo
+        const pposChanged = distanceTo(this.lastPpos, ppos) > 2;
         if (pposChanged) {
             this.lastPpos = ppos;
         }
-        const trueHeadingChanged = Avionics.Utils.diffAngle(trueHeading, this.lastTrueHeading) > 2;
+        const trueHeadingChanged = MathUtils.diffAngle(trueHeading, this.lastTrueHeading) > 2;
         if (trueHeadingChanged) {
             this.lastTrueHeading = trueHeading;
         }
@@ -164,10 +160,10 @@ export class EfisSymbols {
                     return true;
                 }
 
-                const dist = Avionics.Utils.computeGreatCircleDistance(mode === Mode.PLAN ? termination : ppos, ll);
-                let bearing = Avionics.Utils.computeGreatCircleHeading(mode === Mode.PLAN ? termination : ppos, ll);
+                const dist = distanceTo(mode === Mode.PLAN ? termination : ppos, ll);
+                let bearing = bearingTo(mode === Mode.PLAN ? termination : ppos, ll);
                 if (mode !== Mode.PLAN) {
-                    bearing = Avionics.Utils.clampAngle(bearing - trueHeading);
+                    bearing = MathUtils.clampAngle(bearing - trueHeading);
                 }
                 bearing = bearing * Math.PI / 180;
                 const dx = dist * Math.sin(bearing);
