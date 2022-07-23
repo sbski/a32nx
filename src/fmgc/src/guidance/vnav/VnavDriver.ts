@@ -10,6 +10,7 @@ import { RequestedVerticalMode, TargetAltitude, TargetVerticalSpeed } from '@fmg
 import { AtmosphericConditions } from '@fmgc/guidance/vnav/AtmosphericConditions';
 import { VerticalMode } from '@shared/autopilot';
 import { CoarsePredictions } from '@fmgc/guidance/vnav/CoarsePredictions';
+import { FinalAppGuidance } from '@fmgc/guidance/vnav/FinalApp';
 import { FlightPlans } from '@fmgc/flightplanning/FlightPlanManager';
 import { Geometry } from '../Geometry';
 import { GuidanceComponent } from '../GuidanceComponent';
@@ -31,12 +32,15 @@ export class VnavDriver implements GuidanceComponent {
 
     private targetAltitude: TargetAltitude;
 
+    private finalAppGuidance: FinalAppGuidance;
+
     // eslint-disable-next-line camelcase
     private coarsePredictionsUpdate = new A32NX_Util.UpdateThrottler(5000);
 
     constructor(
         private readonly guidanceController: GuidanceController,
     ) {
+        this.finalAppGuidance = new FinalAppGuidance();
     }
 
     init(): void {
@@ -84,6 +88,7 @@ export class VnavDriver implements GuidanceComponent {
 
             this.guidanceController.pseudoWaypoints.acceptVerticalProfile();
         } else if (DEBUG) {
+            // TODO this should erase the profile??!
             console.warn('[FMS/VNAV] Did not compute vertical profile. Reason: no legs in flight plan.');
         }
     }
@@ -124,6 +129,20 @@ export class VnavDriver implements GuidanceComponent {
             const holdSpeedTas = this.atmosphericConditions.computeTasFromCas(this.atmosphericConditions.currentAltitude, holdSpeedCas);
 
             this.guidanceController.setHoldSpeed(holdSpeedTas);
+        }
+
+        const verticalMode: VerticalMode = SimVar.GetSimVarValue('L:A32NX_FMA_VERTICAL_MODE', 'enum');
+
+        this.finalAppGuidance.update(this.currentApproachProfile, this.guidanceController, verticalMode === VerticalMode.FINAL);
+
+        if (verticalMode === VerticalMode.FINAL) {
+            newGuidanceMode = RequestedVerticalMode.VpathSpeed;
+            const params = this.finalAppGuidance.getGuidanceParameters(
+                this.currentApproachProfile,
+                this.guidanceController,
+            );
+            newAltitude = params.targetAltitude;
+            newVerticalSpeed = params.targetVerticalSpeed;
         }
 
         if (newGuidanceMode !== this.guidanceMode) {
