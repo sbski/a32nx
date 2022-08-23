@@ -1996,4 +1996,13 @@ export class FlightPlanManager {
 
         return FlightArea.Enroute;
     }
+
+    public tryAddStepAltitude(waypointIdent: string, toAltitude: Feet): boolean {
+        if (this._flightPlans[this._currentFlightPlanIndex].tryAddStepAltitude(waypointIdent, toAltitude)) {
+            this.updateFlightPlanVersion().catch(console.error);
+            return true;
+        }
+
+        return false;
+    }
 }
