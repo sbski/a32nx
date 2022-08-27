@@ -86,6 +86,7 @@ export class DestinationSegment extends FlightPlanSegment {
     clone(forPlan: BaseFlightPlan): DestinationSegment {
         const newSegment = new DestinationSegment(forPlan);
 
+        newSegment.strung = this.strung;
         newSegment.allLegs = [...this.allLegs];
         newSegment.airport = this.airport;
         newSegment.runway = this.runway;
