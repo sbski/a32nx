@@ -2892,6 +2892,7 @@ class FMCMainDisplay extends BaseAirliners {
                         this.clearAutotunedIls();
                         this.tempFpPendingAutoTune = false;
                     }
+                    this.guidanceController.vnavDriver.invalidateFlightPlanProfile();
                     callback();
                 });
             }).catch(console.error);
