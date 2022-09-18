@@ -92,7 +92,7 @@ export namespace GeometryFactory {
 
         let runningMagvar = 0;
 
-        for (let i = flightPlan.activeLegIndex - 1; i < flightPlan.legCount; i++) {
+        for (let i = 0; i < flightPlan.legCount; i++) {
             const oldLeg = geometry.legs.get(i);
 
             const previousPlanLeg = flightPlan.allLegs[i - 1];
@@ -105,6 +105,12 @@ export namespace GeometryFactory {
 
                 // TODO very sussy... declination/variation does not work like this for terminal procedures
                 runningMagvar = getFacilities().getMagVar(fixLocation.lat, fixLocation.long);
+            }
+
+            // We start at 0 in the loop because we wanna still update runningMagvar from the start of the plan. This avoids changes in leg true courses
+            // that can cause unwanted re-creation of new legs.
+            if (i < flightPlan.activeLegIndex - 1) {
+                continue;
             }
 
             let nextLeg: Leg;
@@ -130,6 +136,7 @@ export namespace GeometryFactory {
 
                 if (oldLeg instanceof XFLeg && newLeg instanceof XFLeg) {
                     oldLeg.fix = newLeg.fix;
+                    oldLeg.metadata = newLeg.metadata;
                 }
 
                 const prevLeg = geometry.legs.get(i - 1);

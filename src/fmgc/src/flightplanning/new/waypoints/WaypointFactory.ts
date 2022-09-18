@@ -3,15 +3,15 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { Airport, Location, Runway, Waypoint, WaypointArea } from 'msfs-navdata';
-import { placeBearingDistance } from 'msfs-geo';
+import { Airport, Runway, Waypoint, WaypointArea } from 'msfs-navdata';
+import { Coordinates, placeBearingDistance } from 'msfs-geo';
 import { runwayIdent } from '@fmgc/flightplanning/new/legs/FlightPlanLegNaming';
 
 export namespace WaypointFactory {
 
     export function fromLocation(
         ident: string,
-        location: Location,
+        location: Coordinates,
     ): Waypoint {
         return {
             databaseId: `X      ${ident.padEnd(5, ' ')}`,
@@ -24,13 +24,11 @@ export namespace WaypointFactory {
 
     export function fromWaypointLocationAndDistanceBearing(
         ident: string,
-        location: Location,
+        location: Coordinates,
         distance: NauticalMiles,
         bearing: DegreesTrue,
     ): Waypoint {
-        const loc = placeBearingDistance(location, bearing, distance);
-
-        const point: Location = { lat: loc.lat, lon: loc.long };
+        const point = placeBearingDistance(location, bearing, distance);
 
         return {
             databaseId: 'X      CF   ',

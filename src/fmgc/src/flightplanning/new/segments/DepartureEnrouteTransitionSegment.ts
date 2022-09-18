@@ -54,7 +54,6 @@ export class DepartureEnrouteTransitionSegment extends FlightPlanSegment {
     clone(forPlan: BaseFlightPlan): DepartureEnrouteTransitionSegment {
         const newSegment = new DepartureEnrouteTransitionSegment(forPlan);
 
-        newSegment.strung = this.strung;
         newSegment.allLegs = [...this.allLegs];
         newSegment.departureEnrouteTransition = this.departureEnrouteTransition;
 

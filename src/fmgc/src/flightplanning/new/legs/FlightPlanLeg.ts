@@ -4,15 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { Coordinates } from 'msfs-geo';
-import {
-    Airport,
-    LegType,
-    ProcedureLeg,
-    Runway,
-    Waypoint,
-    WaypointArea,
-    WaypointDescriptor,
-} from 'msfs-navdata';
+import { Airport, LegType, ProcedureLeg, Runway, Waypoint, WaypointArea, WaypointDescriptor } from 'msfs-navdata';
 import { FlightPlanLegDefinition } from '@fmgc/flightplanning/new/legs/FlightPlanLegDefinition';
 import { procedureLegIdentAndAnnotation } from '@fmgc/flightplanning/new/legs/FlightPlanLegNaming';
 import { WaypointFactory } from '@fmgc/flightplanning/new/waypoints/WaypointFactory';
@@ -45,12 +37,18 @@ export class FlightPlanLeg {
     }
 
     /**
-     * Determines whether this leg is a fix-terminating leg (AF, CF, DF, RF, TF)
+     * Determines whether this leg is a fix-terminating leg (AF, CF, IF, DF, RF, TF, HF)
      */
     isXF() {
         const legType = this.definition.type;
 
-        return legType === LegType.AF || legType === LegType.CF || legType === LegType.IF || legType === LegType.DF || legType === LegType.RF || legType === LegType.TF;
+        return legType === LegType.AF
+            || legType === LegType.CF
+            || legType === LegType.IF
+            || legType === LegType.DF
+            || legType === LegType.RF
+            || legType === LegType.TF
+            || legType === LegType.HF;
     }
 
     isFX() {
@@ -66,7 +64,7 @@ export class FlightPlanLeg {
     }
 
     isRunway() {
-        return this.waypointDescriptor === WaypointDescriptor.Runway;
+        return this.definition.waypointDescriptor === WaypointDescriptor.Runway;
     }
 
     /**
@@ -90,7 +88,8 @@ export class FlightPlanLeg {
             return false;
         }
 
-        return this.definition.waypoint.databaseId === waypoint.databaseId;
+        // FIXME use databaseId when tracer fixes it
+        return this.definition.waypoint.ident === waypoint.ident && this.definition.waypoint.icaoCode === waypoint.icaoCode;
     }
 
     static turningPoint(segment: EnrouteSegment, location: Coordinates): FlightPlanLeg {
@@ -108,6 +107,14 @@ export class FlightPlanLeg {
             waypoint: WaypointFactory.fromWaypointLocationAndDistanceBearing('', location, 0.1, bearing),
             length: 0.1 * 1852, // 0.1 NM in metres
         }, '', '', undefined, undefined, false);
+    }
+
+    static directToTurnEnd(segment: EnrouteSegment, targetWaypoint: Waypoint): FlightPlanLeg {
+        return new FlightPlanLeg(segment, {
+            type: LegType.DF,
+            overfly: false,
+            waypoint: targetWaypoint,
+        }, targetWaypoint.ident, '', undefined, undefined, false);
     }
 
     static fromProcedureLeg(segment: FlightPlanSegment, procedureLeg: ProcedureLeg, procedureIdent: string): FlightPlanLeg {
@@ -138,7 +145,7 @@ export class FlightPlanLeg {
     }
 
     static originExtendedCenterline(segment: FlightPlanSegment, runwayLeg: FlightPlanLeg): FlightPlanLeg {
-        const altitude = runwayLeg.definition.waypoint.location.alt + 1500;
+        const altitude = runwayLeg.definition.altitude1 ? runwayLeg.definition.altitude1 + 1500 : 1500;
 
         // TODO magvar
         const annotation = runwayLeg.ident.substring(0, 3) + Math.round(runwayLeg.definition.magneticCourse).toString().padStart(3, '0');
@@ -173,7 +180,7 @@ export class FlightPlanLeg {
             type: LegType.TF,
             overfly: false,
             waypoint,
-        }, waypoint.ident, '', airwayIdent, undefined, false);
+        }, waypoint.ident, airwayIdent ?? '', airwayIdent, undefined, false);
     }
 }
 

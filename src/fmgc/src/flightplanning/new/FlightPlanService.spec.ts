@@ -11,11 +11,13 @@ import { assertDiscontinuity, assertNotDiscontinuity } from '@fmgc/flightplannin
 import { setupNavigraphDatabase } from '@fmgc/flightplanning/new/test/Database';
 import { placeBearingDistance } from 'msfs-geo';
 import { dumpFlightPlan } from '@fmgc/flightplanning/new/test/FlightPlan';
-import { FmgcFlightPhase } from '@shared/flightphase';
+import { LegType } from 'msfs-navdata';
 
 if (!globalThis.fetch) {
     globalThis.fetch = fetch;
 }
+
+jest.setTimeout(120_000);
 
 describe('the flight plan service', () => {
     beforeEach(() => {
@@ -86,11 +88,9 @@ describe('the flight plan service', () => {
 
                 expect(leg4.ident).toEqual('ERBUS');
 
-                assertDiscontinuity(FlightPlanService.active.allLegs[5]);
+                const leg5 = assertNotDiscontinuity(FlightPlanService.active.allLegs[5]);
 
-                const leg6 = assertNotDiscontinuity(FlightPlanService.active.allLegs[6]);
-
-                expect(leg6.ident).toEqual('DULPA');
+                expect(leg5.ident).toEqual('DULPA');
             });
         });
 
@@ -112,11 +112,46 @@ describe('the flight plan service', () => {
 
                 const targetWaypoint = await loadSingleWaypoint('NUGOP', 'WCY    NUGOP');
 
-                FlightPlanService.directTo({ lat: ppos.lat, lon: ppos.long }, runway.bearing, targetWaypoint);
+                FlightPlanService.directTo(ppos, runway.bearing, targetWaypoint);
 
                 FlightPlanService.temporaryInsert();
 
-                console.log(dumpFlightPlan(FlightPlanService.active));
+                const leg1 = assertNotDiscontinuity(FlightPlanService.activeOrTemporary.legElementAt(1));
+
+                expect(leg1.definition.type).toBe(LegType.IF);
+                expect(leg1.ident).toBe('T-P');
+
+                const leg2 = assertNotDiscontinuity(FlightPlanService.activeOrTemporary.legElementAt(2));
+
+                expect(leg2.definition.type).toBe(LegType.FD);
+
+                const leg3 = assertNotDiscontinuity(FlightPlanService.activeOrTemporary.legElementAt(3));
+
+                expect(leg3.definition.type).toBe(LegType.DF);
+                expect(leg3.definition.waypoint.ident).toBe('NUGOP');
+            });
+        });
+
+        describe('set overfly', () => {
+            beforeEach(async () => {
+                await FlightPlanService.newCityPair('CYYZ', 'CYVR');
+
+                await FlightPlanService.setOriginRunway('RW06R');
+                await FlightPlanService.setDepartureProcedure('AVSEP6');
+
+                FlightPlanService.temporaryInsert();
+            });
+
+            test('toggling an overfly on DUVKO', async () => {
+                FlightPlanService.setOverfly(4, true);
+
+                const leg = assertNotDiscontinuity(FlightPlanService.active.elementAt(4));
+
+                expect(leg.definition.overfly).toBeTruthy();
+
+                FlightPlanService.setOverfly(4, false);
+
+                expect(leg.definition.overfly).toBeFalsy();
             });
         });
     });

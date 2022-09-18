@@ -285,8 +285,9 @@ class CDUFlightPlanPage {
                     }
                 } else if (fpIndex === targetPlan.originLegIndex) {
                     if (wp.isRunway()) {
-                        ident = `${targetPlan.originAirport.ident}${wp.ident.substring(2)}`;
-                        const runway = targetPlan.availableOriginRunways.find((it) => it.ident === wp.ident);
+                        const runway = targetPlan.originRunway;
+
+                        ident = `${targetPlan.originAirport.ident}${runway.ident.substring(2)}`;
                         altitudeConstraint = `{big}${formatAlt(runway.thresholdLocation.alt)}{end}`;
                         altColor = color;
                     } else {
@@ -356,15 +357,9 @@ class CDUFlightPlanPage {
                                     CDUFlightPlanPage.clearElement(mcdu, fpIndex, offset, scratchpadCallback);
                                     break;
                                 case FMCMainDisplay.ovfyValue:
-                                    if (wp.additionalData.overfly) {
-                                        mcdu.removeWaypointOverfly(fpIndex, () => {
-                                            CDUFlightPlanPage.ShowPage(mcdu, offset);
-                                        }, !mcdu.flightPlanService.hasTemporary);
-                                    } else {
-                                        mcdu.addWaypointOverfly(fpIndex, () => {
-                                            CDUFlightPlanPage.ShowPage(mcdu, offset);
-                                        }, !mcdu.flightPlanService.hasTemporary);
-                                    }
+                                    mcdu.toggleWaypointOverfly(fpIndex, () => {
+                                        CDUFlightPlanPage.ShowPage(mcdu, offset);
+                                    });
                                     break;
                                 default:
                                     if (value.length > 0) {

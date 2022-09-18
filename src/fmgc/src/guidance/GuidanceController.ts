@@ -351,7 +351,7 @@ export class GuidanceController {
         this.updateEfisIdent();
 
         this.geometryRecomputationTimer = 0;
-        this.vnavDriver.acceptMultipleLegGeometry(this.activeGeometry);
+        // this.vnavDriver.acceptMultipleLegGeometry(this.activeGeometry);
         this.pseudoWaypoints.acceptMultipleLegGeometry(this.activeGeometry);
     }
 

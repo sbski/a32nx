@@ -218,10 +218,9 @@ class FMCMainDisplay extends BaseAirliners {
 
         this.dataManager = new FMCDataManager(this);
 
-        this.guidanceManager = new Fmgc.GuidanceManager(this.flightPlanManager);
-        this.guidanceController = new Fmgc.GuidanceController(this.flightPlanManager, this.guidanceManager, this);
+        this.guidanceController = new Fmgc.GuidanceController();
         this.navRadioManager = new Fmgc.NavRadioManager(this);
-        this.efisSymbols = new Fmgc.EfisSymbols(this.flightPlanManager, this.guidanceController);
+        this.efisSymbols = new Fmgc.EfisSymbols(this.guidanceController);
         this.navigation = new Fmgc.Navigation(this.flightPlanManager);
 
         Fmgc.initFmgcLoop(this, this.flightPlanManager);
@@ -584,10 +583,10 @@ class FMCMainDisplay extends BaseAirliners {
         this.navRadioManager.update(_deltaTime, this.manualNavTuning, this.backupNavTuning);
 
         // this.flightPlanManager.update(_deltaTime);
-        // const flightPlanChanged = this.flightPlanService.version.currentFlightPlanVersion !== this.lastFlightPlanVersion;
-        // if (flightPlanChanged) {
-        //     this.lastFlightPlanVersion = this.flightPlanManager.currentFlightPlanVersion;
-        // }
+        const flightPlanChanged = this.flightPlanService.version !== this.lastFlightPlanVersion;
+        if (flightPlanChanged) {
+            this.lastFlightPlanVersion = this.flightPlanService.version;
+        }
 
         Fmgc.updateFmgcLoop(_deltaTime);
 
@@ -2792,32 +2791,14 @@ class FMCMainDisplay extends BaseAirliners {
         }
     }
 
-    addWaypointOverfly(index, callback = EmptyCallback.Void, immediately = false) {
-        if (immediately) {
-            if (this.flightPlanManager.isCurrentFlightPlanTemporary()) {
-                this.setScratchpadMessage(NXSystemMessages.notAllowed);
-                return callback(false);
-            }
-            this.flightPlanManager.addWaypointOverfly(index, true, callback);
-        } else {
-            this.ensureCurrentFlightPlanIsTemporary(() => {
-                this.flightPlanManager.addWaypointOverfly(index, true, callback);
-            });
+    toggleWaypointOverfly(index, callback = EmptyCallback.Void) {
+        if (this.flightPlanService.hasTemporary) {
+            this.setScratchpadMessage(NXSystemMessages.notAllowed);
+            return callback(false);
         }
-    }
 
-    removeWaypointOverfly(index, callback = EmptyCallback.Void, immediately = false) {
-        if (immediately) {
-            if (this.flightPlanManager.isCurrentFlightPlanTemporary()) {
-                this.setScratchpadMessage(NXSystemMessages.notAllowed);
-                return callback(false);
-            }
-            this.flightPlanManager.removeWaypointOverfly(index, true, callback);
-        } else {
-            this.ensureCurrentFlightPlanIsTemporary(() => {
-                this.flightPlanManager.removeWaypointOverfly(index, true, callback);
-            });
-        }
+        this.flightPlanService.toggleOverfly(index);
+        callback();
     }
 
     clearDiscontinuity(index, callback = EmptyCallback.Void, immediately = false) {

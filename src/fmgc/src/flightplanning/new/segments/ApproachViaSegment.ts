@@ -55,7 +55,6 @@ export class ApproachViaSegment extends FlightPlanSegment {
     clone(forPlan: BaseFlightPlan): ApproachViaSegment {
         const newSegment = new ApproachViaSegment(forPlan);
 
-        newSegment.strung = this.strung;
         newSegment.allLegs = [...this.allLegs];
         newSegment.approachVia = this.approachVia;
 

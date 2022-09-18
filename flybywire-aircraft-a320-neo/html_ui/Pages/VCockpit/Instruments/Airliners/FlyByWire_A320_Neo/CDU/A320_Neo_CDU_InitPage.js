@@ -75,7 +75,9 @@ class CDUInitPage {
 
         if (origin) {
             if (dest) {
-                fromTo.upoate(origin.ident + "/" + dest.ident + "[color]cyan");
+                fromTo.update(origin.ident + "/" + dest.ident);
+                fromTo.color = Column.cyan;
+
                 if (coRoute.raw.includes("__________[color]amber")) {
                     coRoute.text = "";
                 }

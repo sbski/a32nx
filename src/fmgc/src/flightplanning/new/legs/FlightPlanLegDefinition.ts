@@ -9,11 +9,8 @@ import {
     SpeedDescriptor,
     TurnDirection, WaypointDescriptor,
 } from 'msfs-navdata/dist/shared/types/ProcedureLeg';
-import { Waypoint } from 'msfs-navdata';
-import { VhfNavaid } from 'msfs-navdata/dist/shared/types/VhfNavaid';
-import { NdbNavaid } from 'msfs-navdata/dist/shared/types/NdbNavaid';
-import { DegreesMagnetic, Feet, Knots, Minutes, NauticalMiles } from 'msfs-navdata/dist/shared/types/Common';
-import { Degrees } from 'msfs-navdata/dist/shared';
+import { Waypoint, VhfNavaid, NdbNavaid } from 'msfs-navdata';
+import { Minutes } from 'msfs-geo';
 
 export interface FlightPlanLegDefinition {
     /**

@@ -376,7 +376,7 @@ export class EfisSymbols {
                     const isCourseReversal = wp.type === LegType.HA
                         || wp.type === LegType.HF
                         || wp.type === LegType.HM
-                        || wp.additionalData.legType === LegType.PI;
+                        || wp.type === LegType.PI;
 
                     if (i === activeFp.activeLegIndex) {
                         type |= NdSymbolTypeFlags.ActiveLegTermination;

@@ -10,11 +10,11 @@ import {
     Departure,
     LegType,
     ProcedureTransition,
-    Runway,
+    Runway, Waypoint,
     WaypointDescriptor,
 } from 'msfs-navdata';
 import { OriginSegment } from '@fmgc/flightplanning/new/segments/OriginSegment';
-import { FlightPlanElement } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
+import { FlightPlanElement, FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { DepartureSegment } from '@fmgc/flightplanning/new/segments/DepartureSegment';
 import { ArrivalSegment } from '@fmgc/flightplanning/new/segments/ArrivalSegment';
 import { ApproachSegment } from '@fmgc/flightplanning/new/segments/ApproachSegment';
@@ -133,22 +133,12 @@ export abstract class BaseFlightPlan {
         return this.originSegment.allLegs[0];
     }
 
+    get originLegIndex() {
+        return this.originSegment.allLegs.length > 0 ? 0 : -1;
+    }
+
     get destinationLeg() {
         return this.elementAt(this.destinationLegIndex);
-    }
-
-    get endsAtRunway() {
-        if (this.approachSegment.allLegs.length === 0) {
-            return true;
-        }
-
-        const lastApproachLeg = this.approachSegment.allLegs[this.approachSegment.allLegs.length - 1];
-
-        return lastApproachLeg && lastApproachLeg.isDiscontinuity === false && lastApproachLeg.definition.waypointDescriptor === WaypointDescriptor.Runway;
-    }
-
-    get originLegIndex() {
-        return 0;
     }
 
     get destinationLegIndex() {
@@ -174,6 +164,16 @@ export abstract class BaseFlightPlan {
         return accumulator - 1;
     }
 
+    get endsAtRunway() {
+        if (this.approachSegment.allLegs.length === 0) {
+            return true;
+        }
+
+        const lastApproachLeg = this.approachSegment.allLegs[this.approachSegment.allLegs.length - 1];
+
+        return lastApproachLeg && lastApproachLeg.isDiscontinuity === false && lastApproachLeg.definition.waypointDescriptor === WaypointDescriptor.Runway;
+    }
+
     get lastLegIndex() {
         return this.legCount - 1;
     }
@@ -190,6 +190,16 @@ export abstract class BaseFlightPlan {
         }
 
         return legs[index];
+    }
+
+    legElementAt(index: number): FlightPlanLeg {
+        const element = this.elementAt(index);
+
+        if (element.isDiscontinuity === true) {
+            throw new Error('[FMS/FPM] element was not a leg');
+        }
+
+        return element;
     }
 
     maybeElementAt(index: number): FlightPlanElement {
@@ -493,7 +503,7 @@ export abstract class BaseFlightPlan {
         this.incrementVersion();
 
         this.adjustIFLegs();
-        this.redistributeLegsAt(index + 1);
+        this.redistributeLegsAt(index);
 
         this.incrementVersion();
 
@@ -507,7 +517,7 @@ export abstract class BaseFlightPlan {
      *
      * @private
      */
-    private segmentPositionForIndex(index: number): [segment: FlightPlanSegment, indexInSegment: number] {
+    segmentPositionForIndex(index: number): [segment: FlightPlanSegment, indexInSegment: number] {
         if (index < 0) {
             throw new Error('[FMS/FPM] Tried to get segment for out-of-bounds index');
         }
@@ -522,6 +532,86 @@ export abstract class BaseFlightPlan {
         }
 
         throw new Error('[FMS/FPM] Tried to get segment for out-of-bounds index');
+    }
+
+    insertElementAfter(index: number, element: FlightPlanElement, insertDiscontinuity = false) {
+        if (index < 0 || index > this.allLegs.length) {
+            throw new Error(`[FMS/FPM] Tried to insert waypoint out of bounds (index=${index})`);
+        }
+
+        let startSegment;
+        let indexInStartSegment;
+
+        if (this.legCount > 0) {
+            [startSegment, indexInStartSegment] = this.segmentPositionForIndex(index);
+        } else {
+            startSegment = this.enrouteSegment;
+            indexInStartSegment = 0;
+        }
+
+        startSegment.insertAfter(indexInStartSegment, element);
+
+        if (insertDiscontinuity) {
+            startSegment.insertAfter(indexInStartSegment + 1, { isDiscontinuity: true });
+
+            this.incrementVersion();
+            return;
+        }
+
+        if (element.isDiscontinuity === false && element.isXF()) {
+            const duplicate = this.findDuplicate(element.terminationWaypoint(), index + 1);
+
+            if (duplicate) {
+                const [,, duplicatePlanIndex] = duplicate;
+
+                this.removeRange(index + 2, duplicatePlanIndex + 1);
+            }
+        }
+
+        this.incrementVersion();
+        this.redistributeLegsAt(index + 1);
+    }
+
+    setOverflyAt(index: number, overfly: boolean): void {
+        const leg = this.legElementAt(index);
+
+        leg.definition.overfly = overfly;
+
+        this.incrementVersion();
+    }
+
+    toggleOverflyAt(index: number): void {
+        const leg = this.legElementAt(index);
+
+        leg.definition.overfly = !leg.definition.overfly;
+
+        this.incrementVersion();
+    }
+
+    private findDuplicate(waypoint: Waypoint, afterIndex?: number): [FlightPlanSegment, number, number] | null {
+        // There is never gonna be a duplicate in the origin
+
+        let indexAccumulator = 0;
+
+        for (const segment of this.orderedSegments) {
+            indexAccumulator += segment.allLegs.length;
+
+            if (indexAccumulator > afterIndex) {
+                const dupeIndexInSegment = segment.findIndexOfWaypoint(waypoint, afterIndex - (indexAccumulator - segment.allLegs.length));
+
+                const planIndex = indexAccumulator - segment.allLegs.length + dupeIndexInSegment;
+
+                if (planIndex <= afterIndex) {
+                    continue;
+                }
+
+                if (dupeIndexInSegment !== -1) {
+                    return [segment, dupeIndexInSegment, planIndex];
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -570,6 +660,7 @@ export abstract class BaseFlightPlan {
             for (const element of toInsertInEnroute) {
                 if (element.isDiscontinuity === false) {
                     element.annotation = 'TRUNC D';
+                    element.segment = this.enrouteSegment;
                 }
             }
 
@@ -706,14 +797,7 @@ export abstract class BaseFlightPlan {
                 if (element.terminatesWithWaypoint(lastLegInFirst.terminationWaypoint())) {
                     // Transfer leg type from lastLegInFirst definition onto element
                     element.type = lastLegInFirst.definition.type;
-                    // FIXME merge alt and speed constraints properly
-                    const altDesc = element.definition.altitudeDescriptor;
-                    const alt1 = element.definition.altitude1;
-                    const alt2 = element.definition.altitude2;
                     Object.assign(element.definition, lastLegInFirst.definition);
-                    element.definition.altitudeDescriptor = altDesc;
-                    element.definition.altitude1 = alt1;
-                    element.definition.altitude2 = alt2;
 
                     // FIXME carry procedure ident from second segment
                     [element.ident, element.annotation] = procedureLegIdentAndAnnotation(element.definition, '');
@@ -811,6 +895,40 @@ export abstract class BaseFlightPlan {
             await this.arrivalEnrouteTransitionSegment.setArrivalEnrouteTransition(this.arrivalEnrouteTransition.ident);
         }
 
-        await this.destinationSegment.refresh();
+        await this.destinationSegment.refresh(false);
+    }
+
+    public removeRange(start: number, end: number) {
+        const [startSegment, indexInStartSegment] = this.segmentPositionForIndex(start);
+        const [endSegment, indexInEndSegment] = this.segmentPositionForIndex(end);
+
+        if (!startSegment || !endSegment) {
+            throw new Error('[FMS/FPM] Range out of bounds');
+        }
+
+        if (startSegment === endSegment) {
+            startSegment.removeRange(indexInStartSegment, indexInEndSegment);
+        } else {
+            let startFound = false;
+            for (const segment of this.orderedSegments) {
+                if (!startFound && segment !== startSegment) {
+                    continue;
+                }
+
+                if (segment === startSegment) {
+                    startFound = true;
+
+                    segment.removeAfter(indexInStartSegment);
+                    continue;
+                }
+
+                if (segment === endSegment) {
+                    segment.removeBefore(indexInEndSegment);
+                    return;
+                }
+
+                segment.allLegs.length = 0;
+            }
+        }
     }
 }

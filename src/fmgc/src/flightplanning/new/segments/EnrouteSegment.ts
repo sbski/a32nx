@@ -25,7 +25,6 @@ export class EnrouteSegment extends FlightPlanSegment {
     clone(forPlan: BaseFlightPlan): EnrouteSegment {
         const newSegment = new EnrouteSegment(forPlan);
 
-        newSegment.strung = this.strung;
         newSegment.allLegs = [...this.allLegs];
 
         return newSegment;

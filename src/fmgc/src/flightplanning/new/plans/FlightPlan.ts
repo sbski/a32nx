@@ -3,13 +3,12 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { Airport, Waypoint } from 'msfs-navdata';
+import { Airport } from 'msfs-navdata';
 import { FlightPlanDefinition } from '@fmgc/flightplanning/new/FlightPlanDefinition';
-import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanSegment';
 import { AlternateFlightPlan } from '@fmgc/flightplanning/new/plans/AlternateFlightPlan';
-import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
-import { FlightPlanElement } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
-import { FlightPlanPerformanceData } from '@fmgc/flightplanning/new/plans/performance/FlightPlanPerformanceData';
+import { PendingAirways } from '@fmgc/flightplanning/new/plans/PendingAirways';
+import { FlightPlanPerformanceData } from './performance/FlightPlanPerformanceData';
+import { BaseFlightPlan } from './BaseFlightPlan';
 
 export class FlightPlan extends BaseFlightPlan {
     static empty(): FlightPlan {
@@ -24,6 +23,8 @@ export class FlightPlan extends BaseFlightPlan {
      * Alternate flight plan associated with this flight plan
      */
     alternateFlightPlan = new AlternateFlightPlan(this);
+
+    pendingAirways: PendingAirways | undefined;
 
     /**
      * Performance data for this flight plan
@@ -68,119 +69,17 @@ export class FlightPlan extends BaseFlightPlan {
         return this.alternateFlightPlan.setDestinationAirport(icao);
     }
 
-    insertElementAfter(index: number, element: FlightPlanElement, insertDiscontinuity = false) {
-        if (index < 0 || index > this.allLegs.length) {
-            throw new Error(`[FMS/FPM] Tried to insert waypoint out of bounds (index=${index})`);
+    startAirwayEntry(revisedLegIndex: number) {
+        const leg = this.elementAt(revisedLegIndex);
+
+        if (leg.isDiscontinuity === true) {
+            throw new Error('Cannot start airway entry at a discontinuity');
         }
 
-        let startSegment;
-        let indexInStartSegment;
-
-        if (this.legCount > 0) {
-            [startSegment, indexInStartSegment] = this.getIndexInSegment(index);
-        } else {
-            startSegment = this.enrouteSegment;
-            indexInStartSegment = 0;
+        if (!leg.isXF() && !leg.isHX()) {
+            throw new Error('Cannot create a pending airways entry from a non XF or HX leg');
         }
 
-        startSegment.insertAfter(indexInStartSegment, element);
-
-        if (insertDiscontinuity) {
-            startSegment.insertAfter(indexInStartSegment + 1, { isDiscontinuity: true });
-
-            this.incrementVersion();
-            return;
-        }
-
-        if (element.isDiscontinuity === false && element.isXF()) {
-            const duplicate = this.findDuplicate(element.terminationWaypoint(), index + 1);
-
-            if (duplicate) {
-                const [,, duplicatePlanIndex] = duplicate;
-
-                this.removeRange(index + 2, duplicatePlanIndex + 1);
-            }
-        }
-
-        this.incrementVersion();
-        this.redistributeLegsAt(index + 1);
-    }
-
-    private getIndexInSegment(index: number): [segment: FlightPlanSegment, index: number] {
-        let accumulator = 0;
-
-        for (const segment of this.orderedSegments) {
-            if (segment.allLegs.length === 0) {
-                continue;
-            }
-
-            accumulator += segment.allLegs.length;
-
-            if (accumulator >= index) {
-                return [segment, index - (accumulator - segment.allLegs.length)];
-            }
-        }
-
-        throw new Error(`[FMS/FPM] Tried to find index in segment for an out of bounds index (index=${index})`);
-    }
-
-    findDuplicate(waypoint: Waypoint, afterIndex?: number): [FlightPlanSegment, number, number] | null {
-        // There is never gonna be a duplicate in the origin
-
-        let indexAccumulator = 0;
-
-        for (const segment of this.orderedSegments) {
-            indexAccumulator += segment.allLegs.length;
-
-            if (indexAccumulator > afterIndex) {
-                const dupeIndexInSegment = segment.findIndexOfWaypoint(waypoint, afterIndex - (indexAccumulator - segment.allLegs.length));
-
-                const planIndex = indexAccumulator - segment.allLegs.length + dupeIndexInSegment;
-
-                if (planIndex <= afterIndex) {
-                    continue;
-                }
-
-                if (dupeIndexInSegment !== -1) {
-                    return [segment, dupeIndexInSegment, planIndex];
-                }
-            }
-        }
-
-        return null;
-    }
-
-    public removeRange(start: number, end: number) { // TODO not sure this should be public
-        const [startSegment, indexInStartSegment] = this.getIndexInSegment(start);
-        const [endSegment, indexInEndSegment] = this.getIndexInSegment(end);
-
-        if (!startSegment || !endSegment) {
-            throw new Error('[FMS/FPM] Range out of bounds');
-        }
-
-        if (startSegment === endSegment) {
-            startSegment.removeRange(indexInStartSegment, indexInEndSegment);
-        } else {
-            let startFound = false;
-            for (const segment of this.orderedSegments) {
-                if (!startFound && segment !== startSegment) {
-                    continue;
-                }
-
-                if (segment === startSegment) {
-                    startFound = true;
-
-                    segment.removeAfter(indexInStartSegment);
-                    continue;
-                }
-
-                if (segment === endSegment) {
-                    segment.removeBefore(indexInEndSegment);
-                    return;
-                }
-
-                segment.allLegs.length = 0;
-            }
-        }
+        this.pendingAirways = new PendingAirways(this, revisedLegIndex, leg);
     }
 }

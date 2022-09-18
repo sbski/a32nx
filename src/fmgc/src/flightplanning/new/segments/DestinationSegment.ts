@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { Airport, Runway, WaypointDescriptor } from 'msfs-navdata';
+import { Airport, Runway } from 'msfs-navdata';
 import { FlightPlanElement, FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
@@ -49,7 +49,7 @@ export class DestinationSegment extends FlightPlanSegment {
         return this.runway;
     }
 
-    public async setDestinationRunway(runwayIdent: string) {
+    public async setDestinationRunway(runwayIdent: string, setByApproach = false) {
         const db = NavigationDatabaseService.activeDatabase.backendDatabase;
 
         if (!this.airport) {
@@ -64,17 +64,24 @@ export class DestinationSegment extends FlightPlanSegment {
             throw new Error(`[FMS/FPM] Can't find runway '${runwayIdent}' at ${this.airport.ident}`);
         }
 
+        const oldRunwayIdent = this.runway?.ident;
+
         this.runway = matchingRunway;
 
-        await this.refresh();
+        await this.refresh(oldRunwayIdent !== this.runway?.ident && !setByApproach);
     }
 
-    async refresh() {
+    async refresh(doRemoveApproach = true) {
         this.allLegs.length = 0;
 
-        const approach = this.flightPlan.approach;
+        const { approachSegment } = this.flightPlan;
 
-        if (this.airport && !approach) {
+        // We remove the approach if the runway ident changed and the runway was not set by the approach
+        if (doRemoveApproach) {
+            await approachSegment.setApproachProcedure(undefined);
+        }
+
+        if (this.airport && approachSegment.allLegs.length === 0) {
             this.allLegs.push(FlightPlanLeg.fromAirportAndRunway(this, '', this.airport));
         } else {
             this.allLegs.length = 0;
@@ -86,7 +93,6 @@ export class DestinationSegment extends FlightPlanSegment {
     clone(forPlan: BaseFlightPlan): DestinationSegment {
         const newSegment = new DestinationSegment(forPlan);
 
-        newSegment.strung = this.strung;
         newSegment.allLegs = [...this.allLegs];
         newSegment.airport = this.airport;
         newSegment.runway = this.runway;

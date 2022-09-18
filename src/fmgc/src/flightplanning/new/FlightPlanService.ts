@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { FlightPlanIndex, FlightPlanManager } from '@fmgc/flightplanning/new/FlightPlanManager';
-import { A380FpmConfig, FpmConfig } from '@fmgc/flightplanning/new/FpmConfig';
+import { FpmConfig, FpmConfigs } from '@fmgc/flightplanning/new/FpmConfig';
 import { FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { Waypoint } from 'msfs-navdata';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
@@ -16,7 +16,7 @@ export class FlightPlanService {
 
     private static flightPlanManager = new FlightPlanManager();
 
-    private static config: FpmConfig = A380FpmConfig
+    private static config: FpmConfig = FpmConfigs.A320_HONEYWELL_H3
 
     static navigationDatabase: NavigationDatabase
 
@@ -63,6 +63,12 @@ export class FlightPlanService {
     }
 
     static temporaryInsert() {
+        const temporaryPlan = this.flightPlanManager.get(FlightPlanIndex.Temporary);
+
+        if (temporaryPlan.pendingAirways) {
+            temporaryPlan.pendingAirways.finalize();
+        }
+
         this.flightPlanManager.copy(FlightPlanIndex.Temporary, FlightPlanIndex.Active);
         this.flightPlanManager.delete(FlightPlanIndex.Temporary);
     }
@@ -247,6 +253,14 @@ export class FlightPlanService {
         this.flightPlanManager.get(finalIndex).insertElementAfter(atIndex, leg);
     }
 
+    static startAirwayEntry(at: number, planIndex = FlightPlanIndex.Active) {
+        const finalIndex = this.prepareDestructiveModification(planIndex);
+
+        const plan = this.flightPlanManager.get(finalIndex);
+
+        plan.startAirwayEntry(at);
+    }
+
     static directTo(ppos: Coordinates, trueTrack: Degrees, waypoint: Waypoint, planIndex = FlightPlanIndex.Active) {
         const magVar = Facilities.getMagVar(ppos.lat, ppos.long);
 
@@ -256,8 +270,14 @@ export class FlightPlanService {
 
         const targetLeg = plan.allLegs.find((it) => it.isDiscontinuity === false && it.terminatesWithWaypoint(waypoint));
         const targetLegIndex = plan.allLegs.findIndex((it) => it === targetLeg);
+
+        if (targetLeg.isDiscontinuity === true || !targetLeg.isXF()) {
+            throw new Error('[FPM] Target leg of a direct to cannot be a discontinuity or non-XF leg');
+        }
+
         const turningPoint = FlightPlanLeg.turningPoint(plan.enrouteSegment, ppos);
         const turnStart = FlightPlanLeg.directToTurnStart(plan.enrouteSegment, ppos, (720 + trueTrack - (magVar)) % 360);
+        const turnEnd = FlightPlanLeg.directToTurnEnd(plan.enrouteSegment, targetLeg.definition.waypoint);
 
         // Remove all legs before target
 
@@ -266,6 +286,29 @@ export class FlightPlanService {
 
         plan.insertElementAfter(this.activeLegIndex - 1, turningPoint);
         plan.insertElementAfter(this.activeLegIndex, turnStart);
+        plan.insertElementAfter(this.activeLegIndex + 1, turnEnd);
+    }
+
+    static setOverfly(atIndex: number, overfly: boolean, planIndex = FlightPlanIndex.Active) {
+        let finalIndex: number = planIndex;
+        if (this.config.TMPY_ON_OVERFLY) {
+            finalIndex = this.prepareDestructiveModification(planIndex);
+        }
+
+        const plan = this.flightPlanManager.get(finalIndex);
+
+        return plan.setOverflyAt(atIndex, overfly);
+    }
+
+    static toggleOverfly(atIndex: number, planIndex = FlightPlanIndex.Active) {
+        let finalIndex: number = planIndex;
+        if (this.config.TMPY_ON_OVERFLY) {
+            finalIndex = this.prepareDestructiveModification(planIndex);
+        }
+
+        const plan = this.flightPlanManager.get(finalIndex);
+
+        return plan.toggleOverflyAt(atIndex);
     }
 
     static get activeLegIndex(): number {
