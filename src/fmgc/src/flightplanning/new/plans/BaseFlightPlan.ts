@@ -49,7 +49,7 @@ export abstract class BaseFlightPlan {
         return this.allLegs.length - this.missedApproachSegment.allLegs.length;
     }
 
-    activeLegIndex = 1;
+    activeLegIndex = 0;
 
     get activeLeg(): FlightPlanElement {
         return this.allLegs[this.activeLegIndex];
