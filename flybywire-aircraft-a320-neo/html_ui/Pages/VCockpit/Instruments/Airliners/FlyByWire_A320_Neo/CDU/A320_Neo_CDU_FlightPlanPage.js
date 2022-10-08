@@ -426,7 +426,8 @@ class CDUFlightPlanPage {
                         return;
                     }
 
-                    mcdu.insertWaypoint(value, fpIndex + 1, (success) => {
+                    // FIXME we should insert before - what happens on leg 0 ?
+                    mcdu.insertWaypoint(value, fpIndex, (success) => {
                         if (!success) {
                             scratchpadCallback();
                         }
