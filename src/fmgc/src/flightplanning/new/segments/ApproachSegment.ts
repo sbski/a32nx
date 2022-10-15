@@ -138,6 +138,7 @@ export class ApproachSegment extends FlightPlanSegment {
     clone(forPlan: BaseFlightPlan): ApproachSegment {
         const newSegment = new ApproachSegment(forPlan);
 
+        newSegment.strung = this.strung;
         newSegment.allLegs = [...this.allLegs];
         newSegment.approach = this.approach;
 

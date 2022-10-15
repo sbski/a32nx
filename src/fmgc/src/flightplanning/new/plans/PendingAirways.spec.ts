@@ -7,8 +7,7 @@ import fetch from 'node-fetch';
 import { FlightPlanService } from '@fmgc/flightplanning/new/FlightPlanService';
 import { setupNavigraphDatabase } from '@fmgc/flightplanning/new/test/Database';
 import { NavigationDatabaseService } from '@fmgc/flightplanning/new/NavigationDatabaseService';
-import { loadSingleFix, loadSingleWaypoint } from '@fmgc/flightplanning/new/segments/enroute/WaypointLoading';
-import { FlightPlanPerformanceData } from '@fmgc/flightplanning/new/plans/performance/FlightPlanPerformanceData';
+import { loadSingleWaypoint } from '@fmgc/flightplanning/new/segments/enroute/WaypointLoading';
 import { dumpFlightPlan } from '@fmgc/flightplanning/new/test/FlightPlan';
 
 if (!globalThis.fetch) {
@@ -24,19 +23,17 @@ describe('pending airways entry', () => {
     it('inserts an airway', async () => {
         const db = NavigationDatabaseService.activeDatabase;
 
-        const fp = FlightPlanService.active;
-
         await FlightPlanService.newCityPair('CYUL', 'KBOS', 'KJFK');
         await FlightPlanService.setOriginRunway('RW06R');
         await FlightPlanService.setDepartureProcedure('CYUL1');
 
         const wp = await loadSingleWaypoint('DUNUP', 'WCY    DUNUP');
 
-        FlightPlanService.nextWaypoint(2, wp);
+        FlightPlanService.nextWaypoint(3, wp);
 
         FlightPlanService.temporaryInsert();
 
-        FlightPlanService.active.startAirwayEntry(3);
+        FlightPlanService.active.startAirwayEntry(4);
 
         const airway = (await db.searchAirway('Q903'))[0];
 
@@ -54,8 +51,66 @@ describe('pending airways entry', () => {
 
         FlightPlanService.active.pendingAirways.thenTo(endWp2);
 
+        FlightPlanService.active.pendingAirways.finalize();
+
         console.log(dumpFlightPlan(FlightPlanService.active));
-        console.log(FlightPlanService.active.pendingAirways.elements);
+        // console.log(FlightPlanService.active.pendingAirways.elements);
+    });
+
+    it('inserts an airway 2', async () => {
+        const db = NavigationDatabaseService.activeDatabase;
+
+        await FlightPlanService.newCityPair('LPPR', 'EGCC', 'EGKK');
+        await FlightPlanService.setOriginRunway('RW35');
+        await FlightPlanService.setDepartureProcedure('TURO9E');
+
+        FlightPlanService.temporaryInsert();
+
+        const wp1 = (await db.searchFix('TURON'))[0];
+
+        FlightPlanService.nextWaypoint(3, wp1);
+
+        const a1 = (await db.searchAirway('UP600'))[0];
+
+        FlightPlanService.startAirwayEntry(4);
+        FlightPlanService.activeOrTemporary.pendingAirways.thenAirway(a1);
+
+        const wp2 = (await db.searchFix('ASDEB'))[0];
+
+        FlightPlanService.activeOrTemporary.pendingAirways.thenTo(wp2);
+        FlightPlanService.activeOrTemporary.pendingAirways.finalize();
+
+        const wp3 = (await db.searchFix('KORUL'))[0];
+
+        FlightPlanService.nextWaypoint(4, wp3);
+
+        const wp4 = (await db.searchFix('TALIG'))[0];
+
+        FlightPlanService.nextWaypoint(5, wp4);
+
+        const a2 = (await db.searchAirway('UP620'))[0];
+
+        FlightPlanService.startAirwayEntry(6);
+        FlightPlanService.activeOrTemporary.pendingAirways.thenAirway(a2);
+
+        const a3 = (await db.searchAirway('T7'))[2];
+
+        FlightPlanService.activeOrTemporary.pendingAirways.thenAirway(a3);
+
+        const a4 = (await db.searchAirway('L180'))[0];
+
+        FlightPlanService.activeOrTemporary.pendingAirways.thenAirway(a4);
+
+        const a5 = (await db.searchAirway('UN864'))[1];
+
+        FlightPlanService.activeOrTemporary.pendingAirways.thenAirway(a5);
+
+        const wp5 = (await db.searchFix('MONTY'))[2];
+
+        FlightPlanService.activeOrTemporary.pendingAirways.thenTo(wp5);
+        FlightPlanService.activeOrTemporary.pendingAirways.finalize();
+
+        console.log(dumpFlightPlan(FlightPlanService.activeOrTemporary));
     });
 
     it('automatically connects two airways at a matching point', async () => {

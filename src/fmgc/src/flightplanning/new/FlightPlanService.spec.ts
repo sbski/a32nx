@@ -3,14 +3,14 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
+import { jest } from '@jest/globals';
 import fetch from 'node-fetch';
 import { FlightPlanService } from '@fmgc/flightplanning/new/FlightPlanService';
 import { FlightPlanIndex } from '@fmgc/flightplanning/new/FlightPlanManager';
 import { loadSingleWaypoint } from '@fmgc/flightplanning/new/segments/enroute/WaypointLoading';
-import { assertDiscontinuity, assertNotDiscontinuity } from '@fmgc/flightplanning/new/test/LegUtils';
+import { assertNotDiscontinuity } from '@fmgc/flightplanning/new/test/LegUtils';
 import { setupNavigraphDatabase } from '@fmgc/flightplanning/new/test/Database';
 import { placeBearingDistance } from 'msfs-geo';
-import { dumpFlightPlan } from '@fmgc/flightplanning/new/test/FlightPlan';
 import { LegType } from 'msfs-navdata';
 
 if (!globalThis.fetch) {

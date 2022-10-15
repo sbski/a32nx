@@ -104,7 +104,7 @@ export class FlightPlanLeg {
         return new FlightPlanLeg(segment, {
             type: LegType.FD,
             overfly: false,
-            waypoint: WaypointFactory.fromWaypointLocationAndDistanceBearing('', location, 0.1, bearing),
+            waypoint: WaypointFactory.fromPlaceBearingDistance('', location, 0.1, bearing),
             length: 0.1 * 1852, // 0.1 NM in metres
         }, '', '', undefined, undefined, false);
     }
@@ -161,7 +161,7 @@ export class FlightPlanLeg {
     }
 
     static destinationExtendedCenterline(segment: FlightPlanSegment, airport: Airport, runway?: Runway): FlightPlanLeg {
-        const waypoint = WaypointFactory.fromWaypointLocationAndDistanceBearing(
+        const waypoint = WaypointFactory.fromPlaceBearingDistance(
             'CF',
             airport.location,
             5,

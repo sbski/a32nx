@@ -4,17 +4,17 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { Airport, Runway, Waypoint, WaypointArea } from 'msfs-navdata';
-import { Coordinates, placeBearingDistance } from 'msfs-geo';
+import { Coordinates, distanceTo, placeBearingDistance, placeBearingIntersection } from 'msfs-geo';
 import { runwayIdent } from '@fmgc/flightplanning/new/legs/FlightPlanLegNaming';
+import { Icao } from '@shared/Icao';
 
 export namespace WaypointFactory {
-
     export function fromLocation(
         ident: string,
         location: Coordinates,
     ): Waypoint {
         return {
-            databaseId: `X      ${ident.padEnd(5, ' ')}`,
+            databaseId: Icao.create('W', '', '', ident),
             icaoCode: '  ',
             area: WaypointArea.Enroute,
             ident,
@@ -22,7 +22,7 @@ export namespace WaypointFactory {
         };
     }
 
-    export function fromWaypointLocationAndDistanceBearing(
+    export function fromPlaceBearingDistance(
         ident: string,
         location: Coordinates,
         distance: NauticalMiles,
@@ -30,13 +30,22 @@ export namespace WaypointFactory {
     ): Waypoint {
         const point = placeBearingDistance(location, bearing, distance);
 
-        return {
-            databaseId: 'X      CF   ',
-            icaoCode: '  ',
-            area: WaypointArea.Enroute,
-            ident,
-            location: point,
-        };
+        return WaypointFactory.fromLocation(ident, point);
+    }
+
+    export function fromPlaceBearingPlaceBearing(
+        ident: string,
+        locationA: Coordinates,
+        bearingA: DegreesTrue,
+        locationB: Coordinates,
+        bearingB: DegreesTrue,
+    ): Waypoint {
+        const [one, two] = placeBearingIntersection(locationA, bearingA, locationB, bearingB);
+
+        const distanceOne = distanceTo(locationA, one);
+        const distanceTwo = distanceTo(locationA, two);
+
+        return WaypointFactory.fromLocation(ident, distanceOne < distanceTwo ? one : two);
     }
 
     export function fromAirportAndRunway(airport: Airport, runway: Runway): Waypoint {

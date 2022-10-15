@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { Airport, Approach, ApproachType, Database, ExternalBackend, MsfsBackend, Waypoint } from 'msfs-navdata';
+import { Airport, Airway, Approach, ApproachType, Database, ExternalBackend, MsfsBackend, Waypoint } from 'msfs-navdata';
 
 /**
  * The backend for a navigation database
@@ -39,6 +39,10 @@ export class NavigationDatabase {
 
     async searchFix(ident: string): Promise<Waypoint[]> {
         return this.backendDatabase.getWaypoints([ident]);
+    }
+
+    async searchAirway(ident: string): Promise<Airway[]> {
+        return this.backendDatabase.getAirways([ident]);
     }
 
     private static approachSuffix(approach: Approach): string {

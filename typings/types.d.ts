@@ -1,7 +1,9 @@
-import { FlightPlanService as Service } from "../src/fmgc/src";
+import { FlightPlanService as Service, WaypointEntryUtils } from "../src/fmgc/src";
 import { NavigationDatabase as Database, NavigationDatabaseBackend as DatabaseBackend } from '../src/fmgc/src/NavigationDatabase'
 import { FlightPlanIndex as Index } from '../src/fmgc/src';
 import { FlightPhaseManager as FlightPhaseManager_ } from "../src/fmgc/src";
+import { WaypointFactory as WaypointFactory_ } from "../src/fmgc/src";
+import { WaypointEntryUtils as WaypointEntryUtils_ } from "../src/fmgc/src";
 
 declare global {
     type NauticalMiles = number;
@@ -59,6 +61,10 @@ declare global {
         const FlightPlanIndex: typeof Index
 
         const FlightPhaseManager: typeof FlightPhaseManager_
+
+        const WaypointFactory: typeof WaypointFactory_
+
+        const WaypointEntryUtils: typeof WaypointEntryUtils_
 
         function getFlightPhaseManager(): FlightPhaseManager_
     }

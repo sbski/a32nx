@@ -90,6 +90,7 @@ export class OriginSegment extends FlightPlanSegment {
     clone(forPlan: BaseFlightPlan): OriginSegment {
         const newSegment = new OriginSegment(forPlan);
 
+        newSegment.strung = this.strung;
         newSegment.allLegs = [...this.allLegs];
         newSegment.airport = this.airport;
         newSegment.runway = this.runway;

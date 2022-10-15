@@ -1,6 +1,6 @@
 /** @type {import('@ts-jest/dist/types').InitialOptionsTsJest} */
 module.exports = {
-    preset: 'ts-jest',
+    preset: 'ts-jest/presets/default-esm',
     testEnvironment: 'node',
     setupFilesAfterEnv: [
         "./jest/setupJestMock.js"
@@ -16,7 +16,12 @@ module.exports = {
             isolatedModules: true,
             diagnostics: {
                 ignoreCodes: ['TS151001'],
-            }
+            },
+            useESM: true,
         }
-    }
+    },
+    extensionsToTreatAsEsm: ['.ts'],
+    transform: {
+        '^.+\\.tsx?$': ['ts-jest', { useESM: true }],
+    },
 };

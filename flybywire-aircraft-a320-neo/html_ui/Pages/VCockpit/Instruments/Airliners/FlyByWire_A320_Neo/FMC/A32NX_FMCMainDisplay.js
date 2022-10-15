@@ -2614,6 +2614,40 @@ class FMCMainDisplay extends BaseAirliners {
         return this._routeTripFuelWeight;
     }
 
+    /**
+     @param items {Array.<import('msfs-navdata').DatabaseItem>}
+     */
+    deduplicateFacilities(items) {
+        if (items.length === 0) {
+            return undefined;
+        }
+        if (items.length === 1) {
+            return items[0];
+        }
+
+        return new Promise((resolve) => {
+            A320_Neo_CDU_SelectWptPage.ShowPage(this, items, resolve);
+        });
+    }
+
+    /**
+     * @param coordinates {import('msfs-geo').Coordinates}
+     * @param stored {boolean}
+     */
+    createLatLonWaypoint(coordinates, stored) {
+        return this.dataManager.createLatLonWaypoint(coordinates, stored);
+    }
+
+    /**
+     * @param place {import('msfs-navdata').Waypoint}
+     * @param bearing {DegreesTrue}
+     * @param distance {NauticalMiles}
+     * @param stored {boolean}
+     */
+    createPlaceBearingDistWaypoint(place, bearing, distance, stored) {
+        return this.dataManager.createPlaceBearingDistWaypoint(place, bearing, distance, stored);
+    }
+
     //-----------------------------------------------------------------------------------
     // TODO:FPM REWRITE: Start of functions to refactor
     //-----------------------------------------------------------------------------------
@@ -2649,7 +2683,7 @@ class FMCMainDisplay extends BaseAirliners {
             return callback(false);
         }
         try {
-            this.getOrCreateWaypoint(newWaypointTo, true).then(
+            Fmgc.WaypointEntryUtils.getOrCreateWaypoint(this, newWaypointTo, true).then(
                 /**
                  * @param {Waypoint} waypoint
                  */
@@ -2667,17 +2701,20 @@ class FMCMainDisplay extends BaseAirliners {
 
                         return callback(true);
                     } else {
-                        this.ensureCurrentFlightPlanIsTemporary(async () => {
-                            if (waypoint.additionalData && waypoint.additionalData.storedType !== undefined) {
-                                this.flightPlanManager.addUserWaypoint(waypoint, index, () => {
-                                    return callback(true);
-                                }).catch(console.error);
-                            } else {
-                                this.flightPlanManager.addWaypoint(waypoint.icao, index, () => {
-                                    return callback(true);
-                                }).catch(console.error);
-                            }
-                        });
+                        this.flightPlanService.nextWaypoint(index, waypoint);
+
+                        return callback(true);
+                        // this.ensureCurrentFlightPlanIsTemporary(async () => {
+                        //     if (waypoint.additionalData && waypoint.additionalData.storedType !== undefined) {
+                        //         this.flightPlanManager.addUserWaypoint(waypoint, index, () => {
+                        //             return callback(true);
+                        //         }).catch(console.error);
+                        //     } else {
+                        //         this.flightPlanManager.addWaypoint(waypoint.databaseId, index, () => {
+                        //             return callback(true);
+                        //         }).catch(console.error);
+                        //     }
+                        // });
                     }
                 }).catch((err) => {
                 if (err instanceof McduMessage) {
@@ -4680,48 +4717,6 @@ class FMCMainDisplay extends BaseAirliners {
     }
 
     /**
-     *
-     * @param {string} s value to search for or create a waypoint from
-     * @param {boolean} stored if a waypoint is created, should it be a stored waypoint?
-     * @returns
-     */
-    async getOrCreateWaypoint(s, stored = true) {
-        if (this.isLatLonFormat(s)) {
-            const coordinates = this.parseLatLon(s);
-            return this.dataManager.createLatLonWaypoint(coordinates, stored);
-        } else if (this.isPbxFormat(s)) {
-            const [place1, bearing1, place2, bearing2] = await this.parsePbx(s);
-            return this.dataManager.createPlaceBearingPlaceBearingWaypoint(place1, bearing1, place2, bearing2, stored);
-        } else if (this.isPdFormat(s)) {
-            throw NXFictionalMessages.notYetImplemented;
-        } else if (this.isPbdFormat(s)) {
-            const [wp, bearing, dist] = await this.parsePbd(s);
-            return this.dataManager.createPlaceBearingDistWaypoint(wp, bearing, dist, stored);
-        } else if (this.isPlaceFormat(s)) {
-            try {
-                return await this.parsePlace(s);
-            } catch (err) {
-                if (err === NXSystemMessages.notInDatabase) {
-                    this.setScratchpadMessage(err);
-                    return new Promise((resolve, reject) => {
-                        CDUNewWaypoint.ShowPage(this, (waypoint) => {
-                            if (waypoint) {
-                                resolve(waypoint);
-                            } else {
-                                reject();
-                            }
-                        }, { ident: s });
-                    });
-                } else {
-                    throw err;
-                }
-            }
-        } else {
-            throw NXSystemMessages.formatError;
-        }
-    }
-
-    /**
      * Try to set the progress page bearing/dist waypoint/location
      * @param {String} s scratchpad entry
      * @param {Function} callback callback taking boolean arg for success/failure
@@ -4733,8 +4728,9 @@ class FMCMainDisplay extends BaseAirliners {
         }
 
         try {
-            this.getOrCreateWaypoint(s, false).then((wp) => {
-                this._setProgLocation(wp.additionalData.temporary ? "ENTRY" : wp.ident, wp.infos.coordinates, wp.infos.icao);
+            Fmgc.WaypointEntryUtils.getOrCreateWaypoint(this, s, false).then((wp) => {
+                // FIXME wp.additionalData.temporary
+                this._setProgLocation(true ? "ENTRY" : wp.ident, wp.location, wp.databaseId);
                 return callback(true);
             }).catch((err) => {
                 if (err instanceof McduMessage) {

@@ -90,6 +90,10 @@ class NavSystem extends BaseInstrument {
         return this.currFlightPlanService;
     }
 
+    get navigationDatabaseService() {
+        return this.currNavigationDatabaseService;
+    }
+
     get v1Speed() {
         return this.flightPlanService.active.performanceData.v1.get();
     }

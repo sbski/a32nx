@@ -50,21 +50,18 @@ export class PendingAirways {
 
         const taiLElement = this.tailElement;
 
-        let startWaypoint: Waypoint;
         let startWaypointIndex: number;
         done: if (!taiLElement || taiLElement.to) {
             // No airways have been entered. We consider the revised waypoint to be the start of the new entry.
             // OR
             // An airway is entered and has a TO.
 
-            const startDatabaseID = taiLElement ? taiLElement.to.databaseId : this.revisedWaypoint.databaseId;
             const startIdent = taiLElement ? taiLElement.to.ident : this.revisedWaypoint.ident;
             const startIcaoCode = taiLElement ? taiLElement.to.icaoCode : this.revisedWaypoint.icaoCode;
             for (let i = 0; i < airway.fixes.length; i++) {
                 const fix = airway.fixes[i];
 
                 if (startIdent === fix.ident && startIcaoCode === fix.icaoCode) {
-                    startWaypoint = fix;
                     startWaypointIndex = i;
                     break done;
                 }
@@ -84,12 +81,25 @@ export class PendingAirways {
                     taiLElement.to = matchInCurrent;
                     taiLElement.isAutoConnected = true;
 
-                    const splitLegs = taiLElement.airway.fixes.slice(taiLElement.fromIndex, i + 1);
+                    const reversed = i + 1 < taiLElement.fromIndex;
+                    const fixesArray = reversed ? taiLElement.airway.fixes.slice().reverse() : taiLElement.airway.fixes;
+
+                    let start;
+                    let end;
+                    if (reversed) {
+                        start = fixesArray.length - taiLElement.fromIndex;
+                        end = fixesArray.length - i;
+                    } else {
+                        start = taiLElement.fromIndex + 1;
+                        end = i + 1;
+                    }
+
+                    const splitLegs = fixesArray.slice(start, end);
                     const mappedSplitLegs = splitLegs.map((it) => FlightPlanLeg.fromEnrouteWaypoint(this.flightPlan.enrouteSegment, it, taiLElement.airway.ident));
 
                     this.legs.push(...mappedSplitLegs);
 
-                    startWaypointIndex = matchInCurrentIndex + 1;
+                    startWaypointIndex = matchInCurrentIndex;
                     break done;
                 }
             }
@@ -143,8 +153,21 @@ export class PendingAirways {
             return false;
         }
 
-        const splitLegs = tailAirway.fixes.slice(taiLElement.fromIndex, endWaypointIndex + 1);
-        const mappedSplitLegs = splitLegs.map((it) => FlightPlanLeg.fromEnrouteWaypoint(this.flightPlan.enrouteSegment, it, tailAirway.ident));
+        const reversed = endWaypointIndex + 1 < taiLElement.fromIndex;
+        const fixesArray = reversed ? taiLElement.airway.fixes.slice().reverse() : taiLElement.airway.fixes;
+
+        let start;
+        let end;
+        if (reversed) {
+            start = fixesArray.length - taiLElement.fromIndex;
+            end = fixesArray.length - endWaypointIndex;
+        } else {
+            start = taiLElement.fromIndex + 1;
+            end = endWaypointIndex + 1;
+        }
+
+        const splitLegs = fixesArray.slice(start, end);
+        const mappedSplitLegs = splitLegs.map((it) => FlightPlanLeg.fromEnrouteWaypoint(this.flightPlan.enrouteSegment, it, taiLElement.airway.ident));
 
         this.legs.push(...mappedSplitLegs);
 
@@ -164,7 +187,7 @@ export class PendingAirways {
             throw new Error('Finalizing pending airways into a segment that isn\'t enroute is not yet supported');
         }
 
-        this.flightPlan.enrouteSegment.allLegs.splice(indexInSegment, 1, ...this.legs);
+        this.flightPlan.enrouteSegment.allLegs.splice(indexInSegment + 1, 0, ...this.legs);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
         this.flightPlan.flushOperationQueue();
     }

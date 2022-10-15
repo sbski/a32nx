@@ -626,6 +626,8 @@ export abstract class BaseFlightPlan {
 
         const [segment, indexInSegment] = this.segmentPositionForIndex(index);
 
+        segment.strung = true;
+
         if (segment.class === SegmentClass.Departure) {
             const toInsertInEnroute: FlightPlanElement[] = [];
 
@@ -745,7 +747,9 @@ export abstract class BaseFlightPlan {
             segment.insertNecessaryDiscontinuities();
         }
 
+        this.ensureNoDuplicates();
         this.adjustIFLegs();
+
         this.incrementVersion();
     }
 
@@ -867,6 +871,34 @@ export abstract class BaseFlightPlan {
                 if (!prevElement || (prevElement && prevElement.isDiscontinuity === true)) {
                     element.type = LegType.IF;
                 }
+            }
+        }
+    }
+
+    private ensureNoDuplicates() {
+        for (let i = 0; i < this.allLegs.length; i++) {
+            const leg = this.allLegs[i];
+            if (leg.isDiscontinuity === true) {
+                continue;
+            }
+
+            if (!leg.isXF()) {
+                continue;
+            }
+
+            const fix = leg.definition.waypoint;
+
+            const duplicate = this.findDuplicate(fix, i);
+
+            if (duplicate) {
+                const [segment, , duplicatePlanIndex] = duplicate;
+
+                // We can have duplicates in the missed approach
+                if (segment === this.missedApproachSegment) {
+                    continue;
+                }
+
+                this.removeRange(i + 1, duplicatePlanIndex + 1);
             }
         }
     }
