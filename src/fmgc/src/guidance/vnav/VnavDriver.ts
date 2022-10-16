@@ -417,20 +417,22 @@ export class VnavDriver implements GuidanceComponent {
 
                     // Here, we don't need to check whether the checkpoint is lower than the previous one,
                     // because we should only get to this point if we find the first checkpoint below the FCU altitude.
-                    if (previousCheckpoint.reason !== VerticalCheckpointReason.PresentPosition) {
-                        const shouldShowArmedDescentArrow = isArmed(fcuArmedVerticalMode, ArmedVerticalMode.DES)
-                        || isArmed(fcuArmedVerticalMode, ArmedVerticalMode.FINAL);
-
-                        this.currentNdGeometryProfile.addInterpolatedCheckpoint(
-                            Math.max(levelOffDistance, previousCheckpoint.distanceFromStart),
-                            {
-                                reason: shouldShowArmedDescentArrow ? VerticalCheckpointReason.ContinueDescentArmed
-                                    : VerticalCheckpointReason.ContinueDescent,
-                            },
-                        );
-
+                    if (previousCheckpoint.reason === VerticalCheckpointReason.PresentPosition) {
                         break;
                     }
+
+                    const shouldShowArmedDescentArrow = isArmed(fcuArmedVerticalMode, ArmedVerticalMode.DES)
+                        || isArmed(fcuArmedVerticalMode, ArmedVerticalMode.FINAL);
+
+                    this.currentNdGeometryProfile.addInterpolatedCheckpoint(
+                        Math.max(levelOffDistance, previousCheckpoint.distanceFromStart),
+                        {
+                            reason: shouldShowArmedDescentArrow ? VerticalCheckpointReason.ContinueDescentArmed
+                                : VerticalCheckpointReason.ContinueDescent,
+                        },
+                    );
+
+                    break;
                 }
             }
         }
