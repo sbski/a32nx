@@ -310,10 +310,11 @@ class CDUFlightPlanPage {
                 let spdColor = color;
                 let slashColor = color;
 
-                let speedConstraint = "---";
+                // Should show empty speed prediction for waypoint after hold
+                let speedConstraint = wp.additionalData.legType === 14 ? "\xa0\xa0\xa0" : "---";
                 let speedPrefix = "";
 
-                if (!fpm.isCurrentFlightPlanTemporary()) {
+                if (!fpm.isCurrentFlightPlanTemporary() && wp.additionalData.legType !== 14) {
                     if (verticalWaypoint && verticalWaypoint.speed) {
                         speedConstraint = verticalWaypoint.speed < 1 ? formatMachNumber(verticalWaypoint.speed) : Math.round(verticalWaypoint.speed);
 
@@ -568,7 +569,7 @@ class CDUFlightPlanPage {
                 }
 
                 const decelReached = isActive || isNext && mcdu.holdDecelReached;
-                const holdSpeed = fpIndex === mcdu.holdIndex && mcdu.holdSpeedTarget > 0 ? mcdu.holdSpeedTarget.toFixed(0) : '---';
+                const holdSpeed = fpIndex === mcdu.holdIndex && mcdu.holdSpeedTarget > 0 ? mcdu.holdSpeedTarget.toFixed(0) : '\xa0\xa0\xa0';
                 const turnDirection = holdResumeExit.turnDirection === 1 ? 'L' : 'R';
                 // prompt should only be shown once entering decel for hold (3 - 20 NM before hold)
                 const immExit = decelReached && !holdResumeExit.additionalData.immExit;
@@ -637,8 +638,8 @@ class CDUFlightPlanPage {
 
             if (cHold) {
                 const { color, immExit, resumeHold, holdSpeed, turnDirection } = scrollWindow[rowI];
-                scrollText[(rowI * 2)] = ['', `{amber}${immExit ? 'IMM\xa0\xa0' : ''}${resumeHold ? 'RESUME\xa0' : ''}{end}`, 'HOLD\xa0\xa0\xa0\xa0\xa0'];
-                scrollText[(rowI * 2) + 1] = [`{${color}}HOLD ${turnDirection}{end}`, `{amber}${immExit ? 'EXIT*' : ''}${resumeHold ? 'HOLD*' : ''}{end}`, `{${color}}{small}{white}SPD{end}\xa0${holdSpeed}{end}{end}`];
+                scrollText[(rowI * 2)] = ['', `{amber}${immExit ? 'IMM\xa0\xa0' : ''}${resumeHold ? 'RESUME\xa0' : ''}{end}`, 'HOLD\xa0\xa0\xa0\xa0'];
+                scrollText[(rowI * 2) + 1] = [`{${color}}HOLD ${turnDirection}{end}`, `{amber}${immExit ? 'EXIT*' : ''}${resumeHold ? 'HOLD*' : ''}{end}`, `\xa0{${color}}{small}{white}SPD{end}\xa0${holdSpeed}{end}{end}`];
             } else if (!cMarker && !cPwp) { // Waypoint
                 if (rowI > 0) {
                     const { marker: pMarker, pwp: pPwp, holdResumeExit: pHold, speedConstraint: pSpd, altitudeConstraint: pAlt} = scrollWindow[rowI - 1];
