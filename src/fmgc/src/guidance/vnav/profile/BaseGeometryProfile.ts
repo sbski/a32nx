@@ -410,7 +410,7 @@ export abstract class BaseGeometryProfile {
         };
     }
 
-    addPresentPositionCheckpoint(presentPosition: LatLongAlt, remainingFuelOnBoard: number) {
+    addPresentPositionCheckpoint(presentPosition: LatLongAlt, remainingFuelOnBoard: number, mach: Mach) {
         this.checkpoints.push({
             reason: VerticalCheckpointReason.PresentPosition,
             distanceFromStart: this.distanceToPresentPosition,
@@ -420,7 +420,9 @@ export abstract class BaseGeometryProfile {
             // TODO: This is a hack to prevent bad predictions when the aircraft is too slow
             // Not sure what the initial speed should be, I think it depends on flight phase
             speed: Math.max(SimVar.GetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots'), SimVar.GetSimVarValue('AIRSPEED INDICATED', 'knots')),
-            mach: SimVar.GetSimVarValue('AIRSPEED MACH', 'number'),
+            // Note that the `mach` field here is usually not the Mach number that the aircraft is predicted to travel, but rather the Mach number
+            // at which the speed target would change to be a Mach number.
+            mach,
         });
     }
 

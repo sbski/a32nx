@@ -244,6 +244,21 @@ export class McduSpeedProfile implements SpeedProfile {
         }
     }
 
+    getManagedMachTarget() {
+        const { flightPhase, managedClimbSpeedMach, managedCruiseSpeedMach, managedDescentSpeedMach } = this.parameters.get();
+
+        switch (flightPhase) {
+        case FmgcFlightPhase.Cruise:
+            return managedCruiseSpeedMach;
+        case FmgcFlightPhase.Descent:
+        case FmgcFlightPhase.Approach:
+        case FmgcFlightPhase.Done:
+            return managedDescentSpeedMach;
+        default:
+            return managedClimbSpeedMach;
+        }
+    }
+
     private resetCache() {
         this.maxSpeedCache.clear();
         this.maxSpeedLookups = 0;

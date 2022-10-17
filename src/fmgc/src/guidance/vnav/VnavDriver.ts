@@ -237,10 +237,7 @@ export class VnavDriver implements GuidanceComponent {
         console.time('VNAV computation');
         // TODO: This is where the return to trajectory would go:
         if (flightPhase >= FmgcFlightPhase.Climb) {
-            this.currentNavGeometryProfile.addPresentPositionCheckpoint(
-                presentPosition,
-                fuelOnBoard,
-            );
+            this.currentNavGeometryProfile.addPresentPositionCheckpoint(presentPosition, fuelOnBoard, this.currentMcduSpeedProfile.getManagedMachTarget());
         }
 
         this.finishProfileInManagedModes(this.currentNavGeometryProfile, Math.max(FmgcFlightPhase.Takeoff, flightPhase));
@@ -276,10 +273,8 @@ export class VnavDriver implements GuidanceComponent {
         }
 
         if (flightPhase >= FmgcFlightPhase.Climb) {
-            this.currentNdGeometryProfile.addPresentPositionCheckpoint(
-                presentPosition,
-                fuelOnBoard,
-            );
+            // TODO: Using the current managed Mach target is probably not right when in selected speed?
+            this.currentNdGeometryProfile.addPresentPositionCheckpoint(presentPosition, fuelOnBoard, this.currentMcduSpeedProfile.getManagedMachTarget());
         } else {
             this.takeoffPathBuilder.buildTakeoffPath(this.currentNdGeometryProfile);
         }
@@ -522,7 +517,7 @@ export class VnavDriver implements GuidanceComponent {
             const climbStrategy = new ClimbThrustClimbStrategy(this.computationParametersObserver, this.atmosphericConditions);
             const climbWinds = new HeadwindProfile(this.windProfileFactory.getClimbWinds(), this.headingProfile);
 
-            expediteGeometryProfile.addPresentPositionCheckpoint(presentPosition, fuelOnBoard);
+            expediteGeometryProfile.addPresentPositionCheckpoint(presentPosition, fuelOnBoard, this.currentMcduSpeedProfile.getManagedMachTarget());
             this.climbPathBuilder.computeClimbPath(expediteGeometryProfile, climbStrategy, selectedSpeedProfile, climbWinds, fcuAltitude);
 
             expediteGeometryProfile.finalizeProfile();
