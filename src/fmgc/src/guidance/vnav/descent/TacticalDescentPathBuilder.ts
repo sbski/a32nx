@@ -1,3 +1,4 @@
+import { BisectionMethod, NonTerminationStrategy } from '@fmgc/guidance/vnav/BisectionMethod';
 import { SpeedProfile } from '@fmgc/guidance/vnav/climb/SpeedProfile';
 import { DescentStrategy } from '@fmgc/guidance/vnav/descent/DescentStrategy';
 import { StepResults } from '@fmgc/guidance/vnav/Predictions';
@@ -5,7 +6,6 @@ import { BaseGeometryProfile } from '@fmgc/guidance/vnav/profile/BaseGeometryPro
 import { MaxSpeedConstraint, VerticalCheckpoint, VerticalCheckpointReason } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
 import { TemporaryCheckpointSequence } from '@fmgc/guidance/vnav/profile/TemporaryCheckpointSequence';
 import { VerticalProfileComputationParametersObserver } from '@fmgc/guidance/vnav/VerticalProfileComputationParameters';
-import { VnavConfig } from '@fmgc/guidance/vnav/VnavConfig';
 import { HeadwindProfile } from '@fmgc/guidance/vnav/wind/HeadwindProfile';
 
 type DecelerationToSpeedConstraint = {
@@ -49,7 +49,7 @@ export class TacticalDescentPathBuilder {
             let descentSegment = new TemporaryCheckpointSequence(profile.lastCheckpoint);
             let decelerationSegment: StepResults = null;
 
-            const tryDecelDistance = (speedLimitDecelAltitude: Feet): Feet => {
+            const tryDecelAltitude = (speedLimitDecelAltitude: Feet): Feet => {
                 descentSegment = this.buildToAltitude(profile.lastCheckpoint, descentStrategy, constraintsToUse, windProfile, speedLimitDecelAltitude);
 
                 // If we've already decelerated below the constraint speed due to a previous constraint, we don't need to decelerate anymore.
@@ -71,9 +71,13 @@ export class TacticalDescentPathBuilder {
                 return altitudeOvershoot;
             };
 
-            const foundAltitude = bisectionMethod(
-                tryDecelDistance, descentSpeedLimit.underAltitude, Math.min(descentSpeedLimit.underAltitude + 6000, profile.lastCheckpoint.altitude), [-500, 0], 10,
+            const foundAltitude = BisectionMethod.findZero(
+                tryDecelAltitude,
+                [descentSpeedLimit.underAltitude, Math.min(descentSpeedLimit.underAltitude + 6000, profile.lastCheckpoint.altitude)],
+                [-500, 0],
+                NonTerminationStrategy.NegativeErrorResult,
             );
+            tryDecelAltitude(foundAltitude);
 
             profile.checkpoints.push(...descentSegment.get());
 
@@ -179,7 +183,7 @@ export class TacticalDescentPathBuilder {
             return distanceOvershoot;
         };
 
-        const decelDistance = bisectionMethod(tryDecelDistance, 0, 20);
+        const decelDistance = BisectionMethod.findZero(tryDecelDistance, [0, 20], [-0.05, 0.05]);
 
         const isMoreConstrainingThanPreviousConstraint = !this.nextDecelerationToSpeedConstraint
             || constraint.distanceFromStart - decelDistance < this.nextDecelerationToSpeedConstraint.decelerationDistanceFromStart;
@@ -193,33 +197,4 @@ export class TacticalDescentPathBuilder {
         sequence.addCheckpointFromStep(descentSegment, VerticalCheckpointReason.StartDeceleration);
         sequence.addCheckpointFromStep(decelerationSegment, VerticalCheckpointReason.SpeedConstraint);
     }
-}
-
-function bisectionMethod(f: (c: number) => number, a: number, b: number, errorTolerance: [number, number] = [-0.05, 0.05], maxIterations: number = 10): number {
-    let fa = f(a);
-    if (fa > 0) {
-        let i = 0;
-        while (i++ < maxIterations) {
-            const c = (a + b) / 2;
-            const fc = f(c);
-
-            if (fc >= errorTolerance[0] && fc <= errorTolerance[1]) {
-                if (VnavConfig.DEBUG_PROFILE) {
-                    console.log(`[FMS/VNAV] Final error ${fc} after ${i} iterations.`);
-                }
-
-                return c;
-            }
-
-            if (fa * fc > 0) {
-                a = c;
-            } else {
-                b = c;
-            }
-
-            fa = f(a);
-        }
-    }
-
-    return a;
 }

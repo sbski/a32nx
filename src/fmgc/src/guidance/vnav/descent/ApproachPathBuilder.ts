@@ -14,6 +14,7 @@ import { TemporaryCheckpointSequence } from '@fmgc/guidance/vnav/profile/Tempora
 import { HeadwindProfile } from '@fmgc/guidance/vnav/wind/HeadwindProfile';
 import { VnavConfig } from '@fmgc/guidance/vnav/VnavConfig';
 import { FlightPathAngleStrategy } from '@fmgc/guidance/vnav/climb/ClimbStrategy';
+import { BisectionMethod, NonTerminationStrategy } from '@fmgc/guidance/vnav/BisectionMethod';
 
 class FlapConfigurationProfile {
     static getBySpeed(speed: Knots, parameters: VerticalProfileComputationParameters): FlapConf {
@@ -217,48 +218,8 @@ export class ApproachPathBuilder {
             return distanceTraveled - desiredDistanceToCover;
         };
 
-        let a = 0;
-        let b = desiredDistanceToCover;
-
-        // TODO: Use already written `bisectionMethod` for this instead of copy-pasting
-        let fa = tryDecelDistance(0);
-        // We can't reach the altitude constraint even if we do not decelerate at all
-        if (fa < 0) {
-            let i = 0;
-            while (i++ < 10) {
-                const c = (a + b) / 2;
-                const fc = tryDecelDistance(c);
-
-                if (fc < 0.05 && decelerationSequence.lastCheckpoint.reason === VerticalCheckpointReason.Decel) {
-                    if (VnavConfig.DEBUG_PROFILE) {
-                        console.log('[FMS/VNAV] Stopping iteration because DECEL point was found.');
-                    }
-
-                    break;
-                }
-
-                // To be conservative, it's fine if we get to the constraint a bit early. Getting to the constraint too late means we violate it and that's bad.
-                if (fc > -0.1 && fc < 0.01 || (b - a) < 0.05) {
-                    if (VnavConfig.DEBUG_PROFILE) {
-                        console.log(`[FMS/VNAV] Final error ${fc} after ${i} iterations.`);
-                    }
-
-                    break;
-                }
-
-                if (fa * fc > 0) {
-                    a = c;
-                } else {
-                    b = c;
-                }
-
-                fa = tryDecelDistance(a);
-            }
-
-            if (i > 10) {
-                console.log(`[FMS/VNAV] Iteration did not terminate when going from ${altitude} ft to ${minimumAltitude} ft in ${desiredDistanceToCover} NM.`);
-            }
-        }
+        const solution = BisectionMethod.findZero(tryDecelDistance, [0, desiredDistanceToCover], [-0.1, 0.1], NonTerminationStrategy.NegativeErrorResult);
+        tryDecelDistance(solution);
 
         sequence.push(...decelerationSequence.get());
 
