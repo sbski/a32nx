@@ -568,6 +568,17 @@ export class PseudoWaypoints implements GuidanceComponent {
                 displayedOnMcdu: false,
                 displayedOnNd: true,
             };
+        case VerticalCheckpointReason.LevelOffForDescentConstraint:
+            return {
+                ident: 'Level off for descent constraint',
+                alongLegIndex,
+                distanceFromLegTermination,
+                efisSymbolFlag: NdSymbolTypeFlags.PwpDescentLevelOff | NdSymbolTypeFlags.MagentaColor,
+                efisSymbolLla,
+                distanceFromStart: checkpoint.distanceFromStart,
+                displayedOnMcdu: false,
+                displayedOnNd: true,
+            };
         case VerticalCheckpointReason.InterceptDescentProfileSelected:
             return {
                 ident: 'Intercept',

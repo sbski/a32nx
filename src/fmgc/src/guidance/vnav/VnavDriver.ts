@@ -89,7 +89,7 @@ export class VnavDriver implements GuidanceComponent {
         this.takeoffPathBuilder = new TakeoffPathBuilder(computationParametersObserver, this.atmosphericConditions);
         this.climbPathBuilder = new ClimbPathBuilder(computationParametersObserver, this.atmosphericConditions);
         this.cruisePathBuilder = new CruisePathBuilder(computationParametersObserver, this.atmosphericConditions);
-        this.tacticalDescentPathBuilder = new TacticalDescentPathBuilder(this.computationParametersObserver);
+        this.tacticalDescentPathBuilder = new TacticalDescentPathBuilder(this.computationParametersObserver, this.atmosphericConditions);
         this.managedDescentPathBuilder = new DescentPathBuilder(computationParametersObserver, this.atmosphericConditions);
         this.approachPathBuilder = new ApproachPathBuilder(computationParametersObserver, this.atmosphericConditions);
         this.cruiseToDescentCoordinator = new CruiseToDescentCoordinator(computationParametersObserver, this.cruisePathBuilder, this.managedDescentPathBuilder, this.approachPathBuilder);
@@ -292,13 +292,13 @@ export class VnavDriver implements GuidanceComponent {
         const tacticalLevelModes = [
             VerticalMode.ALT,
             VerticalMode.ALT_CST,
+            VerticalMode.ALT_CPT,
+            VerticalMode.ALT_CST_CPT,
         ];
 
         const tacticalDescentModes = [
             VerticalMode.OP_DES,
             VerticalMode.DES,
-            VerticalMode.ALT_CPT,
-            VerticalMode.ALT_CST_CPT,
         ];
 
         const isInDescentOrApproachPhase = flightPhase >= FmgcFlightPhase.Descent && flightPhase <= FmgcFlightPhase.Approach;
@@ -350,7 +350,10 @@ export class VnavDriver implements GuidanceComponent {
 
                 if (interceptDistance) {
                     const isManagedDescent = fcuVerticalMode === VerticalMode.DES;
-                    const reason = isManagedDescent ? VerticalCheckpointReason.InterceptDescentProfileManaged : VerticalCheckpointReason.InterceptDescentProfileSelected;
+                    const isManagedDescentArmed = isArmed(fcuArmedVerticalMode, ArmedVerticalMode.DES);
+                    const reason = isManagedDescent || isManagedDescentArmed
+                        ? VerticalCheckpointReason.InterceptDescentProfileManaged
+                        : VerticalCheckpointReason.InterceptDescentProfileSelected;
                     const interceptCheckpoint = this.currentNdGeometryProfile.addInterpolatedCheckpoint(interceptDistance, { reason });
 
                     const isTooCloseToDrawIntercept = Math.abs(this.aircraftToDescentProfileRelation.computeLinearDeviation()) < 100;
@@ -387,13 +390,38 @@ export class VnavDriver implements GuidanceComponent {
                 const levelOffArrow = this.currentNdGeometryProfile.findVerticalCheckpoint(VerticalCheckpointReason.CrossingFcuAltitudeDescent);
                 let levelOffDistance = levelOffArrow?.distanceFromStart ?? 0;
 
-                if (fcuVerticalMode === VerticalMode.DES && !levelOffArrow) {
+                if ((fcuVerticalMode === VerticalMode.DES || isArmed(fcuArmedVerticalMode, ArmedVerticalMode.DES)) && !levelOffArrow) {
                     levelOffDistance = this.currentNdGeometryProfile.interpolateDistanceAtAltitudeBackwards(fcuAltitude, true);
                     this.currentNdGeometryProfile.addInterpolatedCheckpoint(levelOffDistance, { reason: VerticalCheckpointReason.CrossingFcuAltitudeDescent });
                 }
 
+                const currentAlt = this.currentNdGeometryProfile.checkpoints[0].altitude;
+                const isDescentArmed = isArmed(fcuArmedVerticalMode, ArmedVerticalMode.DES) || isArmed(fcuArmedVerticalMode, ArmedVerticalMode.FINAL);
+                let constraintAlt: Feet = -Infinity;
+                // Find next descent segment
                 for (let i = 1; i < this.currentNdGeometryProfile.checkpoints.length; i++) {
                     const checkpoint = this.currentNdGeometryProfile.checkpoints[i];
+                    if (checkpoint.reason === VerticalCheckpointReason.LevelOffForDescentConstraint) {
+                        // This removes the magenta arrow if we're closer than 100 ft. (I have a reference for that)
+                        // This piece of code should not really be here, but because we happen to be iterating over the ND profile, it's convenient.
+                        if (currentAlt - checkpoint.altitude < 100) {
+                            checkpoint.reason = VerticalCheckpointReason.AtmosphericConditions;
+                        } else {
+                            constraintAlt = Math.round(checkpoint.altitude);
+                        }
+                    }
+
+                    const previousCheckpoint = this.currentNdGeometryProfile.checkpoints[i - 1];
+                    // Either in level flight and DES armed or in descent and checkpoint under cstr alt found
+                    if (isInLevelFlight && isDescentArmed && currentAlt - checkpoint.altitude > 100 || constraintAlt - checkpoint.altitude > 100
+                    ) {
+                        this.currentNdGeometryProfile.addInterpolatedCheckpoint(
+                            previousCheckpoint.distanceFromStart, { reason: VerticalCheckpointReason.ContinueDescentArmed },
+                        );
+
+                        break;
+                    }
+
                     // `checkpoint.altitude - fcuAltitude >= -100` works like this: If you have a constraint at 4450 feet causing a level segment,
                     // but you set the FCU altitude to 4500 ft, then the continue descent arrow should be drawn where you continue the descent from 4450 ft
                     // I have evidence of this somewhere.
@@ -401,23 +429,15 @@ export class VnavDriver implements GuidanceComponent {
                         continue;
                     }
 
-                    const previousCheckpoint = this.currentNdGeometryProfile.checkpoints[i - 1];
-
                     // Here, we don't need to check whether the checkpoint is lower than the previous one,
                     // because we should only get to this point if we find the first checkpoint below the FCU altitude.
                     if (previousCheckpoint.reason === VerticalCheckpointReason.PresentPosition) {
                         break;
                     }
 
-                    const shouldShowArmedDescentArrow = isArmed(fcuArmedVerticalMode, ArmedVerticalMode.DES)
-                        || isArmed(fcuArmedVerticalMode, ArmedVerticalMode.FINAL);
-
                     this.currentNdGeometryProfile.addInterpolatedCheckpoint(
                         Math.max(levelOffDistance, previousCheckpoint.distanceFromStart),
-                        {
-                            reason: shouldShowArmedDescentArrow ? VerticalCheckpointReason.ContinueDescentArmed
-                                : VerticalCheckpointReason.ContinueDescent,
-                        },
+                        { reason: VerticalCheckpointReason.ContinueDescent },
                     );
 
                     break;
@@ -458,10 +478,10 @@ export class VnavDriver implements GuidanceComponent {
             }
 
             return isOnGeometricPath
-                ? new VerticalSpeedStrategy(
+                ? new FlightPathAngleStrategy(this.computationParametersObserver, this.atmosphericConditions, targetFpa / 2)
+                : new VerticalSpeedStrategy(
                     this.computationParametersObserver, this.atmosphericConditions, this.aircraftToDescentProfileRelation.isAboveSpeedLimitAltitude() ? -1000 : -500,
-                )
-                : new FlightPathAngleStrategy(this.computationParametersObserver, this.atmosphericConditions, targetFpa / 2);
+                );
         }
 
         // Assume level flight if we're in a different mode

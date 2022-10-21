@@ -42,6 +42,8 @@ export class ConstraintReader {
         this.updateDistancesToEnd(geometry);
 
         const fpm = this.guidanceController.flightPlanManager;
+        let maxSpeed = Infinity;
+
         for (let i = 0; i < fpm.getWaypointsCount(FlightPlans.Active); i++) {
             const waypoint = fpm.getWaypoint(i, FlightPlans.Active);
 
@@ -88,9 +90,11 @@ export class ConstraintReader {
                 }
 
                 if (speedConstraint && waypoint.speedConstraint > 100) {
+                    maxSpeed = Math.min(maxSpeed, speedConstraint.speed);
+
                     this.descentSpeedConstraints.push({
                         distanceFromStart: this.totalFlightPlanDistance - waypoint.additionalData.distanceToEnd,
-                        maxSpeed: speedConstraint.speed,
+                        maxSpeed,
                     });
                 }
             }

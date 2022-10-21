@@ -1,4 +1,7 @@
+import { AltitudeConstraint, AltitudeConstraintType } from '@fmgc/guidance/lnav/legs';
+import { AtmosphericConditions } from '@fmgc/guidance/vnav/AtmosphericConditions';
 import { BisectionMethod, NonTerminationStrategy } from '@fmgc/guidance/vnav/BisectionMethod';
+import { VerticalSpeedStrategy } from '@fmgc/guidance/vnav/climb/ClimbStrategy';
 import { SpeedProfile } from '@fmgc/guidance/vnav/climb/SpeedProfile';
 import { DescentStrategy } from '@fmgc/guidance/vnav/descent/DescentStrategy';
 import { StepResults } from '@fmgc/guidance/vnav/Predictions';
@@ -19,12 +22,21 @@ type DecelerationToSpeedLimit = {
     speed: Knots,
 }
 
+type MinimumDescentAltitudeConstraint = {
+    distanceFromStart: NauticalMiles,
+    minimumAltitude: Feet,
+}
+
 export class TacticalDescentPathBuilder {
     nextDecelerationToSpeedConstraint?: DecelerationToSpeedConstraint = null;
 
     nextDecelerationToSpeedLimit?: DecelerationToSpeedLimit = null;
 
-    constructor(private observer: VerticalProfileComputationParametersObserver) { }
+    private levelFlightStrategy: VerticalSpeedStrategy;
+
+    constructor(private observer: VerticalProfileComputationParametersObserver, atmosphericConditions: AtmosphericConditions) {
+        this.levelFlightStrategy = new VerticalSpeedStrategy(this.observer, atmosphericConditions, 0);
+    }
 
     /**
      * Builds a path from the last checkpoint to the finalAltitude
@@ -40,17 +52,27 @@ export class TacticalDescentPathBuilder {
 
         const { descentSpeedLimit, managedDescentSpeedMach } = this.observer.get();
         const initialAltitude = profile.lastCheckpoint.altitude;
-        const constraintsToUse = profile.descentSpeedConstraints
-            .slice()
-            .reverse()
-            .sort((a, b) => a.distanceFromStart - b.distanceFromStart);
+
+        let minAlt = Infinity;
+        const altConstraintsToUse = profile.descentAltitudeConstraints.map((constraint) => {
+            minAlt = Math.min(minAlt, minimumAltitude(constraint.constraint));
+            return {
+                distanceFromStart: constraint.distanceFromStart,
+                minimumAltitude: minAlt,
+            } as MinimumDescentAltitudeConstraint;
+        });
+
+        // TODO:
+        // Do descent speed constraints need to be sorted here?
 
         if (speedProfile.shouldTakeDescentSpeedLimitIntoAccount() && finalAltitude < descentSpeedLimit.underAltitude && profile.lastCheckpoint.speed > descentSpeedLimit.speed) {
             let descentSegment = new TemporaryCheckpointSequence(profile.lastCheckpoint);
             let decelerationSegment: StepResults = null;
 
             const tryDecelAltitude = (speedLimitDecelAltitude: Feet): Feet => {
-                descentSegment = this.buildToAltitude(profile.lastCheckpoint, descentStrategy, constraintsToUse, windProfile, speedLimitDecelAltitude);
+                descentSegment = this.buildToAltitudeWithConstraints(
+                    profile.lastCheckpoint, descentStrategy, altConstraintsToUse, profile.descentSpeedConstraints, windProfile, speedLimitDecelAltitude,
+                );
 
                 // If we've already decelerated below the constraint speed due to a previous constraint, we don't need to decelerate anymore.
                 // We return 0 because the bisection method will terminate if the error is zero.
@@ -97,7 +119,9 @@ export class TacticalDescentPathBuilder {
             }
         }
 
-        const sequenceToFinalAltitude = this.buildToAltitude(profile.lastCheckpoint, descentStrategy, constraintsToUse, windProfile, finalAltitude);
+        const sequenceToFinalAltitude = this.buildToAltitudeWithConstraints(
+            profile.lastCheckpoint, descentStrategy, altConstraintsToUse, profile.descentSpeedConstraints, windProfile, finalAltitude,
+        );
 
         profile.checkpoints.push(...sequenceToFinalAltitude.get());
 
@@ -107,10 +131,67 @@ export class TacticalDescentPathBuilder {
         }
     }
 
-    private buildToAltitude(
-        start: VerticalCheckpoint, descentStrategy: DescentStrategy, constraints: MaxSpeedConstraint[], windProfile: HeadwindProfile, finalAltitude: Feet,
+    private buildToAltitudeWithConstraints(
+        start: VerticalCheckpoint,
+        descentStrategy: DescentStrategy,
+        altConstraints: MinimumDescentAltitudeConstraint[],
+        speedConstraints: MaxSpeedConstraint[],
+        windProfile: HeadwindProfile,
+        finalAltitude: Feet,
     ): TemporaryCheckpointSequence {
+        const { managedDescentSpeedMach } = this.observer.get();
         const sequence = new TemporaryCheckpointSequence(start);
+
+        for (const altConstraint of altConstraints) {
+            // If we're past the constraint, ignore it
+            // If we're more than 100 feet below it, ignore it. 100 ft because we don't want it to be ignored when flying at constraint alt
+            if (altConstraint.distanceFromStart < sequence.lastCheckpoint.distanceFromStart || altConstraint.minimumAltitude - sequence.lastCheckpoint.altitude > 100) {
+                continue;
+            } else if (altConstraint.minimumAltitude < finalAltitude) {
+                break;
+            }
+
+            this.buildToAltitude(
+                sequence,
+                descentStrategy,
+                speedConstraints,
+                windProfile,
+                // It's possible we're slightly below the constraint alt, so we don't want this to somehow build a climb segment
+                Math.min(altConstraint.minimumAltitude, sequence.lastCheckpoint.altitude),
+            );
+
+            if (sequence.lastCheckpoint.distanceFromStart < altConstraint.distanceFromStart) {
+                if (sequence.length > 1) {
+                    sequence.lastCheckpoint.reason = VerticalCheckpointReason.LevelOffForDescentConstraint;
+                }
+
+                const levelSegment = this.levelFlightStrategy.predictToDistance(
+                    sequence.lastCheckpoint.altitude,
+                    altConstraint.distanceFromStart - sequence.lastCheckpoint.distanceFromStart,
+                    sequence.lastCheckpoint.speed,
+                    managedDescentSpeedMach,
+                    sequence.lastCheckpoint.remainingFuelOnBoard,
+                    windProfile.getHeadwindComponent(sequence.lastCheckpoint.distanceFromStart, sequence.lastCheckpoint.altitude),
+                );
+
+                sequence.addCheckpointFromStep(levelSegment, VerticalCheckpointReason.AltitudeConstraint);
+            }
+        }
+
+        this.buildToAltitude(
+            sequence,
+            descentStrategy,
+            speedConstraints,
+            windProfile,
+            finalAltitude,
+        );
+
+        return sequence;
+    }
+
+    private buildToAltitude(
+        sequence: TemporaryCheckpointSequence, descentStrategy: DescentStrategy, constraints: MaxSpeedConstraint[], windProfile: HeadwindProfile, finalAltitude: Feet,
+    ) {
         const { managedDescentSpeedMach } = this.observer.get();
 
         for (const constraint of constraints) {
@@ -140,8 +221,6 @@ export class TacticalDescentPathBuilder {
 
             sequence.addCheckpointFromStep(descentSegment, VerticalCheckpointReason.AtmosphericConditions);
         }
-
-        return sequence;
     }
 
     private handleSpeedConstraint(sequence: TemporaryCheckpointSequence, constraint: MaxSpeedConstraint, descentStrategy: DescentStrategy, windProfile: HeadwindProfile) {
@@ -196,5 +275,20 @@ export class TacticalDescentPathBuilder {
 
         sequence.addCheckpointFromStep(descentSegment, VerticalCheckpointReason.StartDeceleration);
         sequence.addCheckpointFromStep(decelerationSegment, VerticalCheckpointReason.SpeedConstraint);
+    }
+}
+
+function minimumAltitude(constraint: AltitudeConstraint): Feet {
+    switch (constraint.type) {
+    case AltitudeConstraintType.at:
+    case AltitudeConstraintType.atOrAbove:
+        return constraint.altitude1;
+    case AltitudeConstraintType.atOrBelow:
+        return -Infinity;
+    case AltitudeConstraintType.range:
+        return constraint.altitude2;
+    default:
+        console.error(`[FMS/VNAV] Unexpected constraint type: ${constraint.type}`);
+        return -Infinity;
     }
 }
