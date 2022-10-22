@@ -65,7 +65,9 @@ export class TacticalDescentPathBuilder {
         // TODO:
         // Do descent speed constraints need to be sorted here?
 
-        if (speedProfile.shouldTakeDescentSpeedLimitIntoAccount() && finalAltitude < descentSpeedLimit.underAltitude && profile.lastCheckpoint.speed > descentSpeedLimit.speed) {
+        if (speedProfile.shouldTakeDescentSpeedLimitIntoAccount()
+            && initialAltitude > descentSpeedLimit.underAltitude && finalAltitude < descentSpeedLimit.underAltitude
+            && profile.lastCheckpoint.speed > descentSpeedLimit.speed) {
             let descentSegment = new TemporaryCheckpointSequence(profile.lastCheckpoint);
             let decelerationSegment: StepResults = null;
 
