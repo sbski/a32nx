@@ -104,7 +104,7 @@ export class ApproachSegment extends FlightPlanSegment {
 
                     if (approachLegs.length > 1) {
                         mappedLeg.type = lastLeg.type;
-                        Object.assign(lastLeg.definition, lastLeg.definition);
+                        Object.assign(mappedLeg.definition, lastLeg.definition);
                     }
 
                     legs.push(mappedLeg);
