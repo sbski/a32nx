@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { LegType, Waypoint } from 'msfs-navdata';
-import { FlightPlanElement } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
+import { FlightPlanElement, FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
-import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
+import { BaseFlightPlan, FlightPlanQueuedOperation } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 
 export abstract class FlightPlanSegment {
     abstract class: SegmentClass
@@ -18,6 +18,21 @@ export abstract class FlightPlanSegment {
 
     get legCount() {
         return this.allLegs.length;
+    }
+
+    /**
+     * Returns the last non-discontinuity leg
+     */
+    get lastLeg() {
+        for (let i = this.allLegs.length - 1; i >= 0; i--) {
+            const element = this.allLegs[i];
+
+            if (element.isDiscontinuity === false) {
+                return element as FlightPlanLeg;
+            }
+        }
+
+        return undefined;
     }
 
     /**
@@ -45,6 +60,8 @@ export abstract class FlightPlanSegment {
      */
     insertAfter(index: number, element: FlightPlanElement) {
         this.allLegs.splice(index + 1, 0, element);
+
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
     /**
@@ -57,6 +74,7 @@ export abstract class FlightPlanSegment {
             // Move legs after cut to enroute
             const removed = this.allLegs.splice(atPoint);
 
+            this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
             return removed;
         }
 
@@ -67,6 +85,7 @@ export abstract class FlightPlanSegment {
                 removed.push(this.allLegs.shift());
             }
 
+            this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
             return removed;
         }
 
@@ -81,6 +100,8 @@ export abstract class FlightPlanSegment {
      */
     removeRange(from: number, to: number) {
         this.allLegs.splice(from, to - from);
+
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
     /**
@@ -92,6 +113,8 @@ export abstract class FlightPlanSegment {
         for (let i = 0; i < before; i++) {
             this.allLegs.shift();
         }
+
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
     /**
@@ -101,6 +124,8 @@ export abstract class FlightPlanSegment {
      */
     removeAfter(from: number) {
         this.allLegs.splice(from);
+
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
     insertNecessaryDiscontinuities() {

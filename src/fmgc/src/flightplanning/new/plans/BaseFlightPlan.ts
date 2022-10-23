@@ -10,7 +10,8 @@ import {
     Departure,
     LegType,
     ProcedureTransition,
-    Runway, Waypoint,
+    Runway,
+    Waypoint,
     WaypointDescriptor,
 } from 'msfs-navdata';
 import { OriginSegment } from '@fmgc/flightplanning/new/segments/OriginSegment';
@@ -70,7 +71,7 @@ export abstract class BaseFlightPlan {
     enqueueOperation(op: FlightPlanQueuedOperation): void {
         const existing = this.queuedOperations.find((it) => it === op);
 
-        if (!existing) {
+        if (existing === undefined) {
             this.queuedOperations.push(op);
         }
     }
@@ -534,12 +535,12 @@ export abstract class BaseFlightPlan {
         throw new Error('[FMS/FPM] Tried to get segment for out-of-bounds index');
     }
 
-    insertElementAfter(index: number, element: FlightPlanElement, insertDiscontinuity = false) {
+    async insertElementAfter(index: number, element: FlightPlanElement, insertDiscontinuity = false) {
         if (index < 0 || index > this.allLegs.length) {
             throw new Error(`[FMS/FPM] Tried to insert waypoint out of bounds (index=${index})`);
         }
 
-        let startSegment;
+        let startSegment: FlightPlanSegment;
         let indexInStartSegment;
 
         if (this.legCount > 0) {
@@ -568,8 +569,10 @@ export abstract class BaseFlightPlan {
             }
         }
 
-        this.incrementVersion();
         this.redistributeLegsAt(index + 1);
+
+        await this.flushOperationQueue();
+        this.incrementVersion();
     }
 
     setOverflyAt(index: number, overfly: boolean): void {
@@ -632,6 +635,12 @@ export abstract class BaseFlightPlan {
             const toInsertInEnroute: FlightPlanElement[] = [];
 
             let emptyAllNext = false;
+
+            if (segment === this.originSegment) {
+                emptyAllNext = true;
+
+                toInsertInEnroute.push(...this.originSegment.truncate(indexInSegment));
+            }
 
             if (segment === this.departureRunwayTransitionSegment) {
                 emptyAllNext = true;
@@ -769,6 +778,12 @@ export abstract class BaseFlightPlan {
             }
         }
 
+        if (first instanceof OriginSegment && first.lastLeg?.waypointDescriptor === WaypointDescriptor.Runway) {
+            // Always string origin with only a runway to next segment
+            first.strung = true;
+            return;
+        }
+
         if (first instanceof ApproachSegment && second instanceof DestinationSegment) {
             // Always string approach to destination
             first.strung = true;
@@ -777,12 +792,6 @@ export abstract class BaseFlightPlan {
 
         if ((first instanceof DestinationSegment || first instanceof ApproachSegment) && second instanceof MissedApproachSegment) {
             // Always string approach to missed
-            first.strung = true;
-            return;
-        }
-
-        if (lastLegInFirst.type === LegType.IF) {
-            // Always connect if first segment end with an IF leg
             first.strung = true;
             return;
         }
@@ -876,30 +885,39 @@ export abstract class BaseFlightPlan {
     }
 
     private ensureNoDuplicates() {
-        for (let i = 0; i < this.allLegs.length; i++) {
-            const leg = this.allLegs[i];
-            if (leg.isDiscontinuity === true) {
-                continue;
-            }
+        let a = 0;
+        let i = 0;
+        for (const segment of this.orderedSegments) {
+            for (let j = 0; j < segment.allLegs.length; j++) {
+                i = a + j;
 
-            if (!leg.isXF()) {
-                continue;
-            }
+                const leg = segment.allLegs[j];
 
-            const fix = leg.definition.waypoint;
-
-            const duplicate = this.findDuplicate(fix, i);
-
-            if (duplicate) {
-                const [segment, , duplicatePlanIndex] = duplicate;
-
-                // We can have duplicates in the missed approach
-                if (segment === this.missedApproachSegment) {
+                if (leg.isDiscontinuity === true) {
                     continue;
                 }
 
-                this.removeRange(i + 1, duplicatePlanIndex + 1);
+                if (!leg.isXF()) {
+                    continue;
+                }
+
+                const fix = leg.definition.waypoint;
+
+                const duplicate = this.findDuplicate(fix, i);
+
+                if (duplicate) {
+                    const [segment, , duplicatePlanIndex] = duplicate;
+
+                    // We can have duplicates in the missed approach
+                    if (segment === this.missedApproachSegment) {
+                        continue;
+                    }
+
+                    this.removeRange(i + 1, duplicatePlanIndex + 1);
+                }
             }
+
+            a += segment.allLegs.length;
         }
     }
 
@@ -956,7 +974,7 @@ export abstract class BaseFlightPlan {
 
                 if (segment === endSegment) {
                     segment.removeBefore(indexInEndSegment);
-                    return;
+                    break;
                 }
 
                 segment.allLegs.length = 0;
