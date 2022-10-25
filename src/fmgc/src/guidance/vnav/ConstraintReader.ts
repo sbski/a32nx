@@ -179,7 +179,7 @@ export class ConstraintReader {
 
         this.totalFlightPlanDistance = 0;
 
-        for (let i = fpm.getWaypointsCount(FlightPlans.Active) - 1; i > fpm.getActiveWaypointIndex() - 1 && i >= 0; i--) {
+        for (let i = fpm.getWaypointsCount(FlightPlans.Active) - 1; i >= fpm.getActiveWaypointIndex() - 1 && i >= 0; i--) {
             const leg = legs.get(i);
             const waypoint = fpm.getWaypoint(i, FlightPlans.Active);
             const nextWaypoint = fpm.getWaypoint(i + 1, FlightPlans.Active);
