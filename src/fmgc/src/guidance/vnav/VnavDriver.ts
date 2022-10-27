@@ -569,7 +569,7 @@ export class VnavDriver implements GuidanceComponent {
     private isForcingSpeedTargetDownForConstraint: boolean = false;
 
     private updateDescentSpeedGuidance() {
-        const { flightPhase, managedDescentSpeed, managedDescentSpeedMach, presentPosition, descentSpeedLimit } = this.computationParametersObserver.get();
+        const { flightPhase, managedDescentSpeed, managedDescentSpeedMach, presentPosition, descentSpeedLimit, approachSpeed } = this.computationParametersObserver.get();
         const isExpediteModeActive = SimVar.GetSimVarValue('L:A32NX_FMA_EXPEDITE_MODE', 'number') === 1;
         const isHoldActive = this.guidanceController.isManualHoldActive() || this.guidanceController.isManualHoldNext();
         const currentDistanceFromStart = this.constraintReader.distanceToPresentPosition;
@@ -596,21 +596,14 @@ export class VnavDriver implements GuidanceComponent {
         // What makes this complicated is that we don't want to the speed target to jump around during the deceleration segment, only because the profile calculation computes
         // that deceleration is only necessary a bit later. Once we start the deceleration to a point, we go through with it.
         // This means, we need to save the state "in deceleration segment" and latch it. But we need to figure out when to reset this value again, as not to get stuck in a bad state.
-        if (isAnticipatedSpeedLimitDecelValid && currentAltitude < this.tacticalDescentPathBuilder.nextDecelerationToSpeedLimit.altitude) {
-            newSpeedTarget = Math.min(newSpeedTarget, this.tacticalDescentPathBuilder.nextDecelerationToSpeedLimit.speed);
+        if (isAnticipatedSpeedLimitDecelValid && currentAltitude < this.tacticalDescentPathBuilder.nextDecelerationToSpeedLimit.altitude
+            || currentAltitude < descentSpeedLimit.underAltitude && this.currentMcduSpeedProfile.shouldTakeDescentSpeedLimitIntoAccount()
+        ) {
             this.isBelowDescentSpeedLimit = true;
-        } else if (this.currentMcduSpeedProfile.shouldTakeDescentSpeedLimitIntoAccount()) {
-            // Hystersis so the speed target doesn't flicker while flying at the speed limit altitude. I don't know if this is in the real aircraft,
-            // but it would definitely make a lot of sense.
-            if (currentAltitude < descentSpeedLimit.underAltitude) {
-                this.isBelowDescentSpeedLimit = true;
-            } else if (currentAltitude > descentSpeedLimit.underAltitude + 100) {
-                this.isBelowDescentSpeedLimit = false;
-            }
+        }
 
-            if (this.isBelowDescentSpeedLimit) {
-                newSpeedTarget = Math.min(newSpeedTarget, descentSpeedLimit.speed);
-            }
+        if (this.isBelowDescentSpeedLimit) {
+            newSpeedTarget = Math.min(newSpeedTarget, descentSpeedLimit.speed);
         }
 
         if (isAnticipatedSpeedConstraintDecelValid) {
