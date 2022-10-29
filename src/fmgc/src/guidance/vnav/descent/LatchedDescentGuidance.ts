@@ -125,6 +125,7 @@ export class LatchedDescentGuidance {
         const isAboveSpeedLimitAltitude = this.aircraftToDescentProfileRelation.isAboveSpeedLimitAltitude();
         const isBeforeTopOfDescent = !this.aircraftToDescentProfileRelation.isPastTopOfDescent();
         const linearDeviation = this.aircraftToDescentProfileRelation.computeLinearDeviation();
+        const isCloseToAirfieldElevation = this.aircraftToDescentProfileRelation.isCloseToAirfieldElevation();
         const isHoldActive = this.guidanceController.isManualHoldActive();
 
         this.targetAltitudeGuidance = this.atmosphericConditions.estimatePressureAltitudeInMsfs(
@@ -142,7 +143,7 @@ export class LatchedDescentGuidance {
             } else {
                 // Below path
                 this.requestedVerticalMode = RequestedVerticalMode.VsSpeed;
-                this.targetVerticalSpeed = (isAboveSpeedLimitAltitude ? -1000 : -500);
+                this.targetVerticalSpeed = (isAboveSpeedLimitAltitude && !isCloseToAirfieldElevation ? -1000 : -500);
                 this.showDescentLatchOnPfd = false;
             }
         } else {

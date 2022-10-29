@@ -157,7 +157,7 @@ export class DescentGuidance {
                 this.targetVerticalSpeed = this.aircraftToDescentProfileRelation.currentTargetPathAngle() / 2;
             } else {
                 this.requestedVerticalMode = RequestedVerticalMode.VsSpeed;
-                this.targetVerticalSpeed = (isAboveSpeedLimitAltitude || isCloseToAirfieldElevation ? -1000 : -500);
+                this.targetVerticalSpeed = (isAboveSpeedLimitAltitude && !isCloseToAirfieldElevation ? -1000 : -500);
             }
         } else if (!isOnGeometricPath && isSpeedAuto && !this.isInUnderspeedCondition && !isApproachPhaseActive) {
             // on idle path
