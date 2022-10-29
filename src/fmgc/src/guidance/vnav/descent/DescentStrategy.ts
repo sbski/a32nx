@@ -1,4 +1,5 @@
 import { AtmosphericConditions } from '@fmgc/guidance/vnav/AtmosphericConditions';
+import { FlightPathAngleStrategy, VerticalSpeedStrategy } from '@fmgc/guidance/vnav/climb/ClimbStrategy';
 import { FlapConf } from '@fmgc/guidance/vnav/common';
 import { AircraftConfiguration } from '@fmgc/guidance/vnav/descent/ApproachPathBuilder';
 import { EngineModel } from '@fmgc/guidance/vnav/EngineModel';
@@ -50,6 +51,51 @@ export interface DescentStrategy {
     predictToSpeed(
         initialAltitude: number, finalSpeed: Knots, speed: Knots, mach: Mach, fuelOnBoard: number, headwindComponent: WindComponent, config?: AircraftConfiguration
     ): StepResults
+}
+
+export class DesModeStrategy implements DescentStrategy {
+    private readonly decelerationStrategy: DescentStrategy;
+
+    private constructor(
+        observer: VerticalProfileComputationParametersObserver,
+        atmosphericConditions: AtmosphericConditions,
+        private readonly descentStrategy: DescentStrategy,
+    ) {
+        this.decelerationStrategy = new IdleDescentStrategy(observer, atmosphericConditions);
+    }
+
+    static aboveProfile(observer: VerticalProfileComputationParametersObserver, atmosphericConditions: AtmosphericConditions): DesModeStrategy {
+        return new DesModeStrategy(observer, atmosphericConditions,
+            new IdleDescentStrategy(observer, atmosphericConditions, { flapConfig: FlapConf.CLEAN, gearExtended: false, speedbrakesExtended: true }));
+    }
+
+    static belowProfileVs(observer: VerticalProfileComputationParametersObserver, atmosphericConditions: AtmosphericConditions, verticalSpeed: FeetPerMinute): DescentStrategy {
+        return new DesModeStrategy(observer, atmosphericConditions,
+            new VerticalSpeedStrategy(observer, atmosphericConditions, verticalSpeed));
+    }
+
+    static belowProfileFpa(observer: VerticalProfileComputationParametersObserver, atmosphericConditions: AtmosphericConditions, flightPathAngle: Degrees): DescentStrategy {
+        return new DesModeStrategy(observer, atmosphericConditions,
+            new FlightPathAngleStrategy(observer, atmosphericConditions, flightPathAngle));
+    }
+
+    predictToAltitude(
+        initialAltitude: number, finalAltitude: number, speed: number, mach: number, fuelOnBoard: number, headwindComponent: WindComponent, config?: AircraftConfiguration,
+    ): StepResults {
+        return this.descentStrategy.predictToAltitude(initialAltitude, finalAltitude, speed, mach, fuelOnBoard, headwindComponent, config);
+    }
+
+    predictToDistance(
+        initialAltitude: number, distance: number, speed: number, mach: number, fuelOnBoard: number, headwindComponent: WindComponent, config?: AircraftConfiguration,
+    ): StepResults {
+        return this.descentStrategy.predictToDistance(initialAltitude, distance, speed, mach, fuelOnBoard, headwindComponent, config);
+    }
+
+    predictToSpeed(
+        initialAltitude: number, finalSpeed: number, speed: number, mach: number, fuelOnBoard: number, headwindComponent: WindComponent, config?: AircraftConfiguration,
+    ): StepResults {
+        return this.decelerationStrategy.predictToSpeed(initialAltitude, finalSpeed, speed, mach, fuelOnBoard, headwindComponent, config);
+    }
 }
 
 export class IdleDescentStrategy implements DescentStrategy {

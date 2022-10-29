@@ -20,12 +20,11 @@ import { ClimbThrustClimbStrategy, FlightPathAngleStrategy, VerticalSpeedStrateg
 import { ConstraintReader } from '@fmgc/guidance/vnav/ConstraintReader';
 import { FmgcFlightPhase } from '@shared/flightphase';
 import { TacticalDescentPathBuilder } from '@fmgc/guidance/vnav/descent/TacticalDescentPathBuilder';
-import { DescentStrategy, IdleDescentStrategy } from '@fmgc/guidance/vnav/descent/DescentStrategy';
+import { DescentStrategy, DesModeStrategy, IdleDescentStrategy } from '@fmgc/guidance/vnav/descent/DescentStrategy';
 import { LatchedDescentGuidance } from '@fmgc/guidance/vnav/descent/LatchedDescentGuidance';
 import { DescentGuidance } from '@fmgc/guidance/vnav/descent/DescentGuidance';
 import { ProfileInterceptCalculator } from '@fmgc/guidance/vnav/descent/ProfileInterceptCalculator';
 import { ApproachPathBuilder } from '@fmgc/guidance/vnav/descent/ApproachPathBuilder';
-import { FlapConf } from '@fmgc/guidance/vnav/common';
 import { AircraftToDescentProfileRelation } from '@fmgc/guidance/vnav/descent/AircraftToProfileRelation';
 import { WindProfileFactory } from '@fmgc/guidance/vnav/wind/WindProfileFactory';
 import { NavHeadingProfile } from '@fmgc/guidance/vnav/wind/AircraftHeadingProfile';
@@ -456,8 +455,6 @@ export class VnavDriver implements GuidanceComponent {
         fcuVerticalMode: VerticalMode, fcuVerticalSpeed: FeetPerMinute, fcuFlightPathAngle: Degrees, relation: AircraftToDescentProfileRelation,
     ): DescentStrategy {
         const linearDeviation = relation.computeLinearDeviation();
-        const isOnGeometricPath = relation.isOnGeometricPath();
-        const targetFpa = relation.currentTargetPathAngle();
 
         if (fcuVerticalMode === VerticalMode.VS && fcuVerticalSpeed <= 0) {
             return new VerticalSpeedStrategy(this.computationParametersObserver, this.atmosphericConditions, fcuVerticalSpeed);
@@ -468,28 +465,22 @@ export class VnavDriver implements GuidanceComponent {
             return new IdleDescentStrategy(this.computationParametersObserver, this.atmosphericConditions);
         }
 
-        if (this.aircraftToDescentProfileRelation.isValid && fcuVerticalMode === VerticalMode.DES) {
-            if (linearDeviation > 0 && this.aircraftToDescentProfileRelation.isPastTopOfDescent()) {
-                return new IdleDescentStrategy(
-                    this.computationParametersObserver,
-                    this.atmosphericConditions,
-                    { flapConfig: FlapConf.CLEAN, gearExtended: false, speedbrakesExtended: true },
-                );
+        if (relation.isValid && fcuVerticalMode === VerticalMode.DES) {
+            if (linearDeviation > 0 && relation.isPastTopOfDescent()) {
+                return DesModeStrategy.aboveProfile(this.computationParametersObserver, this.atmosphericConditions);
+            } if (relation.isOnGeometricPath()) {
+                const fpaTarget = relation.currentTargetPathAngle() / 2;
+                return DesModeStrategy.belowProfileFpa(this.computationParametersObserver, this.atmosphericConditions, fpaTarget);
             }
 
-            return isOnGeometricPath
-                ? new FlightPathAngleStrategy(this.computationParametersObserver, this.atmosphericConditions, targetFpa / 2)
-                : new VerticalSpeedStrategy(
-                    this.computationParametersObserver, this.atmosphericConditions, this.aircraftToDescentProfileRelation.isAboveSpeedLimitAltitude() ? -1000 : -500,
-                );
+            const vsTarget = relation.isAboveSpeedLimitAltitude() && !relation.isCloseToAirfieldElevation() ? -1000 : -500;
+            return DesModeStrategy.belowProfileVs(
+                this.computationParametersObserver, this.atmosphericConditions, vsTarget,
+            );
         }
 
         // Assume level flight if we're in a different mode
-        return new VerticalSpeedStrategy(
-            this.computationParametersObserver,
-            this.atmosphericConditions,
-            0,
-        );
+        return new VerticalSpeedStrategy(this.computationParametersObserver, this.atmosphericConditions, 0);
     }
 
     private shouldObeySpeedConstraints(): boolean {
