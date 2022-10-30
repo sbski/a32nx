@@ -6,15 +6,12 @@
 import { Coordinates } from '@fmgc/flightplanning/data/geo';
 import { SegmentType } from '@fmgc/flightplanning/FlightPlanSegment';
 import { GuidanceParameters } from '@fmgc/guidance/ControlLaws';
-import { courseToFixDistanceToGo, courseToFixGuidance } from '@fmgc/guidance/lnav/CommonGeometry';
+import { courseToFixDistanceToGo, courseToFixGuidance, reciprocal } from '@fmgc/guidance/lnav/CommonGeometry';
 import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { Transition } from '@fmgc/guidance/lnav/Transition';
-import { Geo } from '@fmgc/utils/Geo';
-import { FixedRadiusTransition } from '@fmgc/guidance/lnav/transitions/FixedRadiusTransition';
 import { DmeArcTransition } from '@fmgc/guidance/lnav/transitions/DmeArcTransition';
 import { placeBearingDistance } from 'msfs-geo';
-import { MathUtils } from '@shared/MathUtils';
 import { Waypoint } from 'msfs-navdata';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { IFLeg } from '@fmgc/guidance/lnav/legs/IF';
@@ -57,29 +54,10 @@ export class CFLeg extends XFLeg {
      * @private
      */
     private estimateStartWithoutInboundTransition(): Coordinates {
-        const inverseCourse = MathUtils.clampAngle(this.course + 180);
-
-        if (this.inboundGuidable && this.inboundGuidable.isComputed) {
-            const prevLegTerm = this.inboundGuidable.getPathEndPoint();
-
-            return Geo.doublePlaceBearingIntercept(
-                this.getPathEndPoint(),
-                prevLegTerm,
-                inverseCourse,
-                MathUtils.clampAngle(inverseCourse + 90),
-            );
-        }
-
-        // We start the leg at (tad + 0.1) from the fix if we have a fixed radius transition outbound. This allows showing a better looking path after sequencing.
-        let distance = 1;
-        if (this.outboundGuidable instanceof FixedRadiusTransition && this.outboundGuidable.isComputed) {
-            distance = this.outboundGuidable.tad + 0.1;
-        }
-
         return placeBearingDistance(
             this.fix.location,
-            inverseCourse,
-            distance,
+            reciprocal(this.course),
+            this.metadata.flightPlanLegDefinition.length,
         );
     }
 

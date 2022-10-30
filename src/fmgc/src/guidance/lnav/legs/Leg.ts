@@ -8,7 +8,6 @@ import { Coordinates } from '@fmgc/flightplanning/data/geo';
 import { Guidable } from '@fmgc/guidance/Guidable';
 import { distanceTo } from 'msfs-geo';
 import { Waypoint } from 'msfs-navdata';
-import { TurnDirection } from '@fmgc/types/fstypes/FSEnums';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 
 export abstract class Leg extends Guidable {

@@ -4,6 +4,7 @@ import { FlightPlanIndex as Index } from '../src/fmgc/src';
 import { FlightPhaseManager as FlightPhaseManager_ } from "../src/fmgc/src";
 import { WaypointFactory as WaypointFactory_ } from "../src/fmgc/src";
 import { WaypointEntryUtils as WaypointEntryUtils_ } from "../src/fmgc/src";
+import { SimBriefUplinkAdapter as SimBriefUplinkAdapter_ } from "../src/fmgc/src";
 
 declare global {
     type NauticalMiles = number;
@@ -65,6 +66,8 @@ declare global {
         const WaypointFactory: typeof WaypointFactory_
 
         const WaypointEntryUtils: typeof WaypointEntryUtils_
+
+        const SimBriefUplinkAdapter: typeof SimBriefUplinkAdapter_
 
         function getFlightPhaseManager(): FlightPhaseManager_
     }

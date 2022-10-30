@@ -22,6 +22,7 @@ import { WaypointEntryUtils } from './flightplanning/new/WaypointEntryUtils';
 import { Navigation } from './navigation/Navigation';
 import { FlightPlanIndex } from './flightplanning/new/FlightPlanManager';
 import { NavigationDatabaseService } from './flightplanning/new/NavigationDatabaseService';
+import { SimBriefUplinkAdapter } from './flightplanning/new/uplink/SimBriefUplinkAdapter';
 
 function initFmgcLoop(baseInstrument: BaseInstrument, flightPlanManager: FlightPlanManager): void {
     initComponents(baseInstrument, flightPlanManager);
@@ -55,4 +56,5 @@ export {
     WaypointEntryUtils,
     normaliseApproachName,
     Navigation,
+    SimBriefUplinkAdapter,
 };

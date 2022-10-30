@@ -220,8 +220,13 @@ class CDUInitPage {
                         CDUInitPage.ShowPage1(mcdu);
                     }
                 })
-                    .then(() => {
-                        insertUplink(mcdu);
+                    .then((data) => {
+                        Fmgc.SimBriefUplinkAdapter.uplinkFlightPlanFromSimbrief(data, { doUplinkProcedures: false }).then(() => {
+                            console.log('SimBrief data uplinked.');
+
+                            Fmgc.FlightPlanService.uplinkInsert();
+                        });
+                        // insertUplink(mcdu);
                     });
             }
         };

@@ -9,6 +9,7 @@ import { FlightPlanDefinition } from '@fmgc/flightplanning/new/FlightPlanDefinit
 export enum FlightPlanIndex {
     Active,
     Temporary,
+    Uplink,
     FirstSecondary,
 }
 

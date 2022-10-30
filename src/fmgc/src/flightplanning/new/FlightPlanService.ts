@@ -26,6 +26,7 @@ export class FlightPlanService {
         this.flightPlanManager.create(0);
         this.flightPlanManager.create(1);
         this.flightPlanManager.create(2);
+        this.flightPlanManager.create(3);
     }
 
     static has(index: number) {
@@ -47,6 +48,10 @@ export class FlightPlanService {
         return this.flightPlanManager.get(FlightPlanIndex.Active);
     }
 
+    static get uplink() {
+        return this.flightPlanManager.get(FlightPlanIndex.Uplink);
+    }
+
     /**
      * Obtains the specified secondary flight plan, 1-indexed
      */
@@ -60,6 +65,14 @@ export class FlightPlanService {
 
     static get hasTemporary() {
         return this.flightPlanManager.has(FlightPlanIndex.Temporary);
+    }
+
+    static hasSecondary(index: number) {
+        return this.flightPlanManager.has(FlightPlanIndex.FirstSecondary + index - 1);
+    }
+
+    static get hasUplink() {
+        return this.flightPlanManager.has(FlightPlanIndex.Uplink);
     }
 
     static temporaryInsert() {
@@ -81,13 +94,23 @@ export class FlightPlanService {
         this.flightPlanManager.delete(FlightPlanIndex.Temporary);
     }
 
+    static uplinkInsert() {
+        if (!this.hasUplink) {
+            throw new Error('[FMS/FPS] Cannot insert uplink flight plan if none exists');
+        }
+
+        this.flightPlanManager.copy(FlightPlanIndex.Uplink, FlightPlanIndex.Active);
+        this.flightPlanManager.delete(FlightPlanIndex.Uplink);
+        this.flightPlanManager.delete(FlightPlanIndex.Temporary);
+    }
+
     static reset() {
         this.flightPlanManager.deleteAll();
     }
 
     private static prepareDestructiveModification(planIndex: FlightPlanIndex) {
         let finalIndex = planIndex;
-        if (planIndex < FlightPlanIndex.FirstSecondary) {
+        if (planIndex === FlightPlanIndex.Active) {
             this.ensureTemporaryExists();
 
             finalIndex = FlightPlanIndex.Temporary;

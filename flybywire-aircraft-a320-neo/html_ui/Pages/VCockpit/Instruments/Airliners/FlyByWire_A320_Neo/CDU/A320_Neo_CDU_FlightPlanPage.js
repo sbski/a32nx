@@ -277,7 +277,6 @@ class CDUFlightPlanPage {
                     spdColor = "white";
                     altitudeConstraint = altitudeConstraint.padStart(5,"\xa0");
                     if (wp.isRunway()) {
-                        ident = `${targetPlan.destinationAirport.ident}${wp.ident.substring(2)}`;
                         altitudeConstraint = formatLegAltConstraint(wp);
                         altColor = color;
                     } else {

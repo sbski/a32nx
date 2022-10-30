@@ -42,7 +42,9 @@ export class GuidanceController {
 
     secondaryGeometry: Geometry | null;
 
-    activeLegIndex: number;
+    get activeLegIndex(): number {
+        return FlightPlanService.active.activeLegIndex;
+    }
 
     temporaryLegIndex: number = -1;
 
@@ -115,7 +117,7 @@ export class GuidanceController {
         }
 
         // FIXME HAX
-        const matchingGeometryLeg = Array.from(this.activeGeometry.legs.values()).find((leg) => leg.ident === matchingLeg.ident);
+        const matchingGeometryLeg = this.activeGeometry.legs.get(focusedWpIndex);
 
         if (!matchingGeometryLeg) {
             // throw new Error('[FMS/MRP] Could not find matching geometry leg');
@@ -206,8 +208,6 @@ export class GuidanceController {
         this.lnavDriver.ppos.lat = SimVar.GetSimVarValue('PLANE LATITUDE', 'degree latitude');
         this.lnavDriver.ppos.long = SimVar.GetSimVarValue('PLANE LONGITUDE', 'degree longitude');
 
-        this.activeLegIndex = FlightPlanService.activeOrTemporary.activeLegIndex;
-
         this.updateGeometries();
 
         this.leftEfisState = { mode: Mode.ARC, range: 10, dataLimitReached: false, legsCulled: false };
@@ -244,8 +244,6 @@ export class GuidanceController {
 
     update(deltaTime: number) {
         this.geometryRecomputationTimer += deltaTime;
-
-        this.activeLegIndex = FlightPlanService.activeOrTemporary.activeLegIndex;
 
         this.updateEfisState('L', this.leftEfisState);
         this.updateEfisState('R', this.rightEfisState);

@@ -945,6 +945,9 @@ export abstract class BaseFlightPlan {
             await this.arrivalEnrouteTransitionSegment.setArrivalEnrouteTransition(this.arrivalEnrouteTransition.ident);
         }
 
+        const previousSegmentToArrival = this.previousSegment(this.arrivalEnrouteTransitionSegment);
+        previousSegmentToArrival.strung = false;
+
         await this.destinationSegment.refresh(false);
     }
 
