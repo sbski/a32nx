@@ -334,8 +334,9 @@ export class VnavDriver implements GuidanceComponent {
 
             // Compute intercept with managed profile
             if (this.isLatAutoControlActive() && this.aircraftToDescentProfileRelation.isValid) {
-                // The guidance profile is typically not refreshed after the descent is started, whereas the tactical profile is recomputed constantly,
-                // so the `distanceFromStart`s are very different in the profiles.
+                // The guidance profile and the tactical profile agree on the distance to destination by design.
+                // However, since the guidance profile is not refreshed after starting descent whereas the tactical profile is,
+                // they won't agree on total flight plan length, so the distance from start as difference between total length and distance to end changes
                 const guidanceDistanceFromStart = this.aircraftToDescentProfileRelation.distanceFromStart;
                 const tacticalDistanceFromStart = this.currentNdGeometryProfile.checkpoints[0].distanceFromStart;
                 const offset = tacticalDistanceFromStart - guidanceDistanceFromStart;
@@ -565,7 +566,6 @@ export class VnavDriver implements GuidanceComponent {
         const isHoldActive = this.guidanceController.isManualHoldActive() || this.guidanceController.isManualHoldNext();
         const currentDistanceFromStart = this.constraintReader.distanceToPresentPosition;
         const currentAltitude = presentPosition.alt;
-        const currentManagedSpeedTarget = SimVar.GetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots');
 
         // Speed guidance for holds is handled elsewhere for now, so we don't want to interfere here
         if (flightPhase !== FmgcFlightPhase.Descent || isExpediteModeActive || isHoldActive) {
@@ -599,8 +599,8 @@ export class VnavDriver implements GuidanceComponent {
 
         if (isAnticipatedSpeedConstraintDecelValid) {
             if (this.isForcingSpeedTargetDownForConstraint) {
-                if (Math.round(newSpeedTarget) <= Math.round(this.tacticalDescentPathBuilder.nextDecelerationToSpeedConstraint.speed)
-                    || Math.round(currentManagedSpeedTarget) > Math.round(this.tacticalDescentPathBuilder.nextDecelerationToSpeedConstraint.speed)) {
+                // We don't need to force down the constraint anymore if the target speed is already below the constraint speed.
+                if (Math.round(newSpeedTarget) <= Math.round(this.tacticalDescentPathBuilder.nextDecelerationToSpeedConstraint.speed)) {
                     this.isForcingSpeedTargetDownForConstraint = false;
                 }
             } else if (currentDistanceFromStart > this.tacticalDescentPathBuilder.nextDecelerationToSpeedConstraint.decelerationDistanceFromStart) {
@@ -614,7 +614,22 @@ export class VnavDriver implements GuidanceComponent {
             this.isForcingSpeedTargetDownForConstraint = false;
         }
 
-        SimVar.SetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots', Math.min(newSpeedTarget, econMachAsCas));
+        const vLs = SimVar.GetSimVarValue('L:A32NX_SPEEDS_VLS', 'number');
+        const vMan = this.getVman(approachSpeed);
+        SimVar.SetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots', Math.max(vLs, vMan, Math.min(newSpeedTarget, econMachAsCas)));
+    }
+
+    private getVman(vApp: Knots): Knots {
+        switch (SimVar.GetSimVarValue('L:A32NX_FLAPS_HANDLE_INDEX', 'Number')) {
+        case 0: return SimVar.GetSimVarValue('L:A32NX_SPEEDS_GD', 'number');
+        case 1: return SimVar.GetSimVarValue('L:A32NX_SPEEDS_S', 'number');
+        case 2: return SimVar.GetSimVarValue('L:A32NX_SPEEDS_F', 'number');
+        case 3:
+        case 4:
+            return vApp;
+        default:
+            return SimVar.GetSimVarValue('L:A32NX_SPEEDS_VLS', 'number');
+        }
     }
 
     private updateHoldSpeed(): void {

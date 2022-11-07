@@ -14,14 +14,13 @@ export class SpeedMargin {
     }
 
     getMargins(currentTarget: Knots): [Knots, Knots] {
-        const { managedDescentSpeed, managedDescentSpeedMach } = this.observer.get();
+        const { managedDescentSpeed, managedDescentSpeedMach, approachSpeed } = this.observer.get();
 
         const vmax = SimVar.GetSimVarValue('L:A32NX_SPEEDS_VMAX', 'number');
+        const vMan = this.getVman(approachSpeed);
 
         const vls = SimVar.GetSimVarValue('L:A32NX_SPEEDS_VLS', 'number');
-        const f = SimVar.GetSimVarValue('L:A32NX_SPEEDS_F', 'number');
-        const s = SimVar.GetSimVarValue('L:A32NX_SPEEDS_S', 'number');
-        const vmin = Math.max(vls, f, s);
+        const vmin = Math.max(vls, vMan);
 
         const mmoAsIas = SimVar.GetGameVarValue('FROM MACH TO KIAS', 'number', this.mmo);
         const isMachTarget = managedDescentSpeed - SimVar.GetGameVarValue('FROM MACH TO KIAS', 'number', managedDescentSpeedMach) > 1;
@@ -32,5 +31,18 @@ export class SpeedMargin {
             Math.max(vmin, Math.min(currentTarget - 20, vmax, this.vmo - 3, mmoAsIas - 0.006)),
             Math.max(vmin, Math.min(vmax, this.vmo - 3, mmoAsIas - 0.006, currentTarget + distanceToUpperMargin)),
         ];
+    }
+
+    private getVman(vApp: Knots): Knots {
+        switch (SimVar.GetSimVarValue('L:A32NX_FLAPS_HANDLE_INDEX', 'Number')) {
+        case 0: return SimVar.GetSimVarValue('L:A32NX_SPEEDS_GD', 'number');
+        case 1: return SimVar.GetSimVarValue('L:A32NX_SPEEDS_S', 'number');
+        case 2: return SimVar.GetSimVarValue('L:A32NX_SPEEDS_F', 'number');
+        case 3:
+        case 4:
+            return vApp;
+        default:
+            return SimVar.GetSimVarValue('L:A32NX_SPEEDS_VLS', 'number');
+        }
     }
 }
