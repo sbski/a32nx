@@ -6,7 +6,7 @@ import { SpeedProfile } from '@fmgc/guidance/vnav/climb/SpeedProfile';
 import { DescentStrategy } from '@fmgc/guidance/vnav/descent/DescentStrategy';
 import { StepResults } from '@fmgc/guidance/vnav/Predictions';
 import { BaseGeometryProfile } from '@fmgc/guidance/vnav/profile/BaseGeometryProfile';
-import { MaxSpeedConstraint, VerticalCheckpoint, VerticalCheckpointReason } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
+import { MaxSpeedConstraint, VerticalCheckpoint, VerticalCheckpointForDeceleration, VerticalCheckpointReason } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
 import { TemporaryCheckpointSequence } from '@fmgc/guidance/vnav/profile/TemporaryCheckpointSequence';
 import { VerticalProfileComputationParametersObserver } from '@fmgc/guidance/vnav/VerticalProfileComputationParameters';
 import { HeadwindProfile } from '@fmgc/guidance/vnav/wind/HeadwindProfile';
@@ -66,7 +66,7 @@ export class TacticalDescentPathBuilder {
         // Do descent speed constraints need to be sorted here?
 
         if (speedProfile.shouldTakeDescentSpeedLimitIntoAccount()
-            && initialAltitude > descentSpeedLimit.underAltitude && finalAltitude < descentSpeedLimit.underAltitude
+            && initialAltitude > descentSpeedLimit.underAltitude && finalAltitude <= descentSpeedLimit.underAltitude
             && profile.lastCheckpoint.speed > descentSpeedLimit.speed) {
             let descentSegment = new TemporaryCheckpointSequence(profile.lastCheckpoint);
             let decelerationSegment: StepResults = null;
@@ -115,6 +115,9 @@ export class TacticalDescentPathBuilder {
 
                 if (descentSegment.length > 1) {
                     profile.lastCheckpoint.reason = VerticalCheckpointReason.StartDeceleration;
+                    (profile.lastCheckpoint as VerticalCheckpointForDeceleration).targetSpeed = descentSpeedLimit.speed;
+                } else {
+                    profile.addCheckpointFromLast(() => ({ reason: VerticalCheckpointReason.StartDeceleration, targetSpeed: descentSpeedLimit.speed }));
                 }
 
                 descentSegment.addCheckpointFromStep(decelerationSegment, VerticalCheckpointReason.AtmosphericConditions);
@@ -275,7 +278,7 @@ export class TacticalDescentPathBuilder {
             };
         }
 
-        sequence.addCheckpointFromStep(descentSegment, VerticalCheckpointReason.StartDeceleration);
+        sequence.addDecelerationCheckpointFromStep(descentSegment, constraint.maxSpeed);
         sequence.addCheckpointFromStep(decelerationSegment, VerticalCheckpointReason.SpeedConstraint);
     }
 }

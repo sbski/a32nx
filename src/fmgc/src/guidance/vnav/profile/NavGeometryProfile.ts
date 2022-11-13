@@ -86,6 +86,16 @@ export interface VerticalCheckpoint {
     mach: Mach,
 }
 
+export interface VerticalCheckpointForDeceleration extends VerticalCheckpoint {
+    reason: VerticalCheckpointReason.StartDeceleration,
+    targetSpeed: Knots
+}
+
+// I'm sure there's a better way to handle the distinction between `VerticalCheckpoint` and `VerticalCheckpointForDeceleration`
+export function isSpeedChangePoint(checkpoint: VerticalCheckpoint): checkpoint is VerticalCheckpointForDeceleration {
+    return checkpoint.reason === VerticalCheckpointReason.StartDeceleration;
+}
+
 export interface MaxAltitudeConstraint {
     distanceFromStart: NauticalMiles,
     maxAltitude: Feet,

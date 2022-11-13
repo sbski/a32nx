@@ -645,13 +645,15 @@ export class PseudoWaypoints implements GuidanceComponent {
     }
 
     private createDebugPwp(geometry: Geometry, wptCount: number, totalDistance: number): PseudoWaypoint | null {
-        const debugPoint = SimVar.GetSimVarValue('L:A32NX_FM_VNAV_DEBUG_POINT', 'number');
+        const debugPoint = this.guidanceController.vnavDriver.currentNdGeometryProfile.findVerticalCheckpoint(
+            VerticalCheckpointReason.StartDeceleration,
+        );
 
         if (!debugPoint) {
             return null;
         }
 
-        const position = PseudoWaypoints.pointFromEndOfPath(geometry, wptCount, totalDistance - debugPoint);
+        const position = PseudoWaypoints.pointFromEndOfPath(geometry, wptCount, totalDistance - debugPoint.distanceFromStart);
         if (!position) {
             return null;
         }
@@ -664,7 +666,7 @@ export class PseudoWaypoints implements GuidanceComponent {
             distanceFromLegTermination,
             efisSymbolFlag: NdSymbolTypeFlags.PwpSpeedChange | NdSymbolTypeFlags.CyanColor,
             efisSymbolLla,
-            distanceFromStart: debugPoint,
+            distanceFromStart: debugPoint.distanceFromStart,
             displayedOnMcdu: false,
             displayedOnNd: true,
         };

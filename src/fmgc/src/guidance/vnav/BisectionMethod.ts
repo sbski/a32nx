@@ -32,16 +32,19 @@ export class BisectionMethod {
         const fa = f(a);
         const fb = f(b);
 
-        if (fa * fb > 0 || isWithinTolerance(fa) || isWithinTolerance(fb)) {
+        if (fa * fb > 0) {
             return Math.abs(fa) < Math.abs(fb) ? a : b;
+        } if (isWithinTolerance(fa)) {
+            return a;
+        } if (isWithinTolerance(fb)) {
+            return b;
         }
 
-        let i = 0;
-        for (; i < maxIterations; i++) {
+        for (let i = 0; i < maxIterations; i++) {
             const c = (a + b) / 2;
             const fc = f(c);
 
-            if (fc >= errorTolerance[0] && fc <= errorTolerance[1]) {
+            if (isWithinTolerance(fc)) {
                 if (VnavConfig.DEBUG_PROFILE) {
                     console.log(`[FMS/VNAV] Final error ${fc} after ${i} iterations.`);
                 }

@@ -126,7 +126,7 @@ export class GeometricPathBuilder {
                 this.scaleStepBasedOnLastCheckpoint(sequence.lastCheckpoint, decelerationStep, scaling);
                 sequence.addCheckpointFromStep(decelerationStep, VerticalCheckpointReason.SpeedConstraint);
             } else if (Math.max(speedConstraint.distanceFromStart, segment.end.distanceFromStart) - sequence.lastCheckpoint.distanceFromStart < 0) {
-                sequence.addCheckpointFromStep(decelerationStep, VerticalCheckpointReason.AtmosphericConditions);
+                sequence.addDecelerationCheckpointFromStep(decelerationStep, speedConstraint.maxSpeed);
 
                 // Fly to constraint
                 const stepToConstraint = this.flightPathAngleStrategy.predictToDistance(

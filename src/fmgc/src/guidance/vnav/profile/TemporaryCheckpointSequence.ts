@@ -1,6 +1,6 @@
 import { Common } from '@fmgc/guidance/vnav/common';
 import { StepResults } from '@fmgc/guidance/vnav/Predictions';
-import { VerticalCheckpoint, VerticalCheckpointReason } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
+import { VerticalCheckpoint, VerticalCheckpointForDeceleration, VerticalCheckpointReason } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
 
 export class TemporaryCheckpointSequence {
     checkpoints: VerticalCheckpoint[];
@@ -35,6 +35,19 @@ export class TemporaryCheckpointSequence {
             speed: step.speed,
             mach: this.lastCheckpoint.mach,
         });
+    }
+
+    addDecelerationCheckpointFromStep(step: StepResults, targetSpeed: Knots) {
+        this.checkpoints.push({
+            reason: VerticalCheckpointReason.StartDeceleration,
+            distanceFromStart: this.lastCheckpoint.distanceFromStart + step.distanceTraveled,
+            altitude: step.finalAltitude,
+            secondsFromPresent: this.lastCheckpoint.secondsFromPresent + step.timeElapsed,
+            remainingFuelOnBoard: this.lastCheckpoint.remainingFuelOnBoard - step.fuelBurned,
+            speed: step.speed,
+            mach: this.lastCheckpoint.mach,
+            targetSpeed,
+        } as VerticalCheckpointForDeceleration);
     }
 
     get(includeStartingPoint = false) {

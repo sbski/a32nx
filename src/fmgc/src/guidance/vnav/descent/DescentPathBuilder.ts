@@ -94,6 +94,7 @@ export class DescentPathBuilder {
         while (i++ < 50 && speedConstraints.length > 0) {
             const constraint = speedConstraints[0];
             const { distanceFromStart, remainingFuelOnBoard, speed, altitude } = sequence.lastCheckpoint;
+            const headwind = windProfile.getHeadwindComponent(distanceFromStart, altitude);
 
             if (altitude >= topOfDescentAltitude) {
                 break;
@@ -104,11 +105,10 @@ export class DescentPathBuilder {
                 continue;
             }
 
+            // I fetch the actual speed target again, because we might not be able to accelerate to the speed constraint directly (e.g if there's a speed limit)
             const speedTargetBeforeCurrentPosition = speedProfile.getTarget(constraint.distanceFromStart, altitude, ManagedSpeedType.Descent);
             // It is safe to use the current altitude here. This way, the speed limit will certainly be obeyed
             if (speedTargetBeforeCurrentPosition - speed > 1) {
-                const headwind = windProfile.getHeadwindComponent(distanceFromStart, altitude);
-
                 const decelerationStep = this.idleDescentStrategy.predictToSpeed(
                     altitude,
                     speedTargetBeforeCurrentPosition,
@@ -122,12 +122,11 @@ export class DescentPathBuilder {
                     throw new Error('[FMS/VNAV] Deceleration step in idle path has positive distance travelled. The final speed and inital speed arguments are probably reversed');
                 }
 
-                sequence.addCheckpointFromStep(decelerationStep, VerticalCheckpointReason.IdlePathAtmosphericConditions);
+                sequence.addDecelerationCheckpointFromStep(decelerationStep, speed);
 
                 continue;
             }
 
-            const headwind = windProfile.getHeadwindComponent(distanceFromStart, altitude);
             const descentStep = this.idleDescentStrategy.predictToDistance(
                 altitude,
                 constraint.distanceFromStart - sequence.lastCheckpoint.distanceFromStart,
@@ -146,6 +145,7 @@ export class DescentPathBuilder {
             sequence.addCheckpointFromStep(descentStep, VerticalCheckpointReason.IdlePathAtmosphericConditions);
         }
 
+        // After we've passed all the speed constraints, we can accelerate up to the descent speed (unless the speed limit is in the way)
         let j = 0;
         for (let altitude = sequence.lastCheckpoint.altitude; altitude < topOfDescentAltitude && j++ < 50; altitude = Math.min(altitude + 1500, topOfDescentAltitude)) {
             const { distanceFromStart, remainingFuelOnBoard, speed } = sequence.lastCheckpoint;
@@ -171,7 +171,8 @@ export class DescentPathBuilder {
                     this.scaleStepBasedOnLastCheckpoint(sequence.lastCheckpoint, decelerationStep, scaling);
                 }
 
-                sequence.addCheckpointFromStep(decelerationStep, VerticalCheckpointReason.IdlePathAtmosphericConditions);
+                // This checkpoint sets where we have to start decelerating to make the first speed constraint constraint or the speed limit
+                sequence.addDecelerationCheckpointFromStep(decelerationStep, speed);
 
                 // Stupid hack
                 altitude = sequence.lastCheckpoint.altitude - 1500;
