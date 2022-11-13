@@ -784,6 +784,12 @@ export abstract class BaseFlightPlan {
             return;
         }
 
+        if (first instanceof OriginSegment && second instanceof DestinationSegment) {
+            // Don't do anything for origin and dest - we might have something like NZQN <disco> NZQN, and want to keep it that way
+            first.strung = true;
+            return;
+        }
+
         if (first instanceof ApproachSegment && second instanceof DestinationSegment) {
             // Always string approach to destination
             first.strung = true;
@@ -906,10 +912,15 @@ export abstract class BaseFlightPlan {
                 const duplicate = this.findDuplicate(fix, i);
 
                 if (duplicate) {
-                    const [segment, , duplicatePlanIndex] = duplicate;
+                    const [duplicateSegment, , duplicatePlanIndex] = duplicate;
+
+                    // We can have duplicates if they are the origin and destination airport
+                    if (segment === this.originSegment && duplicateSegment === this.destinationSegment) {
+                        continue;
+                    }
 
                     // We can have duplicates in the missed approach
-                    if (segment === this.missedApproachSegment) {
+                    if (duplicateSegment === this.missedApproachSegment) {
                         continue;
                     }
 
