@@ -18,13 +18,13 @@ import { BisectionMethod, NonTerminationStrategy } from '@fmgc/guidance/vnav/Bis
 
 class FlapConfigurationProfile {
     static getBySpeed(speed: Knots, parameters: VerticalProfileComputationParameters): FlapConf {
-        if (speed > parameters.cleanSpeed) {
+        if (speed >= parameters.cleanSpeed) {
             return FlapConf.CLEAN;
-        } if (speed > parameters.slatRetractionSpeed) {
+        } if (speed >= parameters.slatRetractionSpeed) {
             return FlapConf.CONF_1; // Between S and O
-        } if (speed > parameters.flapRetractionSpeed) {
+        } if (speed >= parameters.flapRetractionSpeed) {
             return FlapConf.CONF_2; // Between F and S
-        } if (speed > (parameters.flapRetractionSpeed + parameters.approachSpeed) / 2) {
+        } if (speed >= (parameters.flapRetractionSpeed + parameters.approachSpeed) / 2) {
             return FlapConf.CONF_3;
         }
 
@@ -129,7 +129,7 @@ export class ApproachPathBuilder {
             }
         }
 
-        const speedTarget = speedProfile.getTarget(sequence.lastCheckpoint.distanceFromStart, sequence.lastCheckpoint.altitude, ManagedSpeedType.Descent);
+        const speedTarget = speedProfile.getTarget(sequence.lastCheckpoint.distanceFromStart - 1e-4, sequence.lastCheckpoint.altitude, ManagedSpeedType.Descent);
 
         if (speedTarget - sequence.lastCheckpoint.speed > 0.1) {
             // We use -Infinty because we just want to decelerate to the descent speed without and constraint on distance
@@ -367,7 +367,7 @@ export class ApproachPathBuilder {
                     return decelerationSequence;
                 }
 
-                decelerationSequence.addCheckpointFromStep(decelerationStep, this.getFlapCheckpointReasonByFlapConf(FlapConfigurationProfile.getBySpeed(targetSpeed, parameters)));
+                decelerationSequence.addCheckpointFromStep(decelerationStep, this.getFlapCheckpointReasonByFlapConf(FlapConfigurationProfile.getBySpeed(speed, parameters)));
             }
         }
 
