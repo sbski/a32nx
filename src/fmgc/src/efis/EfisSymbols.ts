@@ -298,21 +298,34 @@ export class EfisSymbols {
             // eslint-disable-next-line no-lone-blocks
 
             if (FlightPlanService.hasActive) {
-                this.transmitFlightPlanSymbols(FlightPlanService.active, range, efisOption, () => true, formatConstraintAlt, formatConstraintSpeed, upsertSymbol);
+                const symbols = this.getFlightPlanSymbols(FlightPlanService.active, range, efisOption, () => true, formatConstraintAlt, formatConstraintSpeed);
+
+                for (const symbol of symbols) {
+                    upsertSymbol(symbol);
+                }
             }
 
             if (FlightPlanService.hasTemporary) {
-                this.transmitFlightPlanSymbols(FlightPlanService.temporary, range, efisOption, () => true, formatConstraintAlt, formatConstraintSpeed, upsertSymbol);
+                const symbols = this.getFlightPlanSymbols(FlightPlanService.temporary, range, efisOption, () => true, formatConstraintAlt, formatConstraintSpeed);
+
+                for (const symbol of symbols) {
+                    upsertSymbol(symbol);
+                }
             }
 
             if (FlightPlanService.hasSecondary(1)) {
-                this.transmitFlightPlanSymbols(FlightPlanService.secondary(1), range, efisOption, () => true, formatConstraintAlt, formatConstraintSpeed, upsertSymbol);
+                const symbols = this.getFlightPlanSymbols(FlightPlanService.secondary(1), range, efisOption, () => true, formatConstraintAlt, formatConstraintSpeed);
+
+                for (const symbol of symbols) {
+                    upsertSymbol(symbol);
+                }
             }
 
             const airports: [Airport, Runway][] = [
                 [FlightPlanService.active.originAirport, FlightPlanService.active.originRunway],
                 [FlightPlanService.active.destinationAirport, FlightPlanService.active.destinationRunway],
             ];
+
             for (const [airport, runway] of airports) {
                 if (!airport) {
                     continue;
@@ -368,15 +381,16 @@ export class EfisSymbols {
         }
     }
 
-    private transmitFlightPlanSymbols(
+    private getFlightPlanSymbols(
         flightPlan: FlightPlan,
         range: NauticalMiles,
         efisOption: EfisOption,
         withinEditArea: (ll) => boolean,
         formatConstraintAlt: (alt: number, descent: boolean, prefix?: string) => string,
         formatConstraintSpeed: (speed: number, prefix?: string) => string,
-        upsertSymbol: (symbol: NdSymbol) => void,
-    ) {
+    ): NdSymbol[] {
+        const ret: NdSymbol[] = [];
+
         for (let i = flightPlan.legCount - 1; i >= (flightPlan.activeLegIndex - 1) && i >= 0; i--) {
             const leg = flightPlan.elementAt(i);
 
@@ -397,20 +411,26 @@ export class EfisSymbols {
                 }
             }
 
-            let location = leg.terminationWaypoint()?.location;
+            let location;
+            let databaseId;
+
+            const geometryLeg = this.guidanceController.activeGeometry.legs.get(i);
+
+            if (geometryLeg) {
+                const terminationWaypoint = geometryLeg.terminationWaypoint;
+
+                if ('lat' in terminationWaypoint) {
+                    location = terminationWaypoint;
+                    databaseId = `X${Math.round(Math.random() * 1_000).toString().padStart(6, '0')}${leg.ident.substring(0, 5)}`;
+                } else {
+                    location = terminationWaypoint.location;
+                    databaseId = terminationWaypoint.databaseId;
+                }
+            }
 
             if (!location) {
-                const geometryLeg = this.guidanceController.activeGeometry.legs.get(i);
-
-                if (geometryLeg) {
-                    const terminationWaypoint = geometryLeg.terminationWaypoint;
-
-                    if ('lat' in terminationWaypoint) {
-                        location = terminationWaypoint;
-                    } else {
-                        location = terminationWaypoint.location;
-                    }
-                }
+                location = leg.terminationWaypoint()?.location;
+                databaseId = leg.terminationWaypoint()?.databaseId;
             }
 
             if (!location) {
@@ -476,8 +496,8 @@ export class EfisSymbols {
                 }
             }
 
-            upsertSymbol({
-                databaseId: leg.terminationWaypoint()?.databaseId ?? `X${Math.round(Math.random() * 1_000).toString().padStart(6, '0')}${leg.ident.substring(0, 5)}`,
+            ret.push({
+                databaseId,
                 ident: leg.ident,
                 location,
                 type,
@@ -485,6 +505,8 @@ export class EfisSymbols {
                 direction,
             });
         }
+
+        return ret;
     }
 
     private generatePathVectorSymbol(vector: PathVector): NdSymbol {
