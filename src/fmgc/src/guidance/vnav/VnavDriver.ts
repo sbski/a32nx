@@ -731,7 +731,7 @@ export class VnavDriver implements GuidanceComponent {
                 if (speedTargetType === ManagedSpeedType.Climb) {
                     return this.currentNdGeometryProfile.checkpoints[i - 1].distanceFromStart;
                 }
-            } else if (isSpeedChangePoint(checkpoint) && checkpoint.targetSpeed - speedTarget < -1) {
+            } else if (checkpoint.reason === VerticalCheckpointReason.Decel || isSpeedChangePoint(checkpoint) && checkpoint.targetSpeed - speedTarget < -1) {
                 return checkpoint.distanceFromStart;
             }
         }
