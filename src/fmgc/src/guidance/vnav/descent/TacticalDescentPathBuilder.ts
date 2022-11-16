@@ -268,6 +268,8 @@ export class TacticalDescentPathBuilder {
         };
 
         const decelDistance = BisectionMethod.findZero(tryDecelDistance, [0, 20], [-0.05, 0.05]);
+        // We run the prediction again for the side effects.
+        tryDecelDistance(decelDistance);
 
         const isMoreConstrainingThanPreviousConstraint = !this.nextDecelerationToSpeedConstraint
             || constraint.distanceFromStart - decelDistance < this.nextDecelerationToSpeedConstraint.decelerationDistanceFromStart;
