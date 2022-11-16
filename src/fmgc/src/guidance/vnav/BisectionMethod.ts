@@ -33,29 +33,28 @@ export class BisectionMethod {
         const fb = f(b);
 
         if (fa * fb > 0) {
+            // If solution does not lie between a and b, return closer value.
             return Math.abs(fa) < Math.abs(fb) ? a : b;
-        } if (isWithinTolerance(fa)) {
-            return a;
-        } if (isWithinTolerance(fb)) {
-            return b;
         }
 
-        for (let i = 0; i < maxIterations; i++) {
-            const c = (a + b) / 2;
-            const fc = f(c);
+        if (fa * fb < 0) {
+            for (let i = 0; i < maxIterations; i++) {
+                const c = (a + b) / 2;
+                const fc = f(c);
 
-            if (isWithinTolerance(fc)) {
-                if (VnavConfig.DEBUG_PROFILE) {
-                    console.log(`[FMS/VNAV] Final error ${fc} after ${i} iterations.`);
+                if (isWithinTolerance(fc)) {
+                    if (VnavConfig.DEBUG_PROFILE) {
+                        console.log(`[FMS/VNAV] Final error ${fc} after ${i} iterations.`);
+                    }
+
+                    return c;
                 }
 
-                return c;
-            }
-
-            if (fa * fc > 0) {
-                a = c;
-            } else {
-                b = c;
+                if (fa * fc > 0) {
+                    a = c;
+                } else {
+                    b = c;
+                }
             }
         }
 
