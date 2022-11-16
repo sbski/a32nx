@@ -32,7 +32,7 @@ import { HeadwindProfile } from '@fmgc/guidance/vnav/wind/HeadwindProfile';
 import { Leg } from '@fmgc/guidance/lnav/legs/Leg';
 import { Geometry } from '../Geometry';
 import { GuidanceComponent } from '../GuidanceComponent';
-import { isSpeedChangePoint, NavGeometryProfile, VerticalCheckpointReason, VerticalWaypointPrediction } from './profile/NavGeometryProfile';
+import { isSpeedChangePoint, NavGeometryProfile, VerticalCheckpoint, VerticalCheckpointReason, VerticalWaypointPrediction } from './profile/NavGeometryProfile';
 import { ClimbPathBuilder } from './climb/ClimbPathBuilder';
 
 export class VnavDriver implements GuidanceComponent {
@@ -233,6 +233,7 @@ export class VnavDriver implements GuidanceComponent {
         this.finishProfileInManagedModes(this.currentNavGeometryProfile, Math.max(FmgcFlightPhase.Takeoff, flightPhase));
 
         this.currentNavGeometryProfile.finalizeProfile();
+        this.decelPoint = this.currentNavGeometryProfile.findVerticalCheckpoint(VerticalCheckpointReason.Decel);
 
         console.timeEnd('VNAV computation');
 
@@ -557,6 +558,9 @@ export class VnavDriver implements GuidanceComponent {
 
     private previousManagedDescentSpeedTarget: Knots;
 
+    // We cache this here, so we don't have to recompute it every guidance step
+    private decelPoint: VerticalCheckpoint = null;
+
     private updateDescentSpeedGuidance() {
         const { flightPhase, managedDescentSpeed, managedDescentSpeedMach, presentPosition, approachSpeed } = this.computationParametersObserver.get();
         const isExpediteModeActive = SimVar.GetSimVarValue('L:A32NX_FMA_EXPEDITE_MODE', 'number') === 1;
@@ -569,6 +573,9 @@ export class VnavDriver implements GuidanceComponent {
             return;
         }
 
+        // We get this value because we only want to a speed constraint if this is not covered by the decel point already
+        const decelPointSpeed = this.decelPoint?.speed ?? 0;
+
         const econMachAsCas = SimVar.GetGameVarValue('FROM MACH TO KIAS', 'number', managedDescentSpeedMach);
         let newSpeedTarget = Math.min(managedDescentSpeed, econMachAsCas, this.previousManagedDescentSpeedTarget);
         if (this.isLatAutoControlActive()) {
@@ -578,7 +585,7 @@ export class VnavDriver implements GuidanceComponent {
         for (let i = 0; i < this.currentNdGeometryProfile.checkpoints.length - 2; i++) {
             const checkpoint = this.currentNdGeometryProfile.checkpoints[i];
 
-            if (isSpeedChangePoint(checkpoint) && currentDistanceFromStart >= checkpoint.distanceFromStart) {
+            if (isSpeedChangePoint(checkpoint) && currentDistanceFromStart >= checkpoint.distanceFromStart && checkpoint.targetSpeed >= decelPointSpeed) {
                 newSpeedTarget = Math.min(newSpeedTarget, checkpoint.targetSpeed);
             }
         }
@@ -709,6 +716,7 @@ export class VnavDriver implements GuidanceComponent {
         }
 
         const distanceToPresentPosition = this.constraintReader.distanceToPresentPosition;
+        const decelPointSpeed = this.decelPoint?.speed;
 
         // We don't want to show the speed change dot at acceleration altiude, so we have to make sure the speed target is econ speed, not SRS speed.
         const speedTarget = flightPhase < FmgcFlightPhase.Climb
@@ -731,7 +739,9 @@ export class VnavDriver implements GuidanceComponent {
                 if (speedTargetType === ManagedSpeedType.Climb) {
                     return this.currentNdGeometryProfile.checkpoints[i - 1].distanceFromStart;
                 }
-            } else if (checkpoint.reason === VerticalCheckpointReason.Decel || isSpeedChangePoint(checkpoint) && checkpoint.targetSpeed - speedTarget < -1) {
+            } else if (checkpoint.reason === VerticalCheckpointReason.Decel
+                || isSpeedChangePoint(checkpoint) && checkpoint.targetSpeed - speedTarget < -1 && checkpoint.targetSpeed >= decelPointSpeed) {
+                // Check if decel point, or `StartDeceleration` point with target spee lower than current target, but larger than the speed the decel point is placed at.
                 return checkpoint.distanceFromStart;
             }
         }
