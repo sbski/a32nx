@@ -13,6 +13,8 @@ import { Waypoint, VhfNavaid, NdbNavaid } from 'msfs-navdata';
 import { Minutes } from 'msfs-geo';
 
 export interface FlightPlanLegDefinition {
+    procedureIdent: string;
+
     /**
      * Leg termination type according to ARICN424
      */

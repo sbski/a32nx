@@ -16,6 +16,8 @@ export abstract class FlightPlanSegment {
      */
     abstract get allLegs(): FlightPlanElement[]
 
+    abstract set allLegs(legs: FlightPlanElement[])
+
     get legCount() {
         return this.allLegs.length;
     }
@@ -41,7 +43,7 @@ export abstract class FlightPlanSegment {
     strung = false
 
     constructor(
-        protected readonly flightPlan: BaseFlightPlan,
+        public readonly flightPlan: BaseFlightPlan,
     ) {
     }
 
@@ -61,6 +63,7 @@ export abstract class FlightPlanSegment {
     insertAfter(index: number, element: FlightPlanElement) {
         this.allLegs.splice(index + 1, 0, element);
 
+        this.flightPlan.syncSegmentLegsChange(this);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
@@ -74,6 +77,7 @@ export abstract class FlightPlanSegment {
             // Move legs after cut to enroute
             const removed = this.allLegs.splice(atPoint);
 
+            this.flightPlan.syncSegmentLegsChange(this);
             this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
             return removed;
         }
@@ -85,6 +89,7 @@ export abstract class FlightPlanSegment {
                 removed.push(this.allLegs.shift());
             }
 
+            this.flightPlan.syncSegmentLegsChange(this);
             this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
             return removed;
         }
@@ -101,6 +106,7 @@ export abstract class FlightPlanSegment {
     removeRange(from: number, to: number) {
         this.allLegs.splice(from, to - from);
 
+        this.flightPlan.syncSegmentLegsChange(this);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
@@ -114,6 +120,7 @@ export abstract class FlightPlanSegment {
             this.allLegs.shift();
         }
 
+        this.flightPlan.syncSegmentLegsChange(this);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
@@ -125,6 +132,7 @@ export abstract class FlightPlanSegment {
     removeAfter(from: number) {
         this.allLegs.splice(from);
 
+        this.flightPlan.syncSegmentLegsChange(this);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 
@@ -140,6 +148,7 @@ export abstract class FlightPlanSegment {
 
             if ((nextElement?.isDiscontinuity ?? false) === false && (element.type === LegType.VM || element.type === LegType.FM)) {
                 this.allLegs.splice(i + 1, 0, { isDiscontinuity: true });
+                this.flightPlan.syncSegmentLegsChange(this);
                 i++;
             }
         }

@@ -88,6 +88,8 @@ export class DestinationSegment extends FlightPlanSegment {
         }
 
         this.flightPlan.availableApproaches = await loadAllApproaches(this.destinationAirport);
+
+        this.flightPlan.syncSegmentLegsChange(this);
     }
 
     clone(forPlan: BaseFlightPlan): DestinationSegment {

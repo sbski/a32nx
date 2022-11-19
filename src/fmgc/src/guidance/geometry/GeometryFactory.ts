@@ -209,8 +209,8 @@ export namespace GeometryFactory {
 function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlanLeg: FlightPlanElement | undefined, flightPlanLeg: FlightPlanLeg, nextGeometryLeg?: Leg): Leg {
     const legType = flightPlanLeg.type;
 
-    if (previousFlightPlanLeg?.isDiscontinuity === true && legType !== LegType.IF) {
-        throw new Error('[FMS/Geometry] Cannot create non-IF geometry leg after discontinuity');
+    if (previousFlightPlanLeg?.isDiscontinuity === true && legType !== LegType.IF && legType !== LegType.CF) {
+        throw new Error('[FMS/Geometry] Leg type after discontinuity can only be IF or CF');
     }
 
     const metadata = legMetadataFromFlightPlanLeg(flightPlanLeg);
@@ -260,9 +260,8 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
     case LegType.DF:
         return new DFLeg(waypoint, metadata, SegmentType.Departure);
     case LegType.FC:
-        break;
     case LegType.FD:
-        return new FDLeg(trueCourse, length, waypoint, recommendedNavaid, metadata, SegmentType.Departure);
+        return new FDLeg(trueCourse, length, waypoint, legType === LegType.FC ? waypoint : recommendedNavaid, metadata, SegmentType.Departure);
     case LegType.IF:
         return new IFLeg(waypoint, metadata, SegmentType.Departure);
     case LegType.PI:

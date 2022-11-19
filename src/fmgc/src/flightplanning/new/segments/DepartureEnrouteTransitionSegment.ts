@@ -24,6 +24,7 @@ export class DepartureEnrouteTransitionSegment extends FlightPlanSegment {
         if (transitionIdent === undefined) {
             this.departureEnrouteTransition = undefined;
             this.allLegs.length = 0;
+            this.flightPlan.syncSegmentLegsChange(this);
             return;
         }
 
@@ -49,6 +50,7 @@ export class DepartureEnrouteTransitionSegment extends FlightPlanSegment {
         this.strung = false;
 
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
+        this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.SyncSegmentLegs, this);
     }
 
     clone(forPlan: BaseFlightPlan): DepartureEnrouteTransitionSegment {

@@ -26,6 +26,8 @@ export class ArrivalSegment extends FlightPlanSegment {
             this.arrival = undefined;
             this.allLegs.length = 0;
             this.flightPlan.arrivalEnrouteTransitionSegment.setArrivalEnrouteTransition(undefined);
+
+            this.flightPlan.syncSegmentLegsChange(this);
             return;
         }
 
@@ -58,6 +60,7 @@ export class ArrivalSegment extends FlightPlanSegment {
         const mappedRunwayTransitionLegs = matchingRunwayTransition?.legs?.map((leg) => FlightPlanLeg.fromProcedureLeg(this, leg, matchingArrival.ident)) ?? [];
         this.flightPlan.arrivalRunwayTransitionSegment.setArrivalRunwayTransition(matchingRunwayTransition, mappedRunwayTransitionLegs);
 
+        this.flightPlan.syncSegmentLegsChange(this);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.RebuildArrivalAndApproach);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }

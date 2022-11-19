@@ -4,14 +4,31 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
+import * as chalk from 'chalk';
 
 export function dumpFlightPlan(plan: BaseFlightPlan): string {
-    const string = plan.allLegs.map((it) => {
+    const string = plan.allLegs.map((it, index) => {
         if (it.isDiscontinuity === true) {
-            return '---F-PLN-DISCONTINUITY--';
+            return '---F-PLN DISCONTINUITY--';
         }
 
-        return ` ${it.annotation}\n${it.ident}`;
+        const isActive = index === plan.activeLegIndex;
+        const isMissedApproach = index > plan.destinationLegIndex;
+
+        let ident: any;
+        let legIdent = it.ident;
+
+        if (it.definition.overfly) {
+            legIdent += 'Δ';
+        }
+
+        if (isActive) {
+            ident = chalk.rgb(255, 255, 255)(legIdent);
+        } else {
+            ident = isMissedApproach ? chalk.rgb(0, 255, 255)(legIdent) : chalk.rgb(0, 255, 0)(legIdent);
+        }
+
+        return ` ${it.annotation}\n${ident}`;
     }).join('\n');
 
     return string;

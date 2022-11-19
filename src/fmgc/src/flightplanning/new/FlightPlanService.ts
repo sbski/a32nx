@@ -9,12 +9,14 @@ import { FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { Waypoint } from 'msfs-navdata';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
 import { Coordinates } from 'msfs-geo';
+import { EventBus } from 'msfssdk';
+import { MagVar } from '@shared/MagVar';
 
 export class FlightPlanService {
     private constructor() {
     }
 
-    private static flightPlanManager = new FlightPlanManager();
+    private static flightPlanManager = new FlightPlanManager(new EventBus(), Math.round(Math.random() * 10_000));
 
     private static config: FpmConfig = FpmConfigs.A320_HONEYWELL_H3
 
@@ -285,8 +287,6 @@ export class FlightPlanService {
     }
 
     static directTo(ppos: Coordinates, trueTrack: Degrees, waypoint: Waypoint, planIndex = FlightPlanIndex.Active) {
-        const magVar = Facilities.getMagVar(ppos.lat, ppos.long);
-
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
         const plan = this.flightPlanManager.get(finalIndex);
@@ -298,18 +298,26 @@ export class FlightPlanService {
             throw new Error('[FPM] Target leg of a direct to cannot be a discontinuity or non-XF leg');
         }
 
-        const turningPoint = FlightPlanLeg.turningPoint(plan.enrouteSegment, ppos);
-        const turnStart = FlightPlanLeg.directToTurnStart(plan.enrouteSegment, ppos, (720 + trueTrack - (magVar)) % 360);
+        const magVar = MagVar.getMagVar(ppos);
+        const magneticCourse = MagVar.trueToMagnetic(trueTrack, magVar);
+
+        const turningPoint = FlightPlanLeg.turningPoint(plan.enrouteSegment, ppos, magneticCourse);
         const turnEnd = FlightPlanLeg.directToTurnEnd(plan.enrouteSegment, targetLeg.definition.waypoint);
 
-        // Remove all legs before target
-
         // TODO maybe encapsulate this behaviour in BaseFlightPlan
-        plan.removeRange(this.activeLegIndex, targetLegIndex);
+        plan.redistributeLegsAt(targetLegIndex);
+        const indexInEnrouteSegment = plan.enrouteSegment.allLegs.findIndex((it) => it === targetLeg);
 
-        plan.insertElementAfter(this.activeLegIndex - 1, turningPoint);
-        plan.insertElementAfter(this.activeLegIndex, turnStart);
-        plan.insertElementAfter(this.activeLegIndex + 1, turnEnd);
+        plan.enrouteSegment.allLegs.splice(indexInEnrouteSegment, 0, { isDiscontinuity: true });
+        plan.enrouteSegment.allLegs.splice(indexInEnrouteSegment + 1, 0, turningPoint);
+        plan.enrouteSegment.allLegs.splice(indexInEnrouteSegment + 2, 0, turnEnd);
+        plan.enrouteSegment.allLegs.splice(indexInEnrouteSegment + 3, 1);
+        plan.incrementVersion();
+
+        const turnStartLegIndexInPlan = plan.allLegs.findIndex((it) => it === turnEnd);
+
+        plan.activeLegIndex = turnStartLegIndexInPlan;
+        plan.incrementVersion();
     }
 
     static setOverfly(atIndex: number, overfly: boolean, planIndex = FlightPlanIndex.Active) {

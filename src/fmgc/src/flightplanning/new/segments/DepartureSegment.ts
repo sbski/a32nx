@@ -26,6 +26,7 @@ export class DepartureSegment extends FlightPlanSegment {
             await this.flightPlan.setDepartureEnrouteTransition(undefined);
             await this.flightPlan.originSegment.refreshOriginLegs();
 
+            this.flightPlan.syncSegmentLegsChange(this);
             return;
         }
 
@@ -57,6 +58,7 @@ export class DepartureSegment extends FlightPlanSegment {
         const mappedRunwayTransitionLegs = runwayTransition?.legs?.map((leg) => FlightPlanLeg.fromProcedureLeg(this, leg, matchingProcedure.ident)) ?? [];
         await this.flightPlan.departureRunwayTransitionSegment.setOriginRunwayTransitionSegment(runwayTransition, mappedRunwayTransitionLegs);
 
+        this.flightPlan.syncSegmentLegsChange(this);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 

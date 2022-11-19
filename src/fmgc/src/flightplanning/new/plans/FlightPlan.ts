@@ -4,25 +4,21 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { Airport } from 'msfs-navdata';
-import { FlightPlanDefinition } from '@fmgc/flightplanning/new/FlightPlanDefinition';
 import { AlternateFlightPlan } from '@fmgc/flightplanning/new/plans/AlternateFlightPlan';
 import { PendingAirways } from '@fmgc/flightplanning/new/plans/PendingAirways';
+import { EventBus } from 'msfssdk';
 import { FlightPlanPerformanceData } from './performance/FlightPlanPerformanceData';
 import { BaseFlightPlan } from './BaseFlightPlan';
 
 export class FlightPlan extends BaseFlightPlan {
-    static empty(): FlightPlan {
-        return new FlightPlan();
-    }
-
-    static fromDefinition(definition: FlightPlanDefinition): FlightPlan {
-        return new FlightPlan();
+    static empty(index: number, bus: EventBus): FlightPlan {
+        return new FlightPlan(index, bus);
     }
 
     /**
      * Alternate flight plan associated with this flight plan
      */
-    alternateFlightPlan = new AlternateFlightPlan(this);
+    alternateFlightPlan = new AlternateFlightPlan(this.index, this);
 
     pendingAirways: PendingAirways | undefined;
 
@@ -32,7 +28,7 @@ export class FlightPlan extends BaseFlightPlan {
     performanceData = new FlightPlanPerformanceData();
 
     clone(): FlightPlan {
-        const newPlan = FlightPlan.empty();
+        const newPlan = FlightPlan.empty(this.index, this.bus);
 
         newPlan.originSegment = this.originSegment.clone(newPlan);
         newPlan.departureRunwayTransitionSegment = this.departureRunwayTransitionSegment.clone(newPlan);

@@ -31,6 +31,7 @@ export class ApproachSegment extends FlightPlanSegment {
             this.approach = undefined;
             this.allLegs = this.createLegSet([]);
 
+            this.flightPlan.syncSegmentLegsChange(this);
             this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
 
             return;
@@ -72,6 +73,7 @@ export class ApproachSegment extends FlightPlanSegment {
 
         this.flightPlan.availableApproachVias = matchingProcedure.transitions;
 
+        this.flightPlan.syncSegmentLegsChange(this);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.RebuildArrivalAndApproach);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }

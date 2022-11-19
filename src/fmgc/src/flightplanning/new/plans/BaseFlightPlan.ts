@@ -31,13 +31,53 @@ import { ApproachViaSegment } from '@fmgc/flightplanning/new/segments/ApproachVi
 import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
 import { WaypointStats } from '@fmgc/flightplanning/data/flightplan';
 import { procedureLegIdentAndAnnotation } from '@fmgc/flightplanning/new/legs/FlightPlanLegNaming';
+import { FlightPlanSyncEvents } from '@fmgc/flightplanning/new/sync/FlightPlanSyncEvents';
+import { EventBus, Publisher } from 'msfssdk';
 
 export enum FlightPlanQueuedOperation {
     Restring,
     RebuildArrivalAndApproach,
+    SyncSegmentLegs,
 }
 
 export abstract class BaseFlightPlan {
+    private readonly syncPub: Publisher<FlightPlanSyncEvents>;
+
+    constructor(public readonly index: number, public readonly bus: EventBus) {
+        this.syncPub = this.bus.getPublisher<FlightPlanSyncEvents>();
+
+        const subs = this.bus.getSubscriber<FlightPlanSyncEvents>();
+
+        subs.on('flightPlan.setActiveLegIndex').handle((event) => {
+            if (!this.ignoreSync) {
+                if (event.planIndex !== this.index) {
+                    return;
+                }
+
+                this.activeLegIndex = event.activeLegIndex;
+            }
+        });
+
+        subs.on('flightPlan.setSegmentLegs').handle((event) => {
+            if (!this.ignoreSync) {
+                if (event.planIndex !== this.index) {
+                    return;
+                }
+
+                const segment = this.orderedSegments[event.segmentIndex];
+
+                const elements: FlightPlanElement[] = event.legs.map((it) => {
+                    if (it.isDiscontinuity === false) {
+                        return FlightPlanLeg.deserialize(it, segment);
+                    }
+                    return it;
+                });
+
+                segment.allLegs = elements;
+            }
+        });
+    }
+
     get legCount() {
         return this.allLegs.length;
     }
@@ -58,6 +98,8 @@ export abstract class BaseFlightPlan {
 
     sequence() {
         this.activeLegIndex++;
+
+        this.sendEvent('flightPlan.setActiveLegIndex', { planIndex: this.index, activeLegIndex: this.activeLegIndex });
     }
 
     version = 0;
@@ -66,18 +108,18 @@ export abstract class BaseFlightPlan {
         this.version++;
     }
 
-    queuedOperations: FlightPlanQueuedOperation[] = [];
+    queuedOperations: [op: FlightPlanQueuedOperation, param: any][] = [];
 
-    enqueueOperation(op: FlightPlanQueuedOperation): void {
-        const existing = this.queuedOperations.find((it) => it === op);
+    enqueueOperation(op: FlightPlanQueuedOperation, param?: any): void {
+        const existing = this.queuedOperations.find((it) => it[0] === op && it[1] === param);
 
         if (existing === undefined) {
-            this.queuedOperations.push(op);
+            this.queuedOperations.push([op, param]);
         }
     }
 
     async flushOperationQueue() {
-        for (const operation of this.queuedOperations) {
+        for (const [operation, param] of this.queuedOperations) {
             switch (operation) {
             case FlightPlanQueuedOperation.Restring:
                 this.restring();
@@ -86,12 +128,33 @@ export abstract class BaseFlightPlan {
                 // eslint-disable-next-line no-await-in-loop
                 await this.rebuildArrivalAndApproachSegments();
                 break;
+            case FlightPlanQueuedOperation.SyncSegmentLegs:
+                const segment = param as FlightPlanSegment;
+
+                this.syncSegmentLegsChange(segment);
+                break;
             default:
                 console.error(`Unknown queue operation: ${operation}`);
             }
         }
 
         this.queuedOperations.length = 0;
+    }
+
+    private ignoreSync = false;
+
+    sendEvent<K extends keyof FlightPlanSyncEvents>(topic: K, data: FlightPlanSyncEvents[K]) {
+        this.ignoreSync = true;
+        this.syncPub.pub(topic, data, true);
+        this.ignoreSync = false;
+    }
+
+    syncSegmentLegsChange(segment: FlightPlanSegment) {
+        const segmentIndex = this.orderedSegments.indexOf(segment);
+
+        const legs = segment.allLegs.map((it) => (it.isDiscontinuity === false ? it.serialize() : it));
+
+        this.sendEvent('flightPlan.setSegmentLegs', { planIndex: this.index, segmentIndex, legs });
     }
 
     originSegment = new OriginSegment(this);
@@ -262,7 +325,7 @@ export abstract class BaseFlightPlan {
         return stats;
     }
 
-    protected get orderedSegments() {
+    protected get orderedSegments(): FlightPlanSegment[] {
         return [
             this.originSegment,
             this.departureRunwayTransitionSegment,
@@ -646,6 +709,11 @@ export abstract class BaseFlightPlan {
                 emptyAllNext = true;
 
                 toInsertInEnroute.push(...this.departureRunwayTransitionSegment.truncate(indexInSegment));
+            } else if (emptyAllNext) {
+                const removed = this.departureRunwayTransitionSegment.allLegs.slice();
+                this.departureRunwayTransitionSegment.allLegs.length = 0;
+
+                toInsertInEnroute.push(...removed);
             }
 
             if (segment === this.departureSegment) {
@@ -822,6 +890,7 @@ export abstract class BaseFlightPlan {
                     [element.ident, element.annotation] = procedureLegIdentAndAnnotation(element.definition, '');
 
                     first.allLegs.pop();
+                    first.flightPlan.syncSegmentLegsChange(first);
                     cutBefore = i;
                     break;
                 }
@@ -839,6 +908,7 @@ export abstract class BaseFlightPlan {
         if (cutBefore === -1) {
             if (lastElementInFirst.isDiscontinuity === false) {
                 first.allLegs.push({ isDiscontinuity: true });
+                this.enqueueOperation(FlightPlanQueuedOperation.SyncSegmentLegs, first);
             }
 
             first.strung = false;
@@ -848,11 +918,14 @@ export abstract class BaseFlightPlan {
         // Otherwise, clear a possible discontinuity and remove all elements before the matching leg and the last leg of the first segment
         if (lastElementInFirst.isDiscontinuity === true) {
             first.allLegs.pop();
+            this.enqueueOperation(FlightPlanQueuedOperation.SyncSegmentLegs, first);
         }
 
         for (let i = 0; i < cutBefore; i++) {
             second.allLegs.shift();
         }
+
+        this.enqueueOperation(FlightPlanQueuedOperation.SyncSegmentLegs, second);
 
         first.strung = true;
     }
@@ -874,7 +947,7 @@ export abstract class BaseFlightPlan {
                     continue;
                 }
 
-                if (element.definition.type === LegType.IF) {
+                if (element.definition.type === LegType.IF && element.ident !== 'T-P') {
                     element.type = LegType.TF;
                 } else {
                     element.type = element.definition.type;

@@ -14,9 +14,10 @@ import { OriginSegment } from '@fmgc/flightplanning/new/segments/OriginSegment';
  */
 export class AlternateFlightPlan extends BaseFlightPlan {
     constructor(
+        index: number,
         private mainFlightPlan: BaseFlightPlan,
     ) {
-        super();
+        super(index, mainFlightPlan.bus);
 
         this.originSegment = new AlternateOriginSegment(this, this.mainFlightPlan.destinationSegment);
     }
@@ -33,7 +34,7 @@ export class AlternateFlightPlan extends BaseFlightPlan {
     }
 
     clone(fromMainFlightPlan: BaseFlightPlan): AlternateFlightPlan {
-        const newPlan = new AlternateFlightPlan(fromMainFlightPlan);
+        const newPlan = new AlternateFlightPlan(this.index, fromMainFlightPlan);
 
         newPlan.departureRunwayTransitionSegment = this.departureRunwayTransitionSegment.clone(newPlan);
         newPlan.departureSegment = this.departureSegment.clone(newPlan);

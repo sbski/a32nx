@@ -12,6 +12,7 @@ import { courseToFixDistanceToGo, courseToFixGuidance } from '@fmgc/guidance/lna
 import { IFLeg } from '@fmgc/guidance/lnav/legs/IF';
 import { distanceTo, placeBearingDistance } from 'msfs-geo';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
+import { WaypointDescriptor } from 'msfs-navdata';
 import { PathVector, PathVectorType } from '../PathVector';
 
 export class CALeg extends Leg {
@@ -62,8 +63,7 @@ export class CALeg extends Leg {
         ppos: Coordinates,
         _trueTrack: DegreesTrue,
     ) {
-        // FIXME somehow after reloads the isRunway property is gone, so consider airports as runways for now
-        const afterRunway = this.inboundGuidable instanceof IFLeg && this.inboundGuidable.fix.databaseId.startsWith('A');
+        const afterRunway = this.inboundGuidable instanceof IFLeg && this.inboundGuidable.metadata.flightPlanLegDefinition.waypointDescriptor === WaypointDescriptor.Runway;
 
         // We assign / spread properties here to avoid copying references and causing bugs
         if (isActive && !afterRunway) {

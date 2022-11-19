@@ -2885,6 +2885,8 @@ class FMCMainDisplay extends BaseAirliners {
             SimVar.SetSimVarValue("L:MAP_SHOW_TEMPORARY_FLIGHT_PLAN", "number", 0);
             this.tempFpPendingAutoTune = false;
             callback();
+        } else {
+            callback();
         }
     }
 

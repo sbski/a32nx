@@ -62,11 +62,11 @@ export class FDLeg extends Leg {
             this.predictedPath.push({
                 type: PathVectorType.DebugPoint,
                 startPoint: this.getPathStartPoint(),
-                annotation: 'CD START',
+                annotation: 'FD START',
             }, {
                 type: PathVectorType.DebugPoint,
                 startPoint: this.getPathEndPoint(),
-                annotation: 'CD END',
+                annotation: 'FD END',
             });
         }
 

@@ -29,6 +29,7 @@ export class DepartureRunwayTransitionSegment extends FlightPlanSegment {
 
         await this.flightPlan.originSegment.refreshOriginLegs();
 
+        this.flightPlan.syncSegmentLegsChange(this);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 

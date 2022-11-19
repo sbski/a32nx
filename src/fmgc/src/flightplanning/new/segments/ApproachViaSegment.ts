@@ -24,6 +24,8 @@ export class ApproachViaSegment extends FlightPlanSegment {
         if (transitionIdent === undefined) {
             this.approachVia = undefined;
             this.allLegs.length = 0;
+
+            this.flightPlan.syncSegmentLegsChange(this);
             return;
         }
 
@@ -48,6 +50,7 @@ export class ApproachViaSegment extends FlightPlanSegment {
         this.allLegs.push(...mappedApproachViaLegs);
         this.strung = false;
 
+        this.flightPlan.syncSegmentLegsChange(this);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.RebuildArrivalAndApproach);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }

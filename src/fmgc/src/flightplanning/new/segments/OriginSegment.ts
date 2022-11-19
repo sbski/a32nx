@@ -85,6 +85,8 @@ export class OriginSegment extends FlightPlanSegment {
         } else {
             this.allLegs.push({ isDiscontinuity: true });
         }
+
+        this.flightPlan.syncSegmentLegsChange(this);
     }
 
     clone(forPlan: BaseFlightPlan): OriginSegment {

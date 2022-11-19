@@ -88,7 +88,7 @@ class CDUFlightPlanPage {
 
         // If we're still on the ground, force the active leg to be the first one even if we're close enough that the
         // FPM is trying to advance to the next one.
-        const first = (mcdu.flightPhaseManager.phase <= FmgcFlightPhases.TAKEOFF) ? 0 : activeFirst;
+        const first = activeFirst;
 
         // PWPs
         const fmsPseudoWaypoints = mcdu.guidanceController.currentPseudoWaypoints;

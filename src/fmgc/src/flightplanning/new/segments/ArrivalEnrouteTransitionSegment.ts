@@ -24,6 +24,8 @@ export class ArrivalEnrouteTransitionSegment extends FlightPlanSegment {
         if (transitionIdent === undefined) {
             this.arrivalEnrouteTransition = undefined;
             this.allLegs.length = 0;
+
+            this.flightPlan.syncSegmentLegsChange(this);
             return;
         }
 
@@ -48,6 +50,7 @@ export class ArrivalEnrouteTransitionSegment extends FlightPlanSegment {
         this.allLegs.push(...mappedArrivalEnrouteTransitionLegs);
         this.strung = false;
 
+        this.flightPlan.syncSegmentLegsChange(this);
         this.flightPlan.enqueueOperation(FlightPlanQueuedOperation.Restring);
     }
 

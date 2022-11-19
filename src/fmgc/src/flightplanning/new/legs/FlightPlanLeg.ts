@@ -11,6 +11,15 @@ import { WaypointFactory } from '@fmgc/flightplanning/new/waypoints/WaypointFact
 import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanSegment';
 import { MathUtils } from '@shared/MathUtils';
 import { EnrouteSegment } from '@fmgc/flightplanning/new/segments/EnrouteSegment';
+import { MagVar } from '@shared/MagVar';
+
+/**
+ * A serialized flight plan leg, to be sent across FMSes
+ */
+export interface SerializedFlightPlanLeg {
+    isDiscontinuity: false,
+    definition: FlightPlanLegDefinition,
+}
 
 /**
  * A leg in a flight plan. Not to be confused with a geometry leg or a procedure leg
@@ -31,6 +40,14 @@ export class FlightPlanLeg {
     }
 
     isDiscontinuity: false = false
+
+    serialize(): SerializedFlightPlanLeg {
+        return { isDiscontinuity: false, definition: this.definition };
+    }
+
+    static deserialize(serialized: SerializedFlightPlanLeg, segment: FlightPlanSegment): FlightPlanLeg {
+        return FlightPlanLeg.fromProcedureLeg(segment, serialized.definition, serialized.definition.procedureIdent);
+    }
 
     get waypointDescriptor() {
         return this.definition.waypointDescriptor;
@@ -63,6 +80,12 @@ export class FlightPlanLeg {
         return legType === LegType.HA || legType === LegType.HF || legType === LegType.HM;
     }
 
+    isVectors() {
+        const legType = this.definition.type;
+
+        return legType === LegType.FM || legType === LegType.VM;
+    }
+
     isRunway() {
         return this.definition.waypointDescriptor === WaypointDescriptor.Runway;
     }
@@ -92,25 +115,32 @@ export class FlightPlanLeg {
         return this.definition.waypoint.ident === waypoint.ident && this.definition.waypoint.icaoCode === waypoint.icaoCode;
     }
 
-    static turningPoint(segment: EnrouteSegment, location: Coordinates): FlightPlanLeg {
+    static turningPoint(segment: EnrouteSegment, location: Coordinates, magneticCourse: DegreesMagnetic): FlightPlanLeg {
         return new FlightPlanLeg(segment, {
-            type: LegType.IF,
+            procedureIdent: '',
+            type: LegType.CF,
             overfly: false,
             waypoint: WaypointFactory.fromLocation('T-P', location),
+            magneticCourse,
         }, 'T-P', '', undefined, undefined, false);
     }
 
     static directToTurnStart(segment: EnrouteSegment, location: Coordinates, bearing: DegreesTrue): FlightPlanLeg {
+        const magVar = Facilities.getMagVar(location.lat, location.long);
+
         return new FlightPlanLeg(segment, {
-            type: LegType.FD,
+            procedureIdent: '',
+            type: LegType.FC,
             overfly: false,
-            waypoint: WaypointFactory.fromPlaceBearingDistance('', location, 0.1, bearing),
-            length: 0.1 * 1852, // 0.1 NM in metres
+            waypoint: WaypointFactory.fromPlaceBearingDistance('T-P', location, 0.1, bearing),
+            magneticCourse: MagVar.trueToMagnetic(bearing, magVar),
+            length: 0.1,
         }, '', '', undefined, undefined, false);
     }
 
     static directToTurnEnd(segment: EnrouteSegment, targetWaypoint: Waypoint): FlightPlanLeg {
         return new FlightPlanLeg(segment, {
+            procedureIdent: '',
             type: LegType.DF,
             overfly: false,
             waypoint: targetWaypoint,
@@ -127,6 +157,7 @@ export class FlightPlanLeg {
     static fromAirportAndRunway(segment: FlightPlanSegment, procedureIdent: string, airport: Airport, runway?: Runway): FlightPlanLeg {
         if (runway) {
             return new FlightPlanLeg(segment, {
+                procedureIdent: '',
                 type: LegType.IF,
                 overfly: false,
                 waypoint: WaypointFactory.fromAirportAndRunway(airport, runway),
@@ -136,6 +167,7 @@ export class FlightPlanLeg {
         }
 
         return new FlightPlanLeg(segment, {
+            procedureIdent: '',
             type: LegType.IF,
             overfly: false,
             waypoint: { ...airport, area: WaypointArea.Terminal },
@@ -152,6 +184,7 @@ export class FlightPlanLeg {
         const ident = Math.round(altitude).toString().substring(0, 4);
 
         return new FlightPlanLeg(segment, {
+            procedureIdent: '',
             type: LegType.FA,
             overfly: false,
             waypoint: runwayLeg.terminationWaypoint(),
@@ -169,6 +202,7 @@ export class FlightPlanLeg {
         );
 
         return new FlightPlanLeg(segment, {
+            procedureIdent: '',
             type: LegType.IF,
             overfly: false,
             waypoint,
@@ -177,6 +211,7 @@ export class FlightPlanLeg {
 
     static fromEnrouteWaypoint(segment: FlightPlanSegment, waypoint: Waypoint, airwayIdent?: string): FlightPlanLeg {
         return new FlightPlanLeg(segment, {
+            procedureIdent: '',
             type: LegType.TF,
             overfly: false,
             waypoint,
