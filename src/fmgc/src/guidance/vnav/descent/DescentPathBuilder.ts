@@ -1,4 +1,4 @@
-import { DescentAltitudeConstraint, VerticalCheckpoint, VerticalCheckpointReason } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
+import { DescentAltitudeConstraint, MaxSpeedConstraint, VerticalCheckpoint, VerticalCheckpointReason } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
 import { BaseGeometryProfile } from '@fmgc/guidance/vnav/profile/BaseGeometryProfile';
 import { ManagedSpeedType, SpeedProfile } from '@fmgc/guidance/vnav/climb/SpeedProfile';
 import { AtmosphericConditions } from '@fmgc/guidance/vnav/AtmosphericConditions';
@@ -18,7 +18,7 @@ export class DescentPathBuilder {
 
     constructor(
         private computationParametersObserver: VerticalProfileComputationParametersObserver,
-        atmosphericConditions: AtmosphericConditions,
+        private atmosphericConditions: AtmosphericConditions,
     ) {
         this.geometricPathBuilder = new GeometricPathBuilder(
             computationParametersObserver,
@@ -87,102 +87,52 @@ export class DescentPathBuilder {
         // Assume the last checkpoint is the start of the geometric path
         sequence.copyLastCheckpoint({ reason: VerticalCheckpointReason.IdlePathEnd });
 
-        const { managedDescentSpeedMach } = this.computationParametersObserver.get();
+        const { managedDescentSpeedMach, descentSpeedLimit } = this.computationParametersObserver.get();
+        const speedConstraintsAhead = this.speedConstraintGenerator(profile.descentSpeedConstraints, sequence);
 
-        const speedConstraints = profile.descentSpeedConstraints.slice().sort((a, b) => b.distanceFromStart - a.distanceFromStart);
-        let i = 0;
-        while (i++ < 50 && speedConstraints.length > 0) {
-            const constraint = speedConstraints[0];
-            const { distanceFromStart, remainingFuelOnBoard, speed, altitude } = sequence.lastCheckpoint;
+        // We try to figure out what speed we might be decelerating for
+        let previousCasTarget = speedProfile.getTarget(sequence.lastCheckpoint.altitude, sequence.lastCheckpoint.distanceFromStart, ManagedSpeedType.Descent);
+
+        for (let i = 0; i < 100 && topOfDescentAltitude - sequence.lastCheckpoint.altitude > 1; i++) {
+            const { distanceFromStart, altitude, speed, remainingFuelOnBoard } = sequence.lastCheckpoint;
             const headwind = windProfile.getHeadwindComponent(distanceFromStart, altitude);
 
-            if (altitude >= topOfDescentAltitude) {
-                break;
-            }
-
-            if (constraint.distanceFromStart >= distanceFromStart) {
-                speedConstraints.splice(0, 1);
-                continue;
-            }
-
-            // I fetch the actual speed target again, because we might not be able to accelerate to the speed constraint directly (e.g if there's a speed limit)
-            const speedTargetBeforeCurrentPosition = speedProfile.getTarget(constraint.distanceFromStart, altitude, ManagedSpeedType.Descent);
-            // It is safe to use the current altitude here. This way, the speed limit will certainly be obeyed
-            if (speedTargetBeforeCurrentPosition - speed > 1) {
-                const decelerationStep = this.idleDescentStrategy.predictToSpeed(
-                    altitude,
-                    speedTargetBeforeCurrentPosition,
-                    speed,
-                    managedDescentSpeedMach,
-                    remainingFuelOnBoard,
-                    headwind,
-                );
-
-                if (decelerationStep.distanceTraveled > 0) {
-                    throw new Error('[FMS/VNAV] Deceleration step in idle path has positive distance travelled. The final speed and inital speed arguments are probably reversed');
-                }
-
-                sequence.addDecelerationCheckpointFromStep(decelerationStep, speed);
-
-                continue;
-            }
-
-            const descentStep = this.idleDescentStrategy.predictToDistance(
-                altitude,
-                constraint.distanceFromStart - sequence.lastCheckpoint.distanceFromStart,
-                speed,
-                managedDescentSpeedMach,
-                remainingFuelOnBoard,
-                headwind,
+            const casTarget = speedProfile.getTarget(distanceFromStart - 1e-4, altitude - 1e-4, ManagedSpeedType.Descent);
+            const currentSpeedTarget = Math.min(
+                casTarget,
+                this.atmosphericConditions.computeCasFromMach(managedDescentSpeedMach, altitude),
             );
+            const canAccelerate = currentSpeedTarget > speed;
 
-            if (descentStep.finalAltitude > Math.max(topOfDescentAltitude, descentStep.initialAltitude)) {
-                const scaling = (topOfDescentAltitude - descentStep.initialAltitude) / (descentStep.finalAltitude - descentStep.initialAltitude);
+            if (canAccelerate) {
+                // Build acceleration path
+                const speedStep = this.idleDescentStrategy.predictToSpeed(altitude, casTarget, speed, managedDescentSpeedMach, remainingFuelOnBoard, headwind);
+                const scaling = Math.min(1, (topOfDescentAltitude - altitude) / (speedStep.finalAltitude - altitude));
+                this.scaleStepBasedOnLastCheckpoint(sequence.lastCheckpoint, speedStep, scaling);
 
-                this.scaleStepBasedOnLastCheckpoint(sequence.lastCheckpoint, descentStep, scaling);
-            }
-
-            sequence.addCheckpointFromStep(descentStep, VerticalCheckpointReason.IdlePathAtmosphericConditions);
-        }
-
-        // After we've passed all the speed constraints, we can accelerate up to the descent speed (unless the speed limit is in the way)
-        let j = 0;
-        for (let altitude = sequence.lastCheckpoint.altitude; altitude < topOfDescentAltitude && j++ < 50; altitude = Math.min(altitude + 1500, topOfDescentAltitude)) {
-            const { distanceFromStart, remainingFuelOnBoard, speed } = sequence.lastCheckpoint;
-
-            const startingAltitudeForSegment = Math.min(altitude + 1500, topOfDescentAltitude);
-            // Get target slightly before to figure out if we want to accelerate
-            const speedTarget = speedProfile.getTarget(distanceFromStart - 1e-4, altitude, ManagedSpeedType.Descent);
-
-            if ((speedTarget - speed) > 1) {
-                const headwind = windProfile.getHeadwindComponent(distanceFromStart, altitude);
-                const decelerationStep = this.idleDescentStrategy.predictToSpeed(altitude, speedTarget, speed, managedDescentSpeedMach, remainingFuelOnBoard, headwind);
-
-                if (decelerationStep.distanceTraveled > 0) {
-                    throw new Error('[FMS/VNAV] Deceleration step in idle path has positive distance travelled. The final speed and inital speed arguments are probably reversed');
+                sequence.addDecelerationCheckpointFromStep(speedStep, previousCasTarget);
+            } else {
+                // Try alt path
+                let finalAltitude = Math.min(altitude + 1500, topOfDescentAltitude);
+                if (speedProfile.shouldTakeDescentSpeedLimitIntoAccount() && altitude < descentSpeedLimit.underAltitude) {
+                    finalAltitude = Math.min(finalAltitude, descentSpeedLimit.underAltitude);
                 }
 
-                // If we shoot through the final altitude trying to accelerate, pretend we didn't accelerate all the way
-                if (decelerationStep.initialAltitude > topOfDescentAltitude) {
-                    const scaling = (decelerationStep.initialAltitude - decelerationStep.finalAltitude) !== 0
-                        ? (topOfDescentAltitude - decelerationStep.finalAltitude) / (decelerationStep.initialAltitude - decelerationStep.finalAltitude)
-                        : 0;
-
-                    this.scaleStepBasedOnLastCheckpoint(sequence.lastCheckpoint, decelerationStep, scaling);
+                const altitudeStep = this.idleDescentStrategy.predictToAltitude(altitude, finalAltitude, speed, managedDescentSpeedMach, remainingFuelOnBoard, headwind);
+                // Check if constraint violated
+                const nextSpeedConstraint = speedConstraintsAhead.next();
+                // TODO: Make sure we don't get stuck on a constraint
+                if (!nextSpeedConstraint.done && distanceFromStart + altitudeStep.distanceTraveled < nextSpeedConstraint.value.distanceFromStart) {
+                    // Constraint violated
+                    const distanceToConstraint = nextSpeedConstraint.value.distanceFromStart - distanceFromStart;
+                    const distanceStep = this.idleDescentStrategy.predictToDistance(altitude, distanceToConstraint, speed, managedDescentSpeedMach, remainingFuelOnBoard, headwind);
+                    sequence.addCheckpointFromStep(distanceStep, VerticalCheckpointReason.SpeedConstraint);
+                } else {
+                    sequence.addCheckpointFromStep(altitudeStep, VerticalCheckpointReason.IdlePathAtmosphericConditions);
                 }
-
-                // This checkpoint sets where we have to start decelerating to make the first speed constraint constraint or the speed limit
-                sequence.addDecelerationCheckpointFromStep(decelerationStep, speed);
-
-                // Stupid hack
-                altitude = sequence.lastCheckpoint.altitude - 1500;
-                continue;
             }
 
-            const headwind = windProfile.getHeadwindComponent(sequence.lastCheckpoint.distanceFromStart, sequence.lastCheckpoint.altitude);
-
-            const step = this.idleDescentStrategy.predictToAltitude(altitude, startingAltitudeForSegment, speed, managedDescentSpeedMach, remainingFuelOnBoard, headwind);
-            sequence.addCheckpointFromStep(step, VerticalCheckpointReason.IdlePathAtmosphericConditions);
+            previousCasTarget = casTarget;
         }
 
         if (sequence.lastCheckpoint.reason === VerticalCheckpointReason.IdlePathAtmosphericConditions) {
@@ -212,6 +162,18 @@ export class DescentPathBuilder {
         }
 
         return true;
+    }
+
+    private* speedConstraintGenerator(constraints: MaxSpeedConstraint[], sequence: TemporaryCheckpointSequence): Generator<MaxSpeedConstraint> {
+        for (let i = constraints.length - 1; i >= 0;) {
+            // Small tolerance here, so we don't get stuck on a constraint
+            if (constraints[i].distanceFromStart - sequence.lastCheckpoint.distanceFromStart > -1e-4) {
+                i--;
+                continue;
+            }
+
+            yield constraints[i];
+        }
     }
 }
 
