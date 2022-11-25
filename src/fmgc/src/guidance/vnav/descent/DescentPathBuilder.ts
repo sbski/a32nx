@@ -97,7 +97,7 @@ export class DescentPathBuilder {
             const { distanceFromStart, altitude, speed, remainingFuelOnBoard } = sequence.lastCheckpoint;
             const headwind = windProfile.getHeadwindComponent(distanceFromStart, altitude);
 
-            const casTarget = speedProfile.getTarget(distanceFromStart - 1e-4, altitude - 1e-4, ManagedSpeedType.Descent);
+            const casTarget = speedProfile.getTarget(distanceFromStart - 1e-4, altitude + 1e-4, ManagedSpeedType.Descent);
             const currentSpeedTarget = Math.min(
                 casTarget,
                 this.atmosphericConditions.computeCasFromMach(managedDescentSpeedMach, altitude),
