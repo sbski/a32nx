@@ -37,9 +37,9 @@ export class TemporaryCheckpointSequence {
         });
     }
 
-    addDecelerationCheckpointFromStep(step: StepResults, targetSpeed: Knots) {
+    addDecelerationCheckpointFromStep(step: StepResults, reason: VerticalCheckpointReason, targetSpeed: Knots) {
         this.checkpoints.push({
-            reason: VerticalCheckpointReason.StartDeceleration,
+            reason,
             distanceFromStart: this.lastCheckpoint.distanceFromStart + step.distanceTraveled,
             altitude: step.finalAltitude,
             secondsFromPresent: this.lastCheckpoint.secondsFromPresent + step.timeElapsed,

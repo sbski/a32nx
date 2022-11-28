@@ -265,32 +265,6 @@ export abstract class BaseGeometryProfile {
         this.checkpoints = this.checkpoints.filter((checkpoint) => checkpoint.reason !== reason);
     }
 
-    // TODO: We shouldn't have to go looking for this here...
-    // This logic probably belongs to `ClimbPathBuilder`.
-    findSpeedLimitCrossing(): [NauticalMiles, Knots] | undefined {
-        const speedLimit = this.checkpoints.find((checkpoint) => checkpoint.reason === VerticalCheckpointReason.CrossingClimbSpeedLimit);
-
-        if (!speedLimit) {
-            return undefined;
-        }
-
-        return [speedLimit.distanceFromStart, speedLimit.speed];
-    }
-
-    findNextSpeedTarget(distanceFromStart: NauticalMiles): Knots {
-        if (distanceFromStart < this.checkpoints[0].distanceFromStart) {
-            return this.checkpoints[0].speed;
-        }
-
-        for (let i = 0; i < this.checkpoints.length - 1; i++) {
-            if (distanceFromStart > this.checkpoints[i].distanceFromStart && distanceFromStart <= this.checkpoints[i + 1].distanceFromStart) {
-                return this.checkpoints[i + 1].speed;
-            }
-        }
-
-        return this.lastCheckpoint.speed;
-    }
-
     addInterpolatedCheckpoint(distanceFromStart: NauticalMiles, additionalProperties: HasAtLeast<VerticalCheckpoint, 'reason'>): VerticalCheckpoint {
         if (distanceFromStart <= this.checkpoints[0].distanceFromStart) {
             this.checkpoints.unshift({

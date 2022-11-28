@@ -95,10 +95,6 @@ export class AircraftToDescentProfileRelation {
         return this.currentProfile.interpolateAltitudeAtDistance(this.distanceFromStart);
     }
 
-    currentTargetSpeed(): Feet {
-        return this.currentProfile.findNextSpeedTarget(this.distanceFromStart);
-    }
-
     currentTargetPathAngle(): Degrees {
         return this.currentProfile.interpolatePathAngleAtDistance(this.distanceFromStart);
     }

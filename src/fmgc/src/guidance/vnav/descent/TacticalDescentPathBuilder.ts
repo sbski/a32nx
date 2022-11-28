@@ -9,6 +9,7 @@ import { BaseGeometryProfile } from '@fmgc/guidance/vnav/profile/BaseGeometryPro
 import { MaxSpeedConstraint, VerticalCheckpoint, VerticalCheckpointForDeceleration, VerticalCheckpointReason } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
 import { TemporaryCheckpointSequence } from '@fmgc/guidance/vnav/profile/TemporaryCheckpointSequence';
 import { VerticalProfileComputationParametersObserver } from '@fmgc/guidance/vnav/VerticalProfileComputationParameters';
+import { VnavConfig } from '@fmgc/guidance/vnav/VnavConfig';
 import { HeadwindProfile } from '@fmgc/guidance/vnav/wind/HeadwindProfile';
 
 type DecelerationToSpeedConstraint = {
@@ -62,9 +63,6 @@ export class TacticalDescentPathBuilder {
             } as MinimumDescentAltitudeConstraint;
         });
 
-        // TODO:
-        // Do descent speed constraints need to be sorted here?
-
         if (speedProfile.shouldTakeDescentSpeedLimitIntoAccount()
             && initialAltitude > descentSpeedLimit.underAltitude && finalAltitude <= descentSpeedLimit.underAltitude
             && profile.lastCheckpoint.speed > descentSpeedLimit.speed) {
@@ -91,6 +89,16 @@ export class TacticalDescentPathBuilder {
                     windProfile.getHeadwindComponent(descentSegment.lastCheckpoint.distanceFromStart, descentSegment.lastCheckpoint.altitude),
                 );
 
+                // If we're trying to decelerate with a too high vertical speed, the predictions will return a negative distance. Returning inifinity
+                // should be interpreted as taking infinitely long to decelerate, so the deceleration distance should just go to the maximum.
+                if (decelerationSegment.distanceTraveled < 0) {
+                    if (VnavConfig.DEBUG_PROFILE) {
+                        console.log('[FMS/VNAV] Vertical speed too high to decelerate to speed limit...');
+                    }
+
+                    return Infinity;
+                }
+
                 const altitudeOvershoot = descentSpeedLimit.underAltitude - decelerationSegment.finalAltitude;
                 return altitudeOvershoot;
             };
@@ -114,10 +122,10 @@ export class TacticalDescentPathBuilder {
                 };
 
                 if (descentSegment.length > 1) {
-                    profile.lastCheckpoint.reason = VerticalCheckpointReason.StartDeceleration;
+                    profile.lastCheckpoint.reason = VerticalCheckpointReason.StartDecelerationToLimit;
                     (profile.lastCheckpoint as VerticalCheckpointForDeceleration).targetSpeed = descentSpeedLimit.speed;
                 } else {
-                    profile.addCheckpointFromLast(() => ({ reason: VerticalCheckpointReason.StartDeceleration, targetSpeed: descentSpeedLimit.speed }));
+                    profile.addCheckpointFromLast(() => ({ reason: VerticalCheckpointReason.StartDecelerationToLimit, targetSpeed: descentSpeedLimit.speed }));
                 }
 
                 descentSegment.addCheckpointFromStep(decelerationSegment, VerticalCheckpointReason.AtmosphericConditions);
@@ -261,6 +269,16 @@ export class TacticalDescentPathBuilder {
                 windProfile.getHeadwindComponent(sequence.lastCheckpoint.distanceFromStart + descentSegment.distanceTraveled, descentSegment.finalAltitude),
             );
 
+            // If we're trying to decelerate with a too high vertical speed, the predictions will return a negative distance. Returning inifinity
+            // should be interpreted as taking infinitely long to decelerate, so the deceleration distance should just go to the maximum.
+            if (decelerationSegment.distanceTraveled < 0) {
+                if (VnavConfig.DEBUG_PROFILE) {
+                    console.log('[FMS/VNAV] Vertical speed too high to decelerate to speed constraint...');
+                }
+
+                return Infinity;
+            }
+
             const totalDistanceTravelled = descentSegment.distanceTraveled + decelerationSegment.distanceTraveled;
             const distanceOvershoot = totalDistanceTravelled - distanceToConstraint;
 
@@ -280,7 +298,7 @@ export class TacticalDescentPathBuilder {
             };
         }
 
-        sequence.addDecelerationCheckpointFromStep(descentSegment, constraint.maxSpeed);
+        sequence.addDecelerationCheckpointFromStep(descentSegment, VerticalCheckpointReason.StartDecelerationToConstraint, constraint.maxSpeed);
         sequence.addCheckpointFromStep(decelerationSegment, VerticalCheckpointReason.SpeedConstraint);
     }
 }

@@ -92,10 +92,12 @@ export class DescentPathBuilder {
 
         // We try to figure out what speed we might be decelerating for
         let previousCasTarget = speedProfile.getTarget(sequence.lastCheckpoint.altitude, sequence.lastCheckpoint.distanceFromStart, ManagedSpeedType.Descent);
+        let wasPreviouslyUnderSpeedLimitAltitude = speedProfile.shouldTakeDescentSpeedLimitIntoAccount() && sequence.lastCheckpoint.altitude < descentSpeedLimit.underAltitude;
 
         for (let i = 0; i < 100 && topOfDescentAltitude - sequence.lastCheckpoint.altitude > 1; i++) {
             const { distanceFromStart, altitude, speed, remainingFuelOnBoard } = sequence.lastCheckpoint;
             const headwind = windProfile.getHeadwindComponent(distanceFromStart, altitude);
+            const isUnderSpeedLimitAltitude = speedProfile.shouldTakeDescentSpeedLimitIntoAccount() && altitude < descentSpeedLimit.underAltitude;
 
             const casTarget = speedProfile.getTarget(distanceFromStart - 1e-4, altitude + 1e-4, ManagedSpeedType.Descent);
             const currentSpeedTarget = Math.min(
@@ -110,18 +112,20 @@ export class DescentPathBuilder {
                 const scaling = Math.min(1, (topOfDescentAltitude - altitude) / (speedStep.finalAltitude - altitude));
                 this.scaleStepBasedOnLastCheckpoint(sequence.lastCheckpoint, speedStep, scaling);
 
-                sequence.addDecelerationCheckpointFromStep(speedStep, previousCasTarget);
+                const didCrossoverSpeedLimitAltitude = wasPreviouslyUnderSpeedLimitAltitude && !isUnderSpeedLimitAltitude;
+                const checkpointReason = didCrossoverSpeedLimitAltitude ? VerticalCheckpointReason.StartDecelerationToLimit : VerticalCheckpointReason.StartDecelerationToConstraint;
+
+                sequence.addDecelerationCheckpointFromStep(speedStep, checkpointReason, previousCasTarget);
             } else {
                 // Try alt path
                 let finalAltitude = Math.min(altitude + 1500, topOfDescentAltitude);
-                if (speedProfile.shouldTakeDescentSpeedLimitIntoAccount() && altitude < descentSpeedLimit.underAltitude) {
+                if (isUnderSpeedLimitAltitude) {
                     finalAltitude = Math.min(finalAltitude, descentSpeedLimit.underAltitude);
                 }
 
                 const altitudeStep = this.idleDescentStrategy.predictToAltitude(altitude, finalAltitude, speed, managedDescentSpeedMach, remainingFuelOnBoard, headwind);
                 // Check if constraint violated
                 const nextSpeedConstraint = speedConstraintsAhead.next();
-                // TODO: Make sure we don't get stuck on a constraint
                 if (!nextSpeedConstraint.done && distanceFromStart + altitudeStep.distanceTraveled < nextSpeedConstraint.value.distanceFromStart) {
                     // Constraint violated
                     const distanceToConstraint = nextSpeedConstraint.value.distanceFromStart - distanceFromStart;
@@ -133,6 +137,7 @@ export class DescentPathBuilder {
             }
 
             previousCasTarget = casTarget;
+            wasPreviouslyUnderSpeedLimitAltitude = isUnderSpeedLimitAltitude;
         }
 
         if (sequence.lastCheckpoint.reason === VerticalCheckpointReason.IdlePathAtmosphericConditions) {

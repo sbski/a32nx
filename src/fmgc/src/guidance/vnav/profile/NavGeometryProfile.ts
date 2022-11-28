@@ -65,7 +65,8 @@ export enum VerticalCheckpointReason {
     GeometricPathConstraint = 'GeometricPathConstraint',
     GeometricPathTooSteep = 'GeometricPathTooSteep',
     GeometricPathEnd = 'GeometricPathEnd',
-    StartDeceleration = 'StartDeceleration',
+    StartDecelerationToConstraint = 'StartDecelerationToConstraint',
+    StartDecelerationToLimit = 'StartDecelerationToLimit',
 
     // Approach
     Decel = 'Decel',
@@ -87,13 +88,12 @@ export interface VerticalCheckpoint {
 }
 
 export interface VerticalCheckpointForDeceleration extends VerticalCheckpoint {
-    reason: VerticalCheckpointReason.StartDeceleration,
     targetSpeed: Knots
 }
 
 // I'm sure there's a better way to handle the distinction between `VerticalCheckpoint` and `VerticalCheckpointForDeceleration`
 export function isSpeedChangePoint(checkpoint: VerticalCheckpoint): checkpoint is VerticalCheckpointForDeceleration {
-    return checkpoint.reason === VerticalCheckpointReason.StartDeceleration;
+    return checkpoint.reason === VerticalCheckpointReason.StartDecelerationToConstraint || checkpoint.reason === VerticalCheckpointReason.StartDecelerationToLimit;
 }
 
 export interface MaxAltitudeConstraint {

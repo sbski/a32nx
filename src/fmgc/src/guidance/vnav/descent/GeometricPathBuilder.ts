@@ -55,8 +55,8 @@ export class GeometricPathBuilder {
 
         // We treat the speed limit like a constraint if we cross it on this segment
         const isSpeedLimitValid = Number.isFinite(descentSpeedLimit.speed) && Number.isFinite(descentSpeedLimit.underAltitude);
-        const isBelowSpeedLimitAlt = sequence.lastCheckpoint.altitude <= descentSpeedLimit.underAltitude;
-        if (isSpeedLimitValid && isBelowSpeedLimitAlt) {
+        let wasBelowSpeedLimitAlt = sequence.lastCheckpoint.altitude <= descentSpeedLimit.underAltitude;
+        if (isSpeedLimitValid && wasBelowSpeedLimitAlt) {
             if (segment.end.altitude > descentSpeedLimit.underAltitude) {
                 const distanceToSpeedLimit = (descentSpeedLimit.underAltitude - sequence.lastCheckpoint.altitude) / segment.gradient;
 
@@ -74,6 +74,7 @@ export class GeometricPathBuilder {
         for (let i = speedConstraints.length - 1; i >= 0 && !segment.isTooSteep; i--) {
             const speedConstraint = speedConstraints[i];
             const maxDistance = segment.end.distanceFromStart - sequence.lastCheckpoint.distanceFromStart;
+            const isBelowSpeedLimitAlt = isSpeedLimitValid && sequence.lastCheckpoint.altitude <= descentSpeedLimit.underAltitude;
 
             if (speedConstraint.distanceFromStart > sequence.lastCheckpoint.distanceFromStart || maxDistance >= 0) {
                 continue;
@@ -126,7 +127,10 @@ export class GeometricPathBuilder {
                 this.scaleStepBasedOnLastCheckpoint(sequence.lastCheckpoint, decelerationStep, scaling);
                 sequence.addCheckpointFromStep(decelerationStep, VerticalCheckpointReason.SpeedConstraint);
             } else if (Math.max(speedConstraint.distanceFromStart, segment.end.distanceFromStart) - sequence.lastCheckpoint.distanceFromStart < 0) {
-                sequence.addDecelerationCheckpointFromStep(decelerationStep, speedConstraint.maxSpeed);
+                const didCrossoverSpeedLimitAltitude = isSpeedLimitValid && !isBelowSpeedLimitAlt && wasBelowSpeedLimitAlt;
+                const checkpointReason = didCrossoverSpeedLimitAltitude ? VerticalCheckpointReason.StartDecelerationToLimit : VerticalCheckpointReason.StartDecelerationToConstraint;
+
+                sequence.addDecelerationCheckpointFromStep(decelerationStep, checkpointReason, speedConstraint.maxSpeed);
 
                 // Fly to constraint
                 const stepToConstraint = this.flightPathAngleStrategy.predictToDistance(
@@ -140,6 +144,8 @@ export class GeometricPathBuilder {
 
                 sequence.addCheckpointFromStep(stepToConstraint, VerticalCheckpointReason.SpeedConstraint);
             }
+
+            wasBelowSpeedLimitAlt = isBelowSpeedLimitAlt;
         }
 
         if (segment.end.distanceFromStart - sequence.lastCheckpoint.distanceFromStart < 0) {

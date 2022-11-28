@@ -54,8 +54,6 @@ export class VnavDriver implements GuidanceComponent {
 
     currentNavGeometryProfile: NavGeometryProfile;
 
-    currentSelectedGeometryProfile?: SelectedGeometryProfile;
-
     currentNdGeometryProfile?: BaseGeometryProfile;
 
     // eslint-disable-next-line camelcase
@@ -311,6 +309,11 @@ export class VnavDriver implements GuidanceComponent {
             || fcuVerticalMode === VerticalMode.FPA && fcuFlightPathAngle <= 0
         );
 
+        // During the descent, the guidance profile and the tactical profile agree on the distance to destination by design.
+        // However, since the guidance profile is not refreshed after starting descent whereas the tactical profile is,
+        // they won't agree on total flight plan length, so the distance from start as difference between total length and distance to end changes
+        let tacticalToGuidanceProfileOffset = 0;
+
         // Check if we're in the climb or descent phase and compute an appropriate tactical path.
         // A tactical path is a profile in the currently selected modes.
         if (shouldApplyClimbPredictions) {
@@ -338,13 +341,13 @@ export class VnavDriver implements GuidanceComponent {
                 // they won't agree on total flight plan length, so the distance from start as difference between total length and distance to end changes
                 const guidanceDistanceFromStart = this.aircraftToDescentProfileRelation.distanceFromStart;
                 const tacticalDistanceFromStart = this.currentNdGeometryProfile.checkpoints[0].distanceFromStart;
-                const offset = tacticalDistanceFromStart - guidanceDistanceFromStart;
+                tacticalToGuidanceProfileOffset = tacticalDistanceFromStart - guidanceDistanceFromStart;
 
                 // Compute intercept between managed profile and tactical path.
                 const interceptDistance = ProfileInterceptCalculator.calculateIntercept(
                     this.currentNdGeometryProfile.checkpoints,
                     this.aircraftToDescentProfileRelation.currentProfile.checkpoints,
-                    offset,
+                    tacticalToGuidanceProfileOffset,
                 );
 
                 if (interceptDistance) {
@@ -378,13 +381,17 @@ export class VnavDriver implements GuidanceComponent {
 
         // After computing the tactical profile, we wish to finish it up in managed modes.
         if (this.isLatAutoControlActive() && this.currentNdGeometryProfile) {
-            this.currentNdGeometryProfile.checkpoints.push(
-                ...this.currentNavGeometryProfile.checkpoints
-                    .slice()
-                    .filter(({ distanceFromStart }) => distanceFromStart > this.currentNdGeometryProfile.lastCheckpoint?.distanceFromStart ?? 0),
-            );
-
             if (shouldApplyDescentPredictions) {
+                for (const checkpoint of this.aircraftToDescentProfileRelation.currentProfile.checkpoints) {
+                    const tacticalDistanceFromStart = checkpoint.distanceFromStart + tacticalToGuidanceProfileOffset;
+
+                    if (this.currentNdGeometryProfile.checkpoints.length < 0 || tacticalDistanceFromStart > this.currentNdGeometryProfile.lastCheckpoint.distanceFromStart) {
+                        this.currentNdGeometryProfile.checkpoints.push(
+                            { ...checkpoint, distanceFromStart: tacticalDistanceFromStart },
+                        );
+                    }
+                }
+
                 // It's possible that the level off arrow was spliced from the profile because we spliced it at the intercept, so we need to add it back.
                 const levelOffArrow = this.currentNdGeometryProfile.findVerticalCheckpoint(VerticalCheckpointReason.CrossingFcuAltitudeDescent);
                 let levelOffDistance = levelOffArrow?.distanceFromStart ?? 0;
@@ -440,6 +447,10 @@ export class VnavDriver implements GuidanceComponent {
 
                     break;
                 }
+            } else {
+                this.currentNdGeometryProfile.checkpoints.push(
+                    ...this.currentNavGeometryProfile.checkpoints.filter((checkpoint) => checkpoint.distanceFromStart > this.currentNdGeometryProfile.lastCheckpoint?.distanceFromStart ?? 0),
+                );
             }
         }
 
@@ -576,10 +587,16 @@ export class VnavDriver implements GuidanceComponent {
         // We get this value because we only want to a speed constraint if this is not covered by the decel point already
         const decelPointSpeed = this.decelPoint?.speed ?? 0;
 
+        if (VnavConfig.DEBUG_PROFILE && Math.abs(SimVar.GetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots') - this.previousManagedDescentSpeedTarget) > 1) {
+            console.log('[FMS/VNAV] Managed speed changed outside of VnavDriver');
+        }
+
         const econMachAsCas = SimVar.GetGameVarValue('FROM MACH TO KIAS', 'number', managedDescentSpeedMach);
         let newSpeedTarget = Math.min(managedDescentSpeed, econMachAsCas, this.previousManagedDescentSpeedTarget);
         if (this.isLatAutoControlActive()) {
-            newSpeedTarget = Math.min(newSpeedTarget, this.currentMcduSpeedProfile.getTarget(currentDistanceFromStart, currentAltitude, ManagedSpeedType.Descent));
+            const targetFromProfile = this.currentMcduSpeedProfile.getTarget(currentDistanceFromStart, currentAltitude, ManagedSpeedType.Descent);
+
+            newSpeedTarget = Math.min(newSpeedTarget, targetFromProfile);
         }
 
         for (let i = 0; i < this.currentNdGeometryProfile.checkpoints.length - 2; i++) {

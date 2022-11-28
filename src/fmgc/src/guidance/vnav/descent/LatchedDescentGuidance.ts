@@ -159,7 +159,7 @@ export class LatchedDescentGuidance {
         const inManagedSpeed = Simplane.getAutoPilotAirspeedManaged();
 
         this.speedTarget = inManagedSpeed
-            ? Math.round(this.iasOrMach(this.aircraftToDescentProfileRelation.currentTargetSpeed(), managedDescentSpeedMach))
+            ? Math.round(this.iasOrMach(SimVar.GetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots'), managedDescentSpeedMach))
             : fcuSpeed;
     }
 
