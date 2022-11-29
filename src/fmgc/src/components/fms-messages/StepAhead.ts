@@ -1,3 +1,4 @@
+import { FlightPlans } from '@fmgc/flightplanning/FlightPlanManager';
 import { GuidanceController } from '@fmgc/guidance/GuidanceController';
 import { FMMessage, FMMessageTypes } from '@shared/FmMessages';
 import { FMMessageSelector, FMMessageUpdate } from './FmsMessages';
@@ -22,8 +23,8 @@ export class StepAhead implements FMMessageSelector {
         }
 
         let newState = false;
-        for (let i = fpm.getActiveWaypointIndex(); i < fpm.getWaypointsCount(); i++) {
-            const waypoint = fpm.getWaypoint(i);
+        for (let i = fpm.getActiveWaypointIndex(); i < fpm.getWaypointsCount(FlightPlans.Active); i++) {
+            const waypoint = fpm.getWaypoint(i, FlightPlans.Active);
             if (!waypoint || !waypoint.additionalData.cruiseStep) {
                 continue;
             }
