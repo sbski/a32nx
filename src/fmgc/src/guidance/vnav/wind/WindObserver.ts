@@ -8,12 +8,12 @@ export class WindObserver {
 
     get(): WindVector | null {
         const windDirection = Arinc429Word.fromSimVarValue(`L:A32NX_ADIRS_IR_${this.irsIndex}_WIND_DIRECTION`);
-        const windVelocity = Arinc429Word.fromSimVarValue(`L:A32NX_ADIRS_IR_${this.irsIndex}_WIND_VELOCITY`);
+        const windSpeed = Arinc429Word.fromSimVarValue(`L:A32NX_ADIRS_IR_${this.irsIndex}_WIND_SPEED`);
 
-        if (!windDirection.isNormalOperation() || !windVelocity.isNormalOperation()) {
+        if (!windDirection.isNormalOperation() || !windSpeed.isNormalOperation()) {
             return null;
         }
 
-        return new WindVector(windDirection.value, windVelocity.value);
+        return new WindVector(windDirection.value, windSpeed.value);
     }
 }

@@ -1,15 +1,12 @@
-import { VerticalProfileComputationParametersObserver } from '@fmgc/guidance/vnav/VerticalProfileComputationParameters';
 import { WindComponent, WindVector } from '@fmgc/guidance/vnav/wind';
 import { WindForecastInputs } from '@fmgc/guidance/vnav/wind/WindForecastInputs';
 import { WindObserver } from '@fmgc/guidance/vnav/wind/WindObserver';
 import { WindProfile } from '@fmgc/guidance/vnav/wind/WindProfile';
-import { FmgcFlightPhase } from '@shared/flightphase';
 
 // TODO: Make this actually use cruise winds.
 // I have kept it like this for now, so I can inject it into the profile computations already and change the actual code when I'm ready.
 export class CruiseWindProfile implements WindProfile {
     constructor(
-        private parameterObserver: VerticalProfileComputationParametersObserver,
         private inputs: WindForecastInputs,
         private measurementDevice: WindObserver,
         private aircraftDistanceFromStart: NauticalMiles,
@@ -28,10 +25,7 @@ export class CruiseWindProfile implements WindProfile {
             if (altitude > this.inputs.climbWinds[i].altitude && altitude <= this.inputs.climbWinds[i + 1].altitude) {
                 const scaling = (altitude - this.inputs.climbWinds[i].altitude) / (this.inputs.climbWinds[i + 1].altitude - this.inputs.climbWinds[i].altitude);
 
-                return new WindVector(
-                    (1 - scaling) * this.inputs.climbWinds[i].vector.direction + scaling * this.inputs.climbWinds[i + 1].vector.direction,
-                    (1 - scaling) * this.inputs.climbWinds[i].vector.speed + scaling * this.inputs.climbWinds[i + 1].vector.speed,
-                );
+                return this.interpolateVectors(this.inputs.climbWinds[i].vector, this.inputs.climbWinds[i + 1].vector, scaling);
             }
         }
 
@@ -39,19 +33,21 @@ export class CruiseWindProfile implements WindProfile {
     }
 
     getHeadwindComponent(distanceFromStart: NauticalMiles, altitude: Feet, planeHeading: DegreesTrue): WindComponent {
-        if (this.inputs.climbWinds.length === 0 && this.parameterObserver.get().flightPhase < FmgcFlightPhase.Takeoff) {
-            return this.inputs.tripWind;
-        }
-
+        const hasForecast = this.inputs.climbWinds.length !== 0;
         const measurement = this.measurementDevice.get();
-        if (this.inputs.climbWinds.length === 0) {
+        const hasMeasurement = measurement !== null;
+
+        if (!hasForecast) {
+            if (!hasMeasurement) {
+                return this.inputs.tripWind;
+            }
+
             return WindComponent.fromVector(measurement, planeHeading);
         }
 
         const forecast = this.interpolateByAltitude(altitude);
         const distanceToAirplane = distanceFromStart - this.aircraftDistanceFromStart;
-
-        if (!measurement || distanceToAirplane < 0) {
+        if (!hasMeasurement || distanceToAirplane < 0) {
             return WindComponent.fromVector(forecast, planeHeading);
         }
 

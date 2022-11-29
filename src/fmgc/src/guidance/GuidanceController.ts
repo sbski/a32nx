@@ -209,7 +209,7 @@ export class GuidanceController {
         this.guidanceManager = guidanceManager;
 
         this.verticalProfileComputationParametersObserver = new VerticalProfileComputationParametersObserver(fmgc);
-        this.windProfileFactory = new WindProfileFactory(this.verticalProfileComputationParametersObserver, fmgc, 1);
+        this.windProfileFactory = new WindProfileFactory(fmgc, 1);
 
         this.atmosphericConditions = new AtmosphericConditions(this.verticalProfileComputationParametersObserver);
 

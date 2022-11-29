@@ -16,6 +16,10 @@ export class HeadwindProfile {
      */
     getHeadwindComponent(distanceFromStart: NauticalMiles, altitude: Feet): WindComponent {
         const heading = this.headingProfile.get(distanceFromStart);
+        if (heading === null) {
+            return WindComponent.zero();
+        }
+
         return this.windProfile.getHeadwindComponent(distanceFromStart, altitude, heading);
     }
 }

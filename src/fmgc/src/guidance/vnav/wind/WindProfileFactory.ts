@@ -1,5 +1,4 @@
 import { Fmgc } from '@fmgc/guidance/GuidanceController';
-import { VerticalProfileComputationParametersObserver } from '@fmgc/guidance/vnav/VerticalProfileComputationParameters';
 import { ClimbWindProfile } from '@fmgc/guidance/vnav/wind/ClimbWindProfile';
 import { CruiseWindProfile } from '@fmgc/guidance/vnav/wind/CruiseWindProfile';
 import { DescentWindProfile } from '@fmgc/guidance/vnav/wind/DescentWindProfile';
@@ -13,7 +12,7 @@ export class WindProfileFactory {
 
     private aircraftDistanceFromStart: NauticalMiles;
 
-    constructor(private parameterObserver: VerticalProfileComputationParametersObserver, fmgc: Fmgc, fmgcSide: number) {
+    constructor(fmgc: Fmgc, fmgcSide: number) {
         this.windObserver = new WindObserver(fmgcSide);
         this.windInputObserver = new WindForecastInputObserver(fmgc);
     }
@@ -28,7 +27,6 @@ export class WindProfileFactory {
 
     getClimbWinds(): ClimbWindProfile {
         return new ClimbWindProfile(
-            this.parameterObserver,
             this.windInputObserver.get(),
             this.windObserver,
             this.aircraftDistanceFromStart,
@@ -37,7 +35,6 @@ export class WindProfileFactory {
 
     getCruiseWinds(): CruiseWindProfile {
         return new CruiseWindProfile(
-            this.parameterObserver,
             this.windInputObserver.get(),
             this.windObserver,
             this.aircraftDistanceFromStart,
@@ -46,7 +43,6 @@ export class WindProfileFactory {
 
     getDescentWinds(): DescentWindProfile {
         return new DescentWindProfile(
-            this.parameterObserver,
             this.windInputObserver.get(),
             this.windObserver,
             this.aircraftDistanceFromStart,

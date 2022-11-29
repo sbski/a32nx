@@ -9,7 +9,7 @@ interface CourseAtDistance {
 }
 
 export interface AircraftHeadingProfile {
-    get(distanceFromStart: NauticalMiles): DegreesTrue
+    get(distanceFromStart: NauticalMiles): DegreesTrue | null
 }
 
 export class NavHeadingProfile implements AircraftHeadingProfile {
@@ -17,7 +17,11 @@ export class NavHeadingProfile implements AircraftHeadingProfile {
 
     constructor(private flightPlanManager: FlightPlanManager) { }
 
-    get(distanceFromStart: NauticalMiles): DegreesTrue {
+    get(distanceFromStart: NauticalMiles): DegreesTrue | null {
+        if (this.courses.length === 0) {
+            return null;
+        }
+
         if (distanceFromStart <= this.courses[0].distanceFromStart) {
             return this.courses[0].course;
         }
