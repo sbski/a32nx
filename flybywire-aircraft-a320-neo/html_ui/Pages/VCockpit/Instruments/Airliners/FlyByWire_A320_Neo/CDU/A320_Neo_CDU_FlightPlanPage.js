@@ -490,20 +490,18 @@ class CDUFlightPlanPage {
                     });
 
             } else if (pwp) {
-                const color = "green";
-                let predictionColor = "green";
+                const color = fpm.isCurrentFlightPlanTemporary() ? "green" : "yellow";
 
-                // I am not sure what happens with PWP while the profile is recomputed. I am pretty sure they are not shown at all,
+                // TODO: PWP should not be shown while predictions are recomputed or in a temporary flight plan,
                 // but if I don't show them, the flight plan jumps around because the offset is no longer correct if the number of items in the flight plan changes.
                 // Like this, they are still there, but have dashes for predictions.
-                if (!fmsGeometryProfile || !fmsGeometryProfile.isReadyToDisplay) {
-                    pwp.flightPlanInfo = null;
-                    predictionColor = "white";
-                }
+                const shouldHidePredictions = !fmsGeometryProfile || !fmsGeometryProfile.isReadyToDisplay || !pwp.flightPlanInfo;
 
                 let timeCell = "----[s-text]";
-                if (pwp.flightPlanInfo && isFinite(pwp.flightPlanInfo.secondsFromPresent)) {
+                let timeColor = "white";
+                if (!shouldHidePredictions && Number.isFinite(pwp.flightPlanInfo.secondsFromPresent)) {
                     const utcTime = SimVar.GetGlobalVarValue("ZULU TIME", "seconds");
+                    timeColor = color;
 
                     timeCell = isFlying
                         ? `${FMCMainDisplay.secondsToUTC(utcTime + pwp.flightPlanInfo.secondsFromPresent)}[s-text]`
@@ -511,23 +509,35 @@ class CDUFlightPlanPage {
                 }
 
                 let speed = "---";
-                if (pwp.flightPlanInfo) {
+                let spdColor = "white";
+                if (!shouldHidePredictions && Number.isFinite(pwp.flightPlanInfo.speed)) {
                     speed = pwp.flightPlanInfo.speed < 1 ? formatMachNumber(pwp.flightPlanInfo.speed) : Math.round(pwp.flightPlanInfo.speed).toFixed(0);
+                    spdColor = color;
+                }
+
+                const altitudeConstraint = {
+                    alt: "-----",
+                    altPrefix: "\xa0"
+                };
+                let altColor = "white";
+                if (!shouldHidePredictions && Number.isFinite(pwp.flightPlanInfo.altitude)) {
+                    altitudeConstraint.alt = formatAltitudeOrLevel(pwp.flightPlanInfo.altitude);
+                    altColor = color;
                 }
 
                 scrollWindow[rowI] = {
                     fpIndex: fpIndex,
                     active: false,
                     ident: pwp.mcduIdent || pwp.ident,
-                    color: "green",
-                    distance: pwp.distanceInFP ? Math.round(pwp.distanceInFP).toFixed(0) : "",
-                    spdColor: predictionColor,
+                    color,
+                    distance: !shouldHidePredictions && pwp.distanceInFP ? Math.round(pwp.distanceInFP).toFixed(0) : "",
+                    spdColor,
                     speedConstraint: speed,
-                    altColor: predictionColor,
-                    altitudeConstraint: { alt: pwp.flightPlanInfo ? formatAltitudeOrLevel(pwp.flightPlanInfo.altitude) : "-----", altPrefix: "\xa0" },
+                    altColor,
+                    altitudeConstraint,
                     timeCell,
-                    timeColor: predictionColor,
-                    fixAnnotation: `{green}${pwp.mcduHeader || ''}{end}`,
+                    timeColor,
+                    fixAnnotation: `{${color}}${pwp.mcduHeader || ''}{end}`,
                     bearingTrack: "",
                     isOverfly: false,
                     slashColor: color
