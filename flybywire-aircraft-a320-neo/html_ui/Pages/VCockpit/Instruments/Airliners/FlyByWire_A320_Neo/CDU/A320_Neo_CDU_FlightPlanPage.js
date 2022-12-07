@@ -490,7 +490,7 @@ class CDUFlightPlanPage {
                     });
 
             } else if (pwp) {
-                const color = fpm.isCurrentFlightPlanTemporary() ? "green" : "yellow";
+                const color = !fpm.isCurrentFlightPlanTemporary() ? "green" : "yellow";
 
                 // TODO: PWP should not be shown while predictions are recomputed or in a temporary flight plan,
                 // but if I don't show them, the flight plan jumps around because the offset is no longer correct if the number of items in the flight plan changes.
