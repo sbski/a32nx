@@ -476,8 +476,4 @@ export class GuidanceController {
             holdLeg.setPredictedTas(tas);
         }
     }
-
-    getPresentPosition(): LatLongAlt {
-        return this.verticalProfileComputationParametersObserver.getPresentPosition();
-    }
 }
