@@ -197,11 +197,11 @@ export class PseudoWaypoints implements GuidanceComponent {
             }
         }
 
-        if (VnavConfig.DEBUG_PROFILE) {
-            // const debugPoint = this.createDebugPwp(geometry, wptCount, totalDistance);
-            // if (debugPoint) {
-            //     newPseudoWaypoints.push(debugPoint);
-            // }
+        if (VnavConfig.DEBUG_PROFILE || VnavConfig.ALLOW_DEBUG_PARAMETER_INJECTION) {
+            const debugPoint = this.createDebugPwp(geometry, wptCount, totalDistance);
+            if (debugPoint) {
+                newPseudoWaypoints.push(debugPoint);
+            }
         }
 
         this.pseudoWaypoints = newPseudoWaypoints;
@@ -645,15 +645,13 @@ export class PseudoWaypoints implements GuidanceComponent {
     }
 
     private createDebugPwp(geometry: Geometry, wptCount: number, totalDistance: number): PseudoWaypoint | null {
-        const debugPoint = this.guidanceController.vnavDriver.currentNdGeometryProfile.findVerticalCheckpoint(
-            VerticalCheckpointReason.StartDeceleration,
-        );
+        const debugDistanceToEnd = SimVar.GetSimVarValue('L:A32NX_FM_VNAV_DEBUG_DISTANCE_TO_END', 'number');
 
-        if (!debugPoint) {
+        if (debugDistanceToEnd <= 0) {
             return null;
         }
 
-        const position = PseudoWaypoints.pointFromEndOfPath(geometry, wptCount, totalDistance - debugPoint.distanceFromStart);
+        const position = PseudoWaypoints.pointFromEndOfPath(geometry, wptCount, debugDistanceToEnd);
         if (!position) {
             return null;
         }
@@ -666,7 +664,7 @@ export class PseudoWaypoints implements GuidanceComponent {
             distanceFromLegTermination,
             efisSymbolFlag: NdSymbolTypeFlags.PwpSpeedChange | NdSymbolTypeFlags.CyanColor,
             efisSymbolLla,
-            distanceFromStart: debugPoint.distanceFromStart,
+            distanceFromStart: totalDistance - debugDistanceToEnd,
             displayedOnMcdu: false,
             displayedOnNd: true,
         };

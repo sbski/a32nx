@@ -1,6 +1,7 @@
 import { Fmgc } from '@fmgc/guidance/GuidanceController';
 import { FlapConf } from '@fmgc/guidance/vnav/common';
 import { SpeedLimit } from '@fmgc/guidance/vnav/SpeedLimit';
+import { VnavConfig } from '@fmgc/guidance/vnav/VnavConfig';
 import { ArmedLateralMode, ArmedVerticalMode, LateralMode, VerticalMode } from '@shared/autopilot';
 import { Constants } from '@shared/Constants';
 import { FmgcFlightPhase } from '@shared/flightphase';
@@ -102,9 +103,18 @@ export class VerticalProfileComputationParametersObserver {
             slatRetractionSpeed: this.fmgc.getSlatRetractionSpeed(),
             cleanSpeed: this.fmgc.getCleanSpeed(),
         };
+
+        if (VnavConfig.ALLOW_DEBUG_PARAMETER_INJECTION) {
+            this.parameters.flightPhase = FmgcFlightPhase.Descent;
+            this.parameters.presentPosition.alt = SimVar.GetSimVarValue('L:A32NX_FM_VNAV_DEBUG_ALTITUDE', 'feet');
+            this.parameters.fcuVerticalMode = VerticalMode.DES;
+            this.parameters.fcuLateralMode = LateralMode.NAV;
+            this.parameters.zeroFuelWeight = 134400;
+            this.parameters.v2Speed = 126;
+        }
     }
 
-    getPresentPosition(): LatLongAlt {
+    private getPresentPosition(): LatLongAlt {
         return new LatLongAlt(
             SimVar.GetSimVarValue('PLANE LATITUDE', 'degree latitude'),
             SimVar.GetSimVarValue('PLANE LONGITUDE', 'degree longitude'),

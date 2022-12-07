@@ -9,6 +9,7 @@ import {
     VerticalCheckpointReason,
 } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
 import { MathUtils } from '@shared/MathUtils';
+import { VnavConfig } from '@fmgc/guidance/vnav/VnavConfig';
 
 export interface PerfClbToAltPrediction {
     altitude: Feet,
@@ -393,7 +394,9 @@ export abstract class BaseGeometryProfile {
             remainingFuelOnBoard,
             // TODO: This is a hack to prevent bad predictions when the aircraft is too slow
             // Not sure what the initial speed should be, I think it depends on flight phase
-            speed: Math.max(SimVar.GetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots'), SimVar.GetSimVarValue('AIRSPEED INDICATED', 'knots')),
+            speed: VnavConfig.ALLOW_DEBUG_PARAMETER_INJECTION
+                ? SimVar.GetSimVarValue('L:A32NX_FM_VNAV_DEBUG_SPEED', 'knots')
+                : Math.max(SimVar.GetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots'), SimVar.GetSimVarValue('AIRSPEED INDICATED', 'knots')),
             // Note that the `mach` field here is usually not the Mach number that the aircraft is predicted to travel, but rather the Mach number
             // at which the speed target would change to be a Mach number.
             mach,

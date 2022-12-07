@@ -1784,6 +1784,21 @@ In the variables below, {number} should be replaced with one item in the set: { 
     - Indicates the distance from start at which to draw a debug pseudowaypoint on the ND
     - **WARNING:** This is only used for testing purposes.
 
+- A32NX_FM_VNAV_DEBUG_ALTITUDE
+    - Feet
+    - Indicates the indicated altitude VNAV uses for predictions if VnavConfig.ALLOW_DEBUG_PARAMETER_INJECTION is enabled
+    - **WARNING:** This is only used for testing purposes.
+
+- A32NX_FM_VNAV_DEBUG_SPEED
+    - Knots
+    - Indicates the indicated airspeed VNAV uses for predictions if VnavConfig.ALLOW_DEBUG_PARAMETER_INJECTION is enabled
+    - **WARNING:** This is only used for testing purposes.
+
+- A32NX_FM_VNAV_DEBUG_DISTANCE_TO_END
+    - Nautical miles
+    - Indicates the distance to end VNAV uses for predictions if VnavConfig.ALLOW_DEBUG_PARAMETER_INJECTION is enabled
+    - **WARNING:** This is only used for testing purposes.
+
 - A32NX_FM_VNAV_TRIGGER_STEP_DELETED
     - Bool
     - Indicates whether to trigger a step deleted message on the MCDU

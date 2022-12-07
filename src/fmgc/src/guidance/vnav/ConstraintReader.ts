@@ -9,6 +9,7 @@ import { FixedRadiusTransition } from '@fmgc/guidance/lnav/transitions/FixedRadi
 import { GuidanceController } from '@fmgc/guidance/GuidanceController';
 import { MathUtils } from '@shared/MathUtils';
 import { FixTypeFlags } from '@fmgc/types/fstypes/FSEnums';
+import { VnavConfig } from '@fmgc/guidance/vnav/VnavConfig';
 
 export class ConstraintReader {
     public climbAlitudeConstraints: MaxAltitudeConstraint[] = [];
@@ -112,6 +113,11 @@ export class ConstraintReader {
     }
 
     public updateDistanceToEnd(ppos: LatLongAlt) {
+        if (VnavConfig.ALLOW_DEBUG_PARAMETER_INJECTION) {
+            this.distanceToEnd = SimVar.GetSimVarValue('L:A32NX_FM_VNAV_DEBUG_DISTANCE_TO_END', 'nautical miles');
+            return;
+        }
+
         const geometry = this.guidanceController.activeGeometry;
         const activeLegIndex = this.guidanceController.activeLegIndex;
         const activeTransIndex = this.guidanceController.activeTransIndex;
