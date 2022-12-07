@@ -88,7 +88,7 @@ export class GeometricPathBuilder {
                     break;
                 }
 
-                maxSpeed = Math.min(econSpeed, speedConstraint.maxSpeed);
+                maxSpeed = Math.min(maxSpeed, sc.maxSpeed);
             }
 
             // Decelerate to speed target
