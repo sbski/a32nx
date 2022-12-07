@@ -32,7 +32,14 @@ import { HeadwindProfile } from '@fmgc/guidance/vnav/wind/HeadwindProfile';
 import { Leg } from '@fmgc/guidance/lnav/legs/Leg';
 import { Geometry } from '../Geometry';
 import { GuidanceComponent } from '../GuidanceComponent';
-import { isSpeedChangePoint, NavGeometryProfile, VerticalCheckpoint, VerticalCheckpointReason, VerticalWaypointPrediction } from './profile/NavGeometryProfile';
+import {
+    isSpeedChangePoint,
+    NavGeometryProfile,
+    VerticalCheckpoint,
+    VerticalCheckpointForDeceleration,
+    VerticalCheckpointReason,
+    VerticalWaypointPrediction,
+} from './profile/NavGeometryProfile';
 import { ClimbPathBuilder } from './climb/ClimbPathBuilder';
 
 export class VnavDriver implements GuidanceComponent {
@@ -330,19 +337,23 @@ export class VnavDriver implements GuidanceComponent {
             const descentStrategy = this.getAppropriateTacticalDescentStrategy(fcuVerticalMode, fcuVerticalSpeed, fcuFlightPathAngle, this.aircraftToDescentProfileRelation);
             const descentWinds = new HeadwindProfile(this.windProfileFactory.getDescentWinds(), this.headingProfile);
 
+            // The guidance profile and the tactical profile agree on the distance to destination by design.
+            // However, since the guidance profile is not refreshed after starting descent whereas the tactical profile is,
+            // they won't agree on total flight plan length, so the distance from start as difference between total length and distance to end changes
+            const guidanceDistanceFromStart = this.aircraftToDescentProfileRelation.distanceFromStart;
+            const tacticalDistanceFromStart = this.currentNdGeometryProfile.checkpoints[0].distanceFromStart;
+            tacticalToGuidanceProfileOffset = tacticalDistanceFromStart - guidanceDistanceFromStart;
+
+            const plannedDecelerations = this.aircraftToDescentProfileRelation.currentProfile.checkpoints.filter(
+                (c) => c.reason === VerticalCheckpointReason.StartDecelerationToConstraint || c.reason === VerticalCheckpointReason.StartDecelerationToLimit,
+            ).map((c: VerticalCheckpointForDeceleration) => ({ ...c, distanceFromStart: c.distanceFromStart + tacticalToGuidanceProfileOffset }));
+
             // Build path to FCU altitude.
             this.tacticalDescentPathBuilder.buildTacticalDescentPath(this.currentNdGeometryProfile, descentStrategy, speedProfile, descentWinds,
-                isInLevelFlight ? this.currentNdGeometryProfile.checkpoints[0].altitude : fcuAltitude);
+                isInLevelFlight ? this.currentNdGeometryProfile.checkpoints[0].altitude : fcuAltitude, plannedDecelerations);
 
             // Compute intercept with managed profile
             if (this.isLatAutoControlActive() && this.aircraftToDescentProfileRelation.isValid) {
-                // The guidance profile and the tactical profile agree on the distance to destination by design.
-                // However, since the guidance profile is not refreshed after starting descent whereas the tactical profile is,
-                // they won't agree on total flight plan length, so the distance from start as difference between total length and distance to end changes
-                const guidanceDistanceFromStart = this.aircraftToDescentProfileRelation.distanceFromStart;
-                const tacticalDistanceFromStart = this.currentNdGeometryProfile.checkpoints[0].distanceFromStart;
-                tacticalToGuidanceProfileOffset = tacticalDistanceFromStart - guidanceDistanceFromStart;
-
                 // Compute intercept between managed profile and tactical path.
                 const interceptDistance = ProfileInterceptCalculator.calculateIntercept(
                     this.currentNdGeometryProfile.checkpoints,
