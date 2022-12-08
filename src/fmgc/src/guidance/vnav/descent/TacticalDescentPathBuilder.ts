@@ -59,12 +59,15 @@ export class TacticalDescentPathBuilder {
 
         let isPathValid = false;
         let numRecomputations = 0;
+        let sequence: TemporaryCheckpointSequence | null = null;
         while (!isPathValid && numRecomputations++ < 100) {
-            phaseTable.execute(descentStrategy, this.levelFlightStrategy);
+            sequence = phaseTable.execute(descentStrategy, this.levelFlightStrategy);
             isPathValid = this.checkForViolations(phaseTable, profile, altConstraintsToUse, speedProfile, forcedDecelerations);
         }
 
-        profile.checkpoints.push(...phaseTable.phases.map((phase) => phase.lastResult).filter((checkpoint) => checkpoint !== null));
+        if (sequence != null) {
+            profile.checkpoints.push(...sequence.get());
+        }
     }
 
     /**
@@ -105,7 +108,7 @@ export class TacticalDescentPathBuilder {
             }
 
             for (const speedConstraint of profile.descentSpeedConstraints) {
-                if (this.doesPhaseViolateSpeedConstraint(phase, speedConstraint)) {
+                if (this.doesPhaseViolateSpeedConstraint(previousResult, phase, speedConstraint)) {
                     this.handleSpeedConstraintViolation(phaseTable, i, speedConstraint);
 
                     return false;
@@ -121,7 +124,7 @@ export class TacticalDescentPathBuilder {
             }
 
             if (speedProfile.shouldTakeDescentSpeedLimitIntoAccount()) {
-                if (this.doesPhaseViolateSpeedLimit(phase, descentSpeedLimit)) {
+                if (this.doesPhaseViolateSpeedLimit(previousResult, phase, descentSpeedLimit)) {
                     this.handleSpeedLimitViolation(phaseTable, i, descentSpeedLimit);
 
                     return false;
@@ -139,23 +142,7 @@ export class TacticalDescentPathBuilder {
 
         if (violatingPhase instanceof DescendingDeceleration) {
             // If we are already decelerating, make sure we decelerate to the correct speed
-            if (violatingPhase.toSpeed > forcedDeceleration.targetSpeed) {
-                violatingPhase.toSpeed = forcedDeceleration.targetSpeed;
-            }
-
-            const overshoot = violatingPhase.lastResult.distanceFromStart - forcedDeceleration.distanceFromStart;
-
-            for (let i = violatingPhaseIndex - 1; i >= 0; i--) {
-                const previousPhase = phaseTable.phases[i];
-
-                if (previousPhase instanceof DescendToAltitude) {
-                    phaseTable.phases.splice(i - 1, 1, new DescendToDistance(previousPhase.lastResult.distanceFromStart - overshoot));
-                } else if (previousPhase instanceof DescendToDistance) {
-                    previousPhase.toDistance -= overshoot;
-                }
-
-                return;
-            }
+            violatingPhase.toSpeed = Math.min(forcedDeceleration.targetSpeed, violatingPhase.toSpeed);
         } else {
             phaseTable.phases.splice(violatingPhaseIndex, 0,
                 new DescendToDistance(forcedDeceleration.distanceFromStart),
@@ -168,19 +155,18 @@ export class TacticalDescentPathBuilder {
 
         if (violatingPhase instanceof DescendingDeceleration) {
             // If we are already decelerating, make sure we decelerate to the correct speed
-            if (violatingPhase.toSpeed > forcedDeceleration.targetSpeed) {
-                violatingPhase.toSpeed = forcedDeceleration.targetSpeed;
-            }
+            violatingPhase.toSpeed = Math.min(forcedDeceleration.targetSpeed, violatingPhase.toSpeed);
 
             const overshoot = violatingPhase.lastResult.altitude - forcedDeceleration.altitude;
 
+            // Try to find a previous phase that we can shorten to allow more deceleration
             for (let i = violatingPhaseIndex - 1; i >= 0; i--) {
                 const previousPhase = phaseTable.phases[i];
 
                 if (previousPhase instanceof DescendToAltitude) {
                     previousPhase.toAltitude -= overshoot;
                 } else if (previousPhase instanceof DescendToDistance) {
-                    phaseTable.phases.splice(i - 1, 1, new DescendToAltitude(previousPhase.lastResult.altitude - overshoot));
+                    phaseTable.phases.splice(i, 1, new DescendToAltitude(previousPhase.lastResult.altitude - overshoot));
                 }
 
                 return;
@@ -195,26 +181,30 @@ export class TacticalDescentPathBuilder {
     private handleSpeedConstraintViolation(phaseTable: PhaseTable, violatingPhaseIndex: number, speedConstraint: MaxSpeedConstraint) {
         const violatingPhase = phaseTable.phases[violatingPhaseIndex];
 
+        // If the deceleration is not long enough, extend it
         if (violatingPhase instanceof DescendingDeceleration) {
-            if (violatingPhase.toSpeed > speedConstraint.maxSpeed) {
-                violatingPhase.toSpeed = speedConstraint.maxSpeed;
+            // If we are already decelerating, make sure we decelerate to the correct speed
+            violatingPhase.toSpeed = Math.min(speedConstraint.maxSpeed, violatingPhase.toSpeed);
+
+            const overshoot = violatingPhase.lastResult.distanceFromStart - speedConstraint.distanceFromStart;
+
+            // Try to find a previous phase that we can shorten to allow more deceleration
+            for (let i = violatingPhaseIndex - 1; i >= 0; i--) {
+                const previousPhase = phaseTable.phases[i];
+
+                if (previousPhase instanceof DescendToAltitude) {
+                    phaseTable.phases.splice(violatingPhaseIndex, 1, new DescendToDistance(previousPhase.lastResult.distanceFromStart - overshoot));
+                } else if (previousPhase instanceof DescendToDistance) {
+                    previousPhase.toDistance -= overshoot;
+                }
+
+                return;
             }
         } else {
-            phaseTable.phases.splice(violatingPhaseIndex, 0, new DescendingDeceleration(speedConstraint.maxSpeed));
-        }
-
-        const overshoot = violatingPhase.lastResult.distanceFromStart - speedConstraint.distanceFromStart;
-
-        for (let i = violatingPhaseIndex - 1; i >= 0; i--) {
-            const previousPhase = phaseTable.phases[i];
-
-            if (previousPhase instanceof DescendToAltitude) {
-                phaseTable.phases.splice(violatingPhaseIndex, 1, new DescendToDistance(previousPhase.lastResult.distanceFromStart - overshoot));
-            } else if (previousPhase instanceof DescendToDistance) {
-                previousPhase.toDistance -= overshoot;
-            }
-
-            return;
+            // If we don't even have a deceleration segment yet, fly to 3 miles before constraint and add the segment
+            phaseTable.phases.splice(violatingPhaseIndex, 0,
+                new DescendToDistance(speedConstraint.distanceFromStart - 3),
+                new DescendingDeceleration(speedConstraint.maxSpeed).withReasonBefore(VerticalCheckpointReason.StartDecelerationToConstraint));
         }
     }
 
@@ -223,8 +213,13 @@ export class TacticalDescentPathBuilder {
 
         if (violatingPhase instanceof DescendingDeceleration) {
             phaseTable.phases.splice(violatingPhaseIndex, 0,
-                new DescendingDeceleration(violatingPhase.toSpeed).withMinAltitude(altitudeConstraint.minimumAltitude),
+                new DescendingDeceleration(violatingPhase.toSpeed)
+                    .withReasonBefore(violatingPhase.reasonBefore)
+                    .withMinAltitude(altitudeConstraint.minimumAltitude).withReasonAfter(VerticalCheckpointReason.LevelOffForDescentConstraint),
                 new DescendingDeceleration(violatingPhase.toSpeed).asLevelSegment().withMaxDistance(altitudeConstraint.distanceFromStart));
+
+            // Transfer reason at start of this leg (`reasonBefore`) to leg that was inserted behind this one
+            violatingPhase.reasonBefore = VerticalCheckpointReason.AtmosphericConditions;
         } else if (violatingPhase instanceof DescendToAltitude) {
             phaseTable.phases.splice(violatingPhaseIndex, 0,
                 new DescendToAltitude(altitudeConstraint.minimumAltitude).withReasonAfter(VerticalCheckpointReason.LevelOffForDescentConstraint),
@@ -240,14 +235,18 @@ export class TacticalDescentPathBuilder {
         const violatingPhase = phaseTable.phases[violatingPhaseIndex];
 
         if (violatingPhase instanceof DescendingDeceleration) {
-            if (violatingPhase.toSpeed > speedLimit.speed) {
-                violatingPhase.toSpeed = speedLimit.speed;
-            }
+            violatingPhase.toSpeed = Math.min(speedLimit.speed, violatingPhase.toSpeed);
 
             const overshoot = violatingPhase.lastResult.altitude - speedLimit.underAltitude; // This is typically negative
 
             for (let i = violatingPhaseIndex - 1; i >= 0; i--) {
                 const previousPhase = phaseTable.phases[i];
+
+                // If the previous phase has not been calculated, it probably means that we are already at the distance/altitude that it was aiming for,
+                // so we should not try to shorten it.
+                if (!previousPhase.lastResult) {
+                    continue;
+                }
 
                 if (previousPhase instanceof DescendToAltitude) {
                     previousPhase.toAltitude -= overshoot;
@@ -280,20 +279,30 @@ export class TacticalDescentPathBuilder {
         return phase.lastResult.speed > forcedDeceleration.targetSpeed;
     }
 
-    private doesPhaseViolateSpeedConstraint(phase: SubPhase, speedConstraint: MaxSpeedConstraint) {
+    private doesPhaseViolateSpeedConstraint(previousResult: VerticalCheckpoint, phase: SubPhase, speedConstraint: MaxSpeedConstraint) {
+        // We're still before the constraint
         if (phase.lastResult.distanceFromStart < speedConstraint.distanceFromStart) {
             return false;
         }
 
-        if (phase instanceof DescendingDeceleration) {
-            return phase.toSpeed > speedConstraint.maxSpeed;
+        // We had already passed the constraint
+        if (previousResult.distanceFromStart > speedConstraint.distanceFromStart) {
+            // We only "violate" the constraint if we don't decelerate at all (i.e not on deceleration segment) or to the incorrect speed
+            return (phase instanceof DescendingDeceleration) ? phase.toSpeed > speedConstraint.maxSpeed : previousResult.speed > speedConstraint.maxSpeed;
         }
 
-        return phase.lastResult.speed > speedConstraint.maxSpeed;
+        // Now that we're sure, we pass the constraint on this exact segment, check what speed we were at
+        const speedChangePerDistance = (previousResult.speed - phase.lastResult.speed) / (previousResult.distanceFromStart - phase.lastResult.distanceFromStart);
+        const speedAtConstraint = phase.lastResult.speed + speedChangePerDistance * (speedConstraint.distanceFromStart - phase.lastResult.distanceFromStart);
+
+        return speedAtConstraint - speedConstraint.maxSpeed > 1;
     }
 
     private doesPhaseViolateAltitudeConstraint(previousResult: VerticalCheckpoint, phase: SubPhase, altitudeConstraint: MinimumDescentAltitudeConstraint) {
-        if (phase.lastResult.altitude >= altitudeConstraint.minimumAltitude || previousResult.distanceFromStart > altitudeConstraint.distanceFromStart) {
+        if (phase.lastResult.altitude >= altitudeConstraint.minimumAltitude // We're still above the constraint
+            || previousResult.distanceFromStart > altitudeConstraint.distanceFromStart // We're already behind the constraint
+            || previousResult.altitude < altitudeConstraint.minimumAltitude // We were already below the constraint before this subphase
+        ) {
             return false;
         }
 
@@ -303,8 +312,23 @@ export class TacticalDescentPathBuilder {
         return altAtConstraint < altitudeConstraint.minimumAltitude;
     }
 
-    private doesPhaseViolateSpeedLimit(phase: SubPhase, speedLimit: SpeedLimit) {
-        return phase.lastResult.altitude < speedLimit.underAltitude && phase.lastResult.speed > speedLimit.speed;
+    private doesPhaseViolateSpeedLimit(previousResult: VerticalCheckpoint, phase: SubPhase, speedLimit: SpeedLimit) {
+        // We're still above the limit
+        if (phase.lastResult.altitude > speedLimit.underAltitude) {
+            return false;
+        }
+
+        // We had already passed the constraint
+        if (previousResult.altitude < speedLimit.underAltitude) {
+            // We only "violate" the constraint if we don't decelerate at all (i.e not on deceleration segment) or to the incorrect speed
+            return (phase instanceof DescendingDeceleration) ? phase.toSpeed > speedLimit.speed : previousResult.speed > speedLimit.speed;
+        }
+
+        // Now that we're sure, we pass the limit on this exact segment, check what speed we were at
+        const speedChangePerAltitude = (previousResult.speed - phase.lastResult.speed) / (previousResult.altitude - phase.lastResult.altitude);
+        const speedAtConstraint = phase.lastResult.speed + speedChangePerAltitude * (speedLimit.underAltitude - phase.lastResult.altitude);
+
+        return speedAtConstraint - speedLimit.underAltitude > 1;
     }
 }
 
@@ -330,7 +354,7 @@ class PhaseTable {
 
     constructor(private readonly winds: HeadwindProfile) { }
 
-    execute(descentStrategy: DescentStrategy, levelFlightStrategy: DescentStrategy) {
+    execute(descentStrategy: DescentStrategy, levelFlightStrategy: DescentStrategy): TemporaryCheckpointSequence {
         const sequence = new TemporaryCheckpointSequence(this.start);
 
         for (const phase of this.phases) {
@@ -357,6 +381,8 @@ class PhaseTable {
                 phase.lastResult = null;
             }
         }
+
+        return sequence;
     }
 }
 
