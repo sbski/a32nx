@@ -91,7 +91,7 @@ export class DescentPathBuilder {
         const speedConstraintsAhead = this.speedConstraintGenerator(profile.descentSpeedConstraints, sequence);
 
         // We try to figure out what speed we might be decelerating for
-        let previousCasTarget = speedProfile.getTarget(sequence.lastCheckpoint.altitude, sequence.lastCheckpoint.distanceFromStart, ManagedSpeedType.Descent);
+        let previousCasTarget = speedProfile.getTarget(sequence.lastCheckpoint.distanceFromStart, sequence.lastCheckpoint.altitude, ManagedSpeedType.Descent);
         let wasPreviouslyUnderSpeedLimitAltitude = speedProfile.shouldTakeDescentSpeedLimitIntoAccount() && sequence.lastCheckpoint.altitude < descentSpeedLimit.underAltitude;
 
         for (let i = 0; i < 100 && topOfDescentAltitude - sequence.lastCheckpoint.altitude > 1; i++) {
