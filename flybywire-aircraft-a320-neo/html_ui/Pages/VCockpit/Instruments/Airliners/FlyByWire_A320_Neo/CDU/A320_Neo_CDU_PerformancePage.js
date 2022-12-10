@@ -1236,10 +1236,7 @@ class CDUPerformancePage {
 
         if (toPrediction) {
             if (Number.isFinite(toPrediction.distanceFromPresentPosition)) {
-                const distanceToTenths = Math.round(toPrediction.distanceFromPresentPosition * 10) / 10;
-                distCell = (distanceToTenths < 100
-                    ? distanceToTenths.toFixed(1)
-                    : Math.round(toPrediction.distanceFromPresentPosition).toFixed(0)) + "[color]green";
+                distCell = Math.round(toPrediction.distanceFromPresentPosition) + "[color]green";
             }
 
             if (Number.isFinite(toPrediction.secondsFromPresent)) {
