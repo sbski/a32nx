@@ -613,7 +613,7 @@ export class VnavDriver implements GuidanceComponent {
         for (let i = 0; i < this.currentNdGeometryProfile.checkpoints.length - 2; i++) {
             const checkpoint = this.currentNdGeometryProfile.checkpoints[i];
 
-            if (isSpeedChangePoint(checkpoint) && currentDistanceFromStart >= checkpoint.distanceFromStart && checkpoint.targetSpeed >= decelPointSpeed) {
+            if (isSpeedChangePoint(checkpoint) && currentDistanceFromStart - checkpoint.distanceFromStart > -1e-4 && checkpoint.targetSpeed >= decelPointSpeed) {
                 newSpeedTarget = Math.min(newSpeedTarget, checkpoint.targetSpeed);
             }
         }
