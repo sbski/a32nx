@@ -23,7 +23,7 @@ export const VnavConfig = {
 
     DEBUG_PROFILE: true,
 
-    ALLOW_DEBUG_PARAMETER_INJECTION: true,
+    ALLOW_DEBUG_PARAMETER_INJECTION: false,
 
     VNAV_USE_LATCHED_DESCENT_MODE: false,
 
