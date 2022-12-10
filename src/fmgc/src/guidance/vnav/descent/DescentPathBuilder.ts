@@ -10,6 +10,7 @@ import { HeadwindProfile } from '@fmgc/guidance/vnav/wind/HeadwindProfile';
 import { TemporaryCheckpointSequence } from '@fmgc/guidance/vnav/profile/TemporaryCheckpointSequence';
 import { AltitudeConstraint, AltitudeConstraintType } from '@fmgc/guidance/lnav/legs';
 import { MathUtils } from '@shared/MathUtils';
+import { SpeedLimit } from '@fmgc/guidance/vnav/SpeedLimit';
 
 export class DescentPathBuilder {
     private geometricPathBuilder: GeometricPathBuilder;
@@ -91,7 +92,8 @@ export class DescentPathBuilder {
         const speedConstraintsAhead = this.speedConstraintGenerator(profile.descentSpeedConstraints, sequence);
 
         // We try to figure out what speed we might be decelerating for
-        let previousCasTarget = speedProfile.getTarget(sequence.lastCheckpoint.distanceFromStart, sequence.lastCheckpoint.altitude, ManagedSpeedType.Descent);
+        let previousCasTarget = this.tryGetAnticipatedTarget(sequence, profile.descentSpeedConstraints, speedProfile.shouldTakeDescentSpeedLimitIntoAccount() ? descentSpeedLimit : null)
+            ?? speedProfile.getTarget(sequence.lastCheckpoint.distanceFromStart, sequence.lastCheckpoint.altitude, ManagedSpeedType.Descent);
         let wasPreviouslyUnderSpeedLimitAltitude = speedProfile.shouldTakeDescentSpeedLimitIntoAccount() && sequence.lastCheckpoint.altitude < descentSpeedLimit.underAltitude;
 
         for (let i = 0; i < 100 && topOfDescentAltitude - sequence.lastCheckpoint.altitude > 1; i++) {
@@ -145,6 +147,40 @@ export class DescentPathBuilder {
         } else {
             sequence.copyLastCheckpoint(({ reason: VerticalCheckpointReason.TopOfDescent }));
         }
+    }
+
+    // TODO: I really don't know if this function does what it's supposed to, so I hope I don't have to return to it.
+    // The problem it's trying to solve is this: After having built the geometric path to the first violating altitude constraint, we might not be at econ speed yet.
+    // So then we need to accelerate to it on the idle path. However, we want to figure out what the reason for this acceleration is, i.e whether it is due
+    // to the speed limit or a constraint. We need to know this to place the correct checkpoint reason.
+    // What the function does is to try and figure this out based on different criteria.
+    private tryGetAnticipatedTarget(sequence: TemporaryCheckpointSequence, speedConstraints: MaxSpeedConstraint[], speedLimit?: SpeedLimit): Knots | null {
+        const { distanceFromStart: pposDistanceFromStart, speed: currentSpeed, altitude: currentAltitude } = sequence.lastCheckpoint;
+
+        // Find next constraint
+        const nextSpeedConstraint = speedConstraints.find((c) => c.distanceFromStart > pposDistanceFromStart && c.maxSpeed <= currentSpeed);
+
+        const isSpeedLimitValidCandidate = speedLimit && currentAltitude > speedLimit.underAltitude && currentSpeed > speedLimit.speed;
+
+        if (nextSpeedConstraint) {
+            // Try to figure out which speed is more important
+            if (isSpeedLimitValidCandidate) {
+                const altAtConstraint = sequence.interpolateAltitudeBackwards(nextSpeedConstraint.distanceFromStart);
+
+                if (speedLimit.underAltitude > altAtConstraint) {
+                    return speedLimit.speed;
+                }
+            }
+
+            return nextSpeedConstraint.maxSpeed;
+        }
+
+        // If we did not find a valid speed constraint candidate, see if the speed limit might be a candidate. If so, return it.
+        if (isSpeedLimitValidCandidate) {
+            return speedLimit.speed;
+        }
+
+        return null;
     }
 
     private scaleStepBasedOnLastCheckpoint(lastCheckpoint: VerticalCheckpoint, step: StepResults, scaling: number) {
