@@ -20,6 +20,11 @@ export interface FpmConfig {
     ALLOW_REVISIONS_ON_TMPY: boolean,
 
     /**
+     * Whether to allow FIX INFO entries on non-active flight plans
+     */
+    ALLOW_NON_ACTIVE_FIX_INFOS: boolean,
+
+    /**
      * Maximum number of flight plan legs
      */
     MAX_NUM_LEGS: number,
@@ -40,6 +45,7 @@ export class FpmConfigs {
         TMPY_ON_DELETE_WAYPOINT: true,
         TMPY_ON_OVERFLY: true,
         ALLOW_REVISIONS_ON_TMPY: true,
+        ALLOW_NON_ACTIVE_FIX_INFOS: false,
         MAX_NUM_LEGS: 200,
         CHECK_VIA_COMPATIBILITY: true,
         DIR_TO_ABEAM_POINT_IS_TO_WPT: true,
@@ -49,6 +55,7 @@ export class FpmConfigs {
         TMPY_ON_DELETE_WAYPOINT: false,
         TMPY_ON_OVERFLY: false,
         ALLOW_REVISIONS_ON_TMPY: false,
+        ALLOW_NON_ACTIVE_FIX_INFOS: false,
         MAX_NUM_LEGS: 250,
         CHECK_VIA_COMPATIBILITY: false,
         DIR_TO_ABEAM_POINT_IS_TO_WPT: false,

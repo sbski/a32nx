@@ -258,22 +258,6 @@ export class EfisSymbols {
                 }
             }
 
-            // TODO port over
-            // for (let i = 0; i < 4; i++) {
-            //     const fixInfo = this.flightPlanManager.getFixInfo(i as 0 | 1 | 2 | 3);
-            //     const refFix = fixInfo?.getRefFix();
-            //     if (refFix !== undefined) {
-            //         upsertSymbol({
-            //             databaseId: refFix.icao,
-            //             ident: refFix.ident,
-            //             location: refFix.infos.coordinates,
-            //             type: NdSymbolTypeFlags.FixInfo,
-            //             radials: fixInfo.getRadialTrueBearings(),
-            //             radii: [fixInfo.getRadiusValue()],
-            //         });
-            //     }
-            // }
-
             const formatConstraintAlt = (alt: number, descent: boolean, prefix: string = '') => {
                 // const transAlt = activeFp?.originTransitionAltitudePilot ?? activeFp?.originTransitionAltitudeDb;
                 // const transFl = activeFp?.destinationTransitionLevelPilot ?? activeFp?.destinationTransitionLevelDb;
@@ -391,6 +375,7 @@ export class EfisSymbols {
     ): NdSymbol[] {
         const ret: NdSymbol[] = [];
 
+        // FP legs
         for (let i = flightPlan.legCount - 1; i >= (flightPlan.activeLegIndex - 1) && i >= 0; i--) {
             const leg = flightPlan.elementAt(i);
 
@@ -503,6 +488,24 @@ export class EfisSymbols {
                 type,
                 constraints: constraints.length > 0 ? constraints : undefined,
                 direction,
+            });
+        }
+
+        // FP fix info
+        for (let i = 0; i < 4; i++) {
+            const fixInfo = flightPlan.fixInfos[i];
+
+            if (!fixInfo) {
+                continue;
+            }
+
+            ret.push({
+                databaseId: fixInfo.fix.databaseId,
+                ident: fixInfo.fix.ident,
+                location: fixInfo.fix.location,
+                type: NdSymbolTypeFlags.FixInfo,
+                radials: fixInfo.radials.map((it) => it.magneticBearing),
+                radii: fixInfo.radii.map((it) => it.radius),
             });
         }
 

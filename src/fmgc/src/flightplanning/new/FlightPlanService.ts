@@ -11,6 +11,7 @@ import { NavigationDatabase } from '@fmgc/NavigationDatabase';
 import { Coordinates } from 'msfs-geo';
 import { EventBus } from 'msfssdk';
 import { MagVar } from '@shared/MagVar';
+import { FixInfoEntry } from '@fmgc/flightplanning/new/plans/FixInfo';
 
 export class FlightPlanService {
     private constructor() {
@@ -340,6 +341,26 @@ export class FlightPlanService {
         const plan = this.flightPlanManager.get(finalIndex);
 
         return plan.toggleOverflyAt(atIndex);
+    }
+
+    static setFixInfoEntry(index: 1 | 2 | 3 | 4, fixInfo: FixInfoEntry | null, planIndex = FlightPlanIndex.Active) {
+        if (!this.config.ALLOW_NON_ACTIVE_FIX_INFOS && planIndex !== FlightPlanIndex.Active) {
+            throw new Error('FIX INFO can only be modified on the active flight plan');
+        }
+
+        const plan = this.flightPlanManager.get(planIndex);
+
+        plan.setFixInfoEntry(index, fixInfo);
+    }
+
+    static editFixInfoEntry(index: 1 | 2 | 3 | 4, callback: (fixInfo: FixInfoEntry) => FixInfoEntry, planIndex = FlightPlanIndex.Active) {
+        if (!this.config.ALLOW_NON_ACTIVE_FIX_INFOS && planIndex !== FlightPlanIndex.Active) {
+            throw new Error('FIX INFO can only be modified on the active flight plan');
+        }
+
+        const plan = this.flightPlanManager.get(planIndex);
+
+        plan.editFixInfoEntry(index, callback);
     }
 
     static get activeLegIndex(): number {

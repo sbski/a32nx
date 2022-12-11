@@ -5,6 +5,7 @@
 
 import { Discontinuity, SerializedFlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { FlightPlanLegDefinition } from '@fmgc/flightplanning/new/legs/FlightPlanLegDefinition';
+import { FixInfoEntry } from '@fmgc/flightplanning/new/plans/FixInfo';
 
 export interface FlightPlanSyncEvent {
     planIndex: number,
@@ -28,6 +29,11 @@ export interface FlightPlanLegDefinitionEditEvent extends FlightPlanSyncEvent {
     newDefinition: FlightPlanLegDefinition,
 }
 
+export interface FlightPlanSetFixInfoEntryEvent extends FlightPlanSyncEvent {
+    index: 1 | 2 | 3 | 4,
+    fixInfo: FixInfoEntry | null,
+}
+
 export interface FlightPlanSyncEvents {
     'flightPlanManager.create': FlightPlanManagerEvent,
     'flightPlanManager.delete': FlightPlanManagerEvent,
@@ -38,4 +44,5 @@ export interface FlightPlanSyncEvents {
     'flightPlan.setActiveLegIndex': FlightPlanSetActiveLegIndexEvent,
     'flightPlan.setSegmentLegs': FlightPlanSetSegmentLegsEvent,
     'flightPlan.legDefinitionEdit': FlightPlanLegDefinitionEditEvent,
+    'flightPlan.setFixInfoEntry': FlightPlanSetFixInfoEntryEvent,
 }

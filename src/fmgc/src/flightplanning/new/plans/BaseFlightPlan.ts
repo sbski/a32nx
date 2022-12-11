@@ -33,6 +33,7 @@ import { WaypointStats } from '@fmgc/flightplanning/data/flightplan';
 import { procedureLegIdentAndAnnotation } from '@fmgc/flightplanning/new/legs/FlightPlanLegNaming';
 import { FlightPlanSyncEvents } from '@fmgc/flightplanning/new/sync/FlightPlanSyncEvents';
 import { EventBus, Publisher } from 'msfssdk';
+import { FlightPlan } from '@fmgc/flightplanning/new/plans/FlightPlan';
 
 export enum FlightPlanQueuedOperation {
     Restring,
@@ -74,6 +75,18 @@ export abstract class BaseFlightPlan {
                 });
 
                 segment.allLegs = elements;
+            }
+        });
+
+        subs.on('flightPlan.setFixInfoEntry').handle((event) => {
+            if (!this.ignoreSync) {
+                if (event.planIndex !== this.index) {
+                    return;
+                }
+
+                if (this instanceof FlightPlan) {
+                    this.setFixInfoEntry(event.index, event.fixInfo);
+                }
             }
         });
     }

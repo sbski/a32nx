@@ -7,6 +7,7 @@ import { Airport } from 'msfs-navdata';
 import { AlternateFlightPlan } from '@fmgc/flightplanning/new/plans/AlternateFlightPlan';
 import { PendingAirways } from '@fmgc/flightplanning/new/plans/PendingAirways';
 import { EventBus } from 'msfssdk';
+import { FixInfoEntry } from '@fmgc/flightplanning/new/plans/FixInfo';
 import { FlightPlanPerformanceData } from './performance/FlightPlanPerformanceData';
 import { BaseFlightPlan } from './BaseFlightPlan';
 
@@ -26,6 +27,11 @@ export class FlightPlan extends BaseFlightPlan {
      * Performance data for this flight plan
      */
     performanceData = new FlightPlanPerformanceData();
+
+    /**
+     * FIX INFO entries
+     */
+    fixInfos: readonly FixInfoEntry[] = [];
 
     clone(): FlightPlan {
         const newPlan = FlightPlan.empty(this.index, this.bus);
@@ -77,5 +83,27 @@ export class FlightPlan extends BaseFlightPlan {
         }
 
         this.pendingAirways = new PendingAirways(this, revisedLegIndex, leg);
+    }
+
+    setFixInfoEntry(index: 1 | 2 | 3 | 4, fixInfo: FixInfoEntry | null): void {
+        const planFixInfo = this.fixInfos as FixInfoEntry[];
+
+        planFixInfo[index] = fixInfo;
+
+        this.sendEvent('flightPlan.setFixInfoEntry', { planIndex: this.index, index, fixInfo });
+        this.incrementVersion();
+    }
+
+    editFixInfoEntry(index: 1 | 2 | 3 | 4, callback: (fixInfo: FixInfoEntry) => FixInfoEntry): void {
+        const planFixInfo = this.fixInfos as FixInfoEntry[];
+
+        const res = callback(planFixInfo[index]);
+
+        if (res) {
+            planFixInfo[index] = res;
+        }
+
+        this.sendEvent('flightPlan.setFixInfoEntry', { planIndex: this.index, index, fixInfo: res });
+        this.incrementVersion();
     }
 }
