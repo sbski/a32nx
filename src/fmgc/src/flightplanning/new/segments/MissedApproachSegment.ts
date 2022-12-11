@@ -17,7 +17,7 @@ export class MissedApproachSegment extends FlightPlanSegment {
         this.allLegs.length = 0;
         this.allLegs.push(...legs);
 
-        this.insertNecessaryDiscontinuities();
+        this.flightPlan.syncSegmentLegsChange(this);
     }
 
     clone(forPlan: BaseFlightPlan): MissedApproachSegment {
