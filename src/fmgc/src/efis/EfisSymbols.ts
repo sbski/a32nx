@@ -504,7 +504,7 @@ export class EfisSymbols {
                 ident: fixInfo.fix.ident,
                 location: fixInfo.fix.location,
                 type: NdSymbolTypeFlags.FixInfo,
-                radials: fixInfo.radials.map((it) => it.magneticBearing),
+                radials: fixInfo.radials.map((it) => it.trueBearing),
                 radii: fixInfo.radii.map((it) => it.radius),
             });
         }
