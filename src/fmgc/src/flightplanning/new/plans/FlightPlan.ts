@@ -85,16 +85,19 @@ export class FlightPlan extends BaseFlightPlan {
         this.pendingAirways = new PendingAirways(this, revisedLegIndex, leg);
     }
 
-    setFixInfoEntry(index: 1 | 2 | 3 | 4, fixInfo: FixInfoEntry | null): void {
+    setFixInfoEntry(index: 1 | 2 | 3 | 4, fixInfo: FixInfoEntry | null, notify = true): void {
         const planFixInfo = this.fixInfos as FixInfoEntry[];
 
         planFixInfo[index] = fixInfo;
 
-        this.sendEvent('flightPlan.setFixInfoEntry', { planIndex: this.index, index, fixInfo });
+        if (notify) {
+            this.sendEvent('flightPlan.setFixInfoEntry', { planIndex: this.index, index, fixInfo });
+        }
+
         this.incrementVersion();
     }
 
-    editFixInfoEntry(index: 1 | 2 | 3 | 4, callback: (fixInfo: FixInfoEntry) => FixInfoEntry): void {
+    editFixInfoEntry(index: 1 | 2 | 3 | 4, callback: (fixInfo: FixInfoEntry) => FixInfoEntry, notify = true): void {
         const planFixInfo = this.fixInfos as FixInfoEntry[];
 
         const res = callback(planFixInfo[index]);
@@ -103,7 +106,10 @@ export class FlightPlan extends BaseFlightPlan {
             planFixInfo[index] = res;
         }
 
-        this.sendEvent('flightPlan.setFixInfoEntry', { planIndex: this.index, index, fixInfo: res });
+        if (notify) {
+            this.sendEvent('flightPlan.setFixInfoEntry', { planIndex: this.index, index, fixInfo: res });
+        }
+
         this.incrementVersion();
     }
 }

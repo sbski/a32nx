@@ -85,7 +85,7 @@ export abstract class BaseFlightPlan {
                 }
 
                 if (this instanceof FlightPlan) {
-                    this.setFixInfoEntry(event.index, event.fixInfo);
+                    this.setFixInfoEntry(event.index, event.fixInfo, false);
                 }
             }
         });
@@ -154,11 +154,11 @@ export abstract class BaseFlightPlan {
         this.queuedOperations.length = 0;
     }
 
-    private ignoreSync = false;
+    protected ignoreSync = false;
 
     sendEvent<K extends keyof FlightPlanSyncEvents>(topic: K, data: FlightPlanSyncEvents[K]) {
         this.ignoreSync = true;
-        this.syncPub.pub(topic, data, true);
+        this.syncPub.pub(topic, data, true, false);
         this.ignoreSync = false;
     }
 
