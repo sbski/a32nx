@@ -54,7 +54,7 @@ export class TacticalDescentPathBuilder {
         const phaseTable = new PhaseTable(windProfile);
         phaseTable.start = start;
         phaseTable.phases = [
-            new DescendToAltitude(finalAltitude),
+            new DescendToAltitude(finalAltitude).withReasonAfter(VerticalCheckpointReason.CrossingFcuAltitudeDescent),
         ];
 
         let isPathValid = false;
@@ -192,13 +192,19 @@ export class TacticalDescentPathBuilder {
             for (let i = violatingPhaseIndex - 1; i >= 0; i--) {
                 const previousPhase = phaseTable.phases[i];
 
-                if (previousPhase instanceof DescendToAltitude) {
-                    phaseTable.phases.splice(violatingPhaseIndex, 1, new DescendToDistance(previousPhase.lastResult.distanceFromStart - overshoot));
-                } else if (previousPhase instanceof DescendToDistance) {
-                    previousPhase.toDistance -= overshoot;
+                if (!previousPhase.lastResult) {
+                    continue;
                 }
 
-                return;
+                if (previousPhase instanceof DescendToAltitude) {
+                    phaseTable.phases.splice(violatingPhaseIndex, 1, new DescendToDistance(previousPhase.lastResult.distanceFromStart - overshoot));
+
+                    return;
+                } if (previousPhase instanceof DescendToDistance) {
+                    previousPhase.toDistance -= overshoot;
+
+                    return;
+                }
             }
         } else {
             // If we don't even have a deceleration segment yet, fly to 3 miles before constraint and add the segment
@@ -225,9 +231,18 @@ export class TacticalDescentPathBuilder {
                 new DescendToAltitude(altitudeConstraint.minimumAltitude).withReasonAfter(VerticalCheckpointReason.LevelOffForDescentConstraint),
                 new DescendToDistance(altitudeConstraint.distanceFromStart).asLevelSegment());
         } else if (violatingPhase instanceof DescendToDistance) {
-            phaseTable.phases.splice(violatingPhaseIndex, 0,
-                new DescendToAltitude(altitudeConstraint.minimumAltitude).withReasonAfter(VerticalCheckpointReason.LevelOffForDescentConstraint),
-                new DescendToDistance(altitudeConstraint.distanceFromStart).asLevelSegment());
+            if (altitudeConstraint.distanceFromStart < violatingPhase.toDistance) {
+                // If the altitude constraint comes before the distance we want to achieve, level off at the the constraint alitude, fly level to the constraint, then continue
+                // descending to the original distance
+                phaseTable.phases.splice(violatingPhaseIndex, 0,
+                    new DescendToAltitude(altitudeConstraint.minimumAltitude).withReasonAfter(VerticalCheckpointReason.LevelOffForDescentConstraint),
+                    new DescendToDistance(altitudeConstraint.distanceFromStart).asLevelSegment());
+            } else {
+                // If the altitude constraint comes after the distance we want to achieve, level off at the the constraint alitude, fly level to the original distance
+                phaseTable.phases.splice(violatingPhaseIndex, 1,
+                    new DescendToAltitude(altitudeConstraint.minimumAltitude).withReasonAfter(VerticalCheckpointReason.LevelOffForDescentConstraint),
+                    new DescendToDistance(violatingPhase.toDistance).asLevelSegment());
+            }
         }
     }
 
@@ -258,7 +273,7 @@ export class TacticalDescentPathBuilder {
             }
         }
 
-        phaseTable.phases.splice(violatingPhaseIndex, 0, new DescendingDeceleration(speedLimit.speed));
+        phaseTable.phases.splice(violatingPhaseIndex, 0, new DescendingDeceleration(speedLimit.speed).withReasonBefore(VerticalCheckpointReason.StartDecelerationToLimit));
     }
 
     private doesPhaseViolateForcedConstraintDeceleration(phase: SubPhase, forcedDeceleration: VerticalCheckpointForDeceleration) {
@@ -299,9 +314,9 @@ export class TacticalDescentPathBuilder {
     }
 
     private doesPhaseViolateAltitudeConstraint(previousResult: VerticalCheckpoint, phase: SubPhase, altitudeConstraint: MinimumDescentAltitudeConstraint) {
-        if (phase.lastResult.altitude >= altitudeConstraint.minimumAltitude // We're still above the constraint
+        if (phase.lastResult.altitude - altitudeConstraint.minimumAltitude >= -1 // We're still above the constraint
+        || previousResult.altitude - altitudeConstraint.minimumAltitude < -1 // We were already below the constraint before this subphase
             || previousResult.distanceFromStart > altitudeConstraint.distanceFromStart // We're already behind the constraint
-            || previousResult.altitude < altitudeConstraint.minimumAltitude // We were already below the constraint before this subphase
         ) {
             return false;
         }
@@ -326,9 +341,9 @@ export class TacticalDescentPathBuilder {
 
         // Now that we're sure, we pass the limit on this exact segment, check what speed we were at
         const speedChangePerAltitude = (previousResult.speed - phase.lastResult.speed) / (previousResult.altitude - phase.lastResult.altitude);
-        const speedAtConstraint = phase.lastResult.speed + speedChangePerAltitude * (speedLimit.underAltitude - phase.lastResult.altitude);
+        const speedAtSpeedLimitAlt = phase.lastResult.speed + speedChangePerAltitude * (speedLimit.underAltitude - phase.lastResult.altitude);
 
-        return speedAtConstraint - speedLimit.underAltitude > 1;
+        return speedAtSpeedLimitAlt - speedLimit.speed > 1;
     }
 }
 
@@ -358,17 +373,17 @@ class PhaseTable {
         const sequence = new TemporaryCheckpointSequence(this.start);
 
         for (const phase of this.phases) {
+            if (phase.reasonBefore !== VerticalCheckpointReason.AtmosphericConditions) {
+                if (sequence.lastCheckpoint.reason === VerticalCheckpointReason.AtmosphericConditions) {
+                    sequence.lastCheckpoint.reason = phase.reasonBefore;
+                } else {
+                    sequence.copyLastCheckpoint({ reason: phase.reasonBefore });
+                }
+            }
+
             if (phase.shouldExecute(sequence.lastCheckpoint)) {
                 const headwind = this.winds.getHeadwindComponent(sequence.lastCheckpoint.distanceFromStart, sequence.lastCheckpoint.altitude);
                 const phaseResult = phase.execute(phase.shouldFlyAsLevelSegment ? levelFlightStrategy : descentStrategy)(sequence.lastCheckpoint, headwind);
-
-                if (phase.reasonBefore !== VerticalCheckpointReason.AtmosphericConditions) {
-                    if (sequence.lastCheckpoint.reason === VerticalCheckpointReason.AtmosphericConditions) {
-                        sequence.lastCheckpoint.reason = phase.reasonBefore;
-                    } else {
-                        sequence.copyLastCheckpoint({ reason: phase.reasonBefore });
-                    }
-                }
 
                 if (phase instanceof DescendingDeceleration) {
                     (sequence.lastCheckpoint as VerticalCheckpointForDeceleration).targetSpeed = phase.toSpeed;
