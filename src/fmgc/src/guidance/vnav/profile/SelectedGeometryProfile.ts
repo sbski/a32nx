@@ -35,4 +35,9 @@ export class SelectedGeometryProfile extends BaseGeometryProfile {
         this.maxAltitudeConstraints = [];
         this.descentAltitudeConstraints = [];
     }
+
+    override resetSpeedConstraints() {
+        this.maxClimbSpeedConstraints = [];
+        this.descentSpeedConstraints = [];
+    }
 }

@@ -290,4 +290,9 @@ export class NavGeometryProfile extends BaseGeometryProfile {
         this.constraintReader.climbAlitudeConstraints = [];
         this.constraintReader.descentAltitudeConstraints = [];
     }
+
+    override resetSpeedConstraints() {
+        this.constraintReader.climbSpeedConstraints = [];
+        this.constraintReader.descentSpeedConstraints = [];
+    }
 }

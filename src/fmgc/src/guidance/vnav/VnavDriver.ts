@@ -279,6 +279,10 @@ export class VnavDriver implements GuidanceComponent {
             this.currentNdGeometryProfile.resetAltitudeConstraints();
         }
 
+        if (!this.shouldObeySpeedConstraints()) {
+            this.currentNdGeometryProfile.resetSpeedConstraints();
+        }
+
         const speedProfile = this.shouldObeySpeedConstraints()
             ? this.currentMcduSpeedProfile
             : new NdSpeedProfile(

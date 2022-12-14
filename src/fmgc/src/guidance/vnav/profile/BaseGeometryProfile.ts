@@ -405,6 +405,8 @@ export abstract class BaseGeometryProfile {
 
     abstract resetAltitudeConstraints(): void;
 
+    abstract resetSpeedConstraints(): void;
+
     getRemainingFuelAtDestination(): Pounds | null {
         if (this.checkpoints.length < 1) {
             return null;
