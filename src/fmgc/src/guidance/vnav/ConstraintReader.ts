@@ -1,6 +1,6 @@
 import { GeographicCruiseStep, DescentAltitudeConstraint, MaxAltitudeConstraint, MaxSpeedConstraint } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
 import { Geometry } from '@fmgc/guidance/Geometry';
-import { AltitudeConstraintType, getAltitudeConstraintFromWaypoint, getSpeedConstraintFromWaypoint } from '@fmgc/guidance/lnav/legs';
+import { AltitudeConstraintType, getAltitudeConstraintFromWaypoint, getPathAngleConstraintFromWaypoint, getSpeedConstraintFromWaypoint } from '@fmgc/guidance/lnav/legs';
 import { FlightPlans, WaypointConstraintType } from '@fmgc/flightplanning/FlightPlanManager';
 import { IFLeg } from '@fmgc/guidance/lnav/legs/IF';
 import { VMLeg } from '@fmgc/guidance/lnav/legs/VM';
@@ -26,9 +26,11 @@ export class ConstraintReader {
 
     public distanceToEnd: NauticalMiles = 0;
 
-    public finalDescentAngle = 3;
+    // If you change this property here, make sure you also reset it properly in `reset`
+    public finalDescentAngle = -3;
 
-    public fafDistanceToEnd = 1000 / Math.tan(3 * MathUtils.DEGREES_TO_RADIANS) / 6076.12;
+    // If you change this property here, make sure you also reset it properly in `reset`
+    public fafDistanceToEnd = 1000 / Math.tan(-this.finalDescentAngle * MathUtils.DEGREES_TO_RADIANS) / 6076.12;
 
     public get distanceToPresentPosition(): NauticalMiles {
         return this.totalFlightPlanDistance - this.distanceToEnd;
@@ -67,6 +69,7 @@ export class ConstraintReader {
 
             const altConstraint = getAltitudeConstraintFromWaypoint(waypoint);
             const speedConstraint = getSpeedConstraintFromWaypoint(waypoint);
+            const pathAngleConstraint = getPathAngleConstraintFromWaypoint(waypoint);
 
             if (waypoint.additionalData.constraintType === WaypointConstraintType.CLB) {
                 if (altConstraint && altConstraint.type !== AltitudeConstraintType.atOrAbove) {
@@ -100,8 +103,8 @@ export class ConstraintReader {
                 }
             }
 
-            if (i === fpm.getDestinationIndex() && waypoint.verticalAngle) {
-                this.finalDescentAngle = waypoint.verticalAngle;
+            if (i === fpm.getDestinationIndex() && pathAngleConstraint) {
+                this.finalDescentAngle = pathAngleConstraint;
             }
 
             if ((waypoint.additionalData.fixTypeFlags & FixTypeFlags.FAF) > 0) {
@@ -175,8 +178,8 @@ export class ConstraintReader {
 
         this.totalFlightPlanDistance = 0;
         this.distanceToEnd = 0;
-        this.finalDescentAngle = 3;
-        this.fafDistanceToEnd = 1000 / Math.tan(3 * MathUtils.DEGREES_TO_RADIANS) / 6076.12;
+        this.finalDescentAngle = -3;
+        this.fafDistanceToEnd = 1000 / Math.tan(-this.finalDescentAngle * MathUtils.DEGREES_TO_RADIANS) / 6076.12;
     }
 
     private updateDistancesToEnd(geometry: Geometry) {

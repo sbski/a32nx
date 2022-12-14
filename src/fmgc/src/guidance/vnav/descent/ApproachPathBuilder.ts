@@ -97,10 +97,10 @@ export class ApproachPathBuilder {
             mach: managedDescentSpeedMach,
         });
 
-        const distanceToOneThousandAgl = 1000 / Math.tan(-profile.finalDescentAngle * MathUtils.DEGREES_TO_RADIANS) / 6076.12;
+        const distanceToOneThousandAgl = 1000 / Math.tan(profile.finalDescentAngle * MathUtils.DEGREES_TO_RADIANS) / 6076.12;
 
         // Build final segment
-        this.fpaStrategy.flightPathAngle = -profile.finalDescentAngle;
+        this.fpaStrategy.flightPathAngle = profile.finalDescentAngle;
         const finalApproachStep = this.fpaStrategy.predictToDistance(
             finalAltitude,
             distanceToOneThousandAgl,
