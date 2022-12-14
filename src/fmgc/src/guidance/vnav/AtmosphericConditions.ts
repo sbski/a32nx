@@ -29,7 +29,7 @@ export class AtmosphericConditions {
         this.ambientTemperatureFromSim = SimVar.GetSimVarValue('AMBIENT TEMPERATURE', 'celsius');
         this.altitudeFromSim = SimVar.GetSimVarValue('INDICATED ALTITUDE', 'feet');
         this.tasFromSim = SimVar.GetSimVarValue('AIRSPEED TRUE', 'knots');
-        this.casFromSim = this.computeCasFromTas(this.altitudeFromSim, this.tasFromSim);
+        this.casFromSim = SimVar.GetSimVarValue('AIRSPEED INDICATED', 'knots');
         // TODO filter?
         this.windSpeedFromSim = SimVar.GetSimVarValue('AMBIENT WIND VELOCITY', 'Knots');
         this.windDirectionFromSim = SimVar.GetSimVarValue('AMBIENT WIND DIRECTION', 'Degrees');

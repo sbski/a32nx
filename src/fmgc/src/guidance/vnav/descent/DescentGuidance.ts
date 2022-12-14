@@ -205,7 +205,7 @@ export class DescentGuidance {
             ? Math.max(Math.min(this.aircraftToDescentProfileRelation.computeLinearDeviation() / 100, maxBias), 0)
             : 0;
 
-        const airspeed = SimVar.GetSimVarValue('AIRSPEED INDICATED', 'knots');
+        const airspeed = this.atmosphericConditions.currentAirspeed;
         const guidanceTarget = this.useDynamicSpeedTarget()
             ? this.speedMargin.getTarget(airspeed + speedBias, this.speedTarget)
             : this.speedTarget;
