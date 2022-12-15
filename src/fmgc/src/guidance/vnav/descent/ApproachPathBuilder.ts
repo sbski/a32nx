@@ -296,7 +296,7 @@ export class ApproachPathBuilder {
                 // Decelerate to constraint
                 const decelerationStep = this.fpaStrategy.predictToSpeed(
                     altitude,
-                    speedConstraint.maxSpeed,
+                    Math.max(speedConstraint.maxSpeed, speed), // If constraint speed is less than the current speed, don't try to decelerate to it (because we'll end up going the wrong way)
                     speed,
                     managedDescentSpeedMach,
                     remainingFuelOnBoard,
