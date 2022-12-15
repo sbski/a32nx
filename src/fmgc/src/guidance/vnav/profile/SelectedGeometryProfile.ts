@@ -11,7 +11,7 @@ import {
 export class SelectedGeometryProfile extends BaseGeometryProfile {
     public override maxAltitudeConstraints: MaxAltitudeConstraint[] = [];
 
-    public override descentAltitudeConstraints: DescentAltitudeConstraint[];
+    public override descentAltitudeConstraints: DescentAltitudeConstraint[] = [];
 
     public override maxClimbSpeedConstraints: MaxSpeedConstraint[] = [];
 
