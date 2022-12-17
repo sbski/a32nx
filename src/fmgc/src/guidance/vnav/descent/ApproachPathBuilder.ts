@@ -349,6 +349,7 @@ export class ApproachPathBuilder {
                 // We don't care about any speed constraint limitations here, because that's what the if block above is for.
                 const targetSpeed = Math.min(flapTargetSpeed, limitingSpeed);
 
+                // TODO: Handle case where we need speedbrakes
                 const decelerationStep = this.fpaStrategy.predictToSpeed(
                     altitude,
                     targetSpeed,
