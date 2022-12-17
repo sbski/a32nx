@@ -602,12 +602,7 @@ export class VnavDriver implements GuidanceComponent {
         // We get this value because we only want to a speed constraint if this is not covered by the decel point already
         const decelPointSpeed = this.decelPoint?.speed ?? 0;
 
-        if (VnavConfig.DEBUG_PROFILE && Math.abs(SimVar.GetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots') - this.previousManagedDescentSpeedTarget) > 1) {
-            console.log('[FMS/VNAV] Managed speed changed outside of VnavDriver');
-        }
-
-        const econMachAsCas = SimVar.GetGameVarValue('FROM MACH TO KIAS', 'number', managedDescentSpeedMach);
-        let newSpeedTarget = Math.min(managedDescentSpeed, econMachAsCas, this.previousManagedDescentSpeedTarget);
+        let newSpeedTarget = Math.min(managedDescentSpeed, this.previousManagedDescentSpeedTarget);
         if (this.isLatAutoControlActive()) {
             const targetFromProfile = this.currentMcduSpeedProfile.getTarget(currentDistanceFromStart, currentAltitude, ManagedSpeedType.Descent);
 
@@ -617,8 +612,14 @@ export class VnavDriver implements GuidanceComponent {
         for (let i = 0; i < this.currentNdGeometryProfile.checkpoints.length - 2; i++) {
             const checkpoint = this.currentNdGeometryProfile.checkpoints[i];
 
+            if (checkpoint.distanceFromStart - currentDistanceFromStart > 1) {
+                break;
+            }
+
             if (isSpeedChangePoint(checkpoint) && currentDistanceFromStart - checkpoint.distanceFromStart > -1e-4 && checkpoint.targetSpeed >= decelPointSpeed) {
                 newSpeedTarget = Math.min(newSpeedTarget, checkpoint.targetSpeed);
+
+                break;
             }
         }
 
@@ -626,7 +627,8 @@ export class VnavDriver implements GuidanceComponent {
 
         const vLs = SimVar.GetSimVarValue('L:A32NX_SPEEDS_VLS', 'number');
         const vMan = this.getVman(approachSpeed);
-        SimVar.SetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots', Math.max(vLs, vMan, newSpeedTarget));
+        const econMachAsCas = SimVar.GetGameVarValue('FROM MACH TO KIAS', 'number', managedDescentSpeedMach);
+        SimVar.SetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots', Math.max(vLs, vMan, Math.min(newSpeedTarget, econMachAsCas)));
     }
 
     private getVman(vApp: Knots): Knots {
@@ -765,14 +767,13 @@ export class VnavDriver implements GuidanceComponent {
                 return null;
             }
 
-            if (Math.min(checkpoint.speed, this.atmosphericConditions.computeCasFromMach(checkpoint.altitude, checkpoint.mach))
-                - Math.max(this.currentNdGeometryProfile.checkpoints[i - 1].speed, speedTarget) > 1) {
+            if (speedTargetType === ManagedSpeedType.Climb) {
+                if (Math.min(checkpoint.speed, this.atmosphericConditions.computeCasFromMach(checkpoint.altitude, checkpoint.mach))
+                    - Math.max(this.currentNdGeometryProfile.checkpoints[i - 1].speed, speedTarget) > 1) {
                 // Candiate for a climb speed change
-                if (speedTargetType === ManagedSpeedType.Climb) {
                     return this.currentNdGeometryProfile.checkpoints[i - 1].distanceFromStart;
                 }
-            } else if (checkpoint.reason === VerticalCheckpointReason.Decel
-                || isSpeedChangePoint(checkpoint) && checkpoint.targetSpeed - speedTarget < -1 && checkpoint.targetSpeed >= decelPointSpeed) {
+            } else if (isSpeedChangePoint(checkpoint) && checkpoint.targetSpeed - speedTarget < -1 && checkpoint.targetSpeed >= decelPointSpeed) {
                 // Check if decel point, or `StartDeceleration` point with target spee lower than current target, but larger than the speed the decel point is placed at.
                 return checkpoint.distanceFromStart;
             }
