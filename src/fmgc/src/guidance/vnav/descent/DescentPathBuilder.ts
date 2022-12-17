@@ -50,9 +50,8 @@ export class DescentPathBuilder {
             if (constraintPoint.distanceFromStart >= decelPoint.distanceFromStart) {
                 // If we've found a constraint that's beyond the decel point, we can ignore it.
                 continue;
-            } else if (constraintPoint.distanceFromStart < idleSequence.lastCheckpoint.distanceFromStart
-                || !this.isConstraintBelowCruisingAltitude(constraintPoint.constraint, cruiseAltitude)) {
-                // If we arrive at the constraints before the idle path, we are done
+            } else if (!this.isConstraintBelowCruisingAltitude(constraintPoint.constraint, cruiseAltitude)) {
+                // Constraints above the cruise altitude are ignored
                 break;
             }
 
