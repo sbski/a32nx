@@ -155,8 +155,8 @@ export class GeometricPathBuilder {
     private buildAccelerationTargets(startingPoint: VerticalCheckpoint, segments: PlannedGeometricSegment[], speedConstraints: MaxSpeedConstraint[]): AccelerationTarget[] {
         const { managedDescentSpeed, descentSpeedLimit } = this.observer.get();
 
-        let shouldAddSpeedLimit = true;
         const distanceAtSpeedLimitCrossing = this.findDistanceAtAltitude(descentSpeedLimit.underAltitude, startingPoint, segments);
+        let shouldAddSpeedLimit = distanceAtSpeedLimitCrossing !== null;
         const speedLimitTarget: AccelerationTarget = {
             distanceFromStart: distanceAtSpeedLimitCrossing,
             speed: descentSpeedLimit.speed,
@@ -181,11 +181,14 @@ export class GeometricPathBuilder {
             targets.push(target);
         }
 
-        targets.push({
+        const econSpeedTarget: AccelerationTarget = {
             distanceFromStart: -Infinity,
             speed: managedDescentSpeed,
             isSpeedLimit: false,
-        });
+        };
+
+        // If we figured that we should add the speed limit as a target, but haven't yet, add it now.
+        targets.push(shouldAddSpeedLimit ? speedLimitTarget : econSpeedTarget);
 
         // Propagate speed constraints forwards
         targets.reduceRight((maxSpeed, target) => {
@@ -209,7 +212,8 @@ export class GeometricPathBuilder {
             }
         }
 
-        return null;
+        // If we don't cross the speed limit on the geometric
+        return -Infinity;
     }
 }
 
