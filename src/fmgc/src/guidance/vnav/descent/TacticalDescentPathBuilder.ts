@@ -271,9 +271,11 @@ export class TacticalDescentPathBuilder {
 
                 return;
             }
+        } else {
+            phaseTable.phases.splice(violatingPhaseIndex, 0,
+                new DescendToAltitude(speedLimit.underAltitude + 100),
+                new DescendingDeceleration(speedLimit.speed).withReasonBefore(VerticalCheckpointReason.StartDecelerationToLimit));
         }
-
-        phaseTable.phases.splice(violatingPhaseIndex, 0, new DescendingDeceleration(speedLimit.speed).withReasonBefore(VerticalCheckpointReason.StartDecelerationToLimit));
     }
 
     private doesPhaseViolateForcedConstraintDeceleration(phase: SubPhase, forcedDeceleration: VerticalCheckpointForDeceleration) {
