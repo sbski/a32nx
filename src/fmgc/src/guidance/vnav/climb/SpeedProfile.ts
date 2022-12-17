@@ -89,11 +89,24 @@ export class McduSpeedProfile implements SpeedProfile {
     }
 
     getTarget(distanceFromStart: NauticalMiles, altitude: Feet, managedSpeedType: ManagedSpeedType): Knots {
-        const { fcuSpeed, flightPhase, preselectedClbSpeed } = this.parameters.get();
+        const { fcuSpeed, flightPhase, preselectedClbSpeed, preselectedCruiseSpeed, preselectedDescentSpeed } = this.parameters.get();
 
-        const hasPreselectedSpeed = flightPhase < FmgcFlightPhase.Climb && preselectedClbSpeed > 1;
+        let preselectedSpeed = -1;
+        if (flightPhase < FmgcFlightPhase.Climb && preselectedClbSpeed > 100) {
+            preselectedSpeed = preselectedClbSpeed;
+        } else if (flightPhase < FmgcFlightPhase.Cruise && preselectedCruiseSpeed > 100) {
+            preselectedSpeed = preselectedCruiseSpeed;
+        } else if (flightPhase < FmgcFlightPhase.Descent && preselectedDescentSpeed > 100) {
+            preselectedSpeed = preselectedDescentSpeed;
+        }
+        const hasPreselectedSpeed = preselectedSpeed > 0;
+
+        const isPredictingForCurrentPhase = managedSpeedType === ManagedSpeedType.Climb && flightPhase === FmgcFlightPhase.Climb
+            || managedSpeedType === ManagedSpeedType.Cruise && flightPhase === FmgcFlightPhase.Cruise
+            || managedSpeedType === ManagedSpeedType.Descent && (flightPhase === FmgcFlightPhase.Descent || flightPhase === FmgcFlightPhase.Approach);
+
         // In the descent, the MCDU assumes an immediate return to managed speed, and selecting a speed should not affect the profile
-        const hasSelectedSpeed = fcuSpeed > 100 && flightPhase > FmgcFlightPhase.Takeoff && flightPhase < FmgcFlightPhase.Descent;
+        const hasSelectedSpeed = fcuSpeed > 100 && isPredictingForCurrentPhase;
 
         if (!hasPreselectedSpeed && !hasSelectedSpeed) {
             return this.getManagedTarget(distanceFromStart, altitude, managedSpeedType);
@@ -106,7 +119,7 @@ export class McduSpeedProfile implements SpeedProfile {
         }
 
         if (hasPreselectedSpeed) {
-            return preselectedClbSpeed;
+            return preselectedSpeed;
         }
 
         return fcuSpeed;

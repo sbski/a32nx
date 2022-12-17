@@ -41,6 +41,8 @@ export interface VerticalProfileComputationParameters {
     descentSpeedLimit: SpeedLimit,
     flightPhase: FmgcFlightPhase,
     preselectedClbSpeed: Knots,
+    preselectedCruiseSpeed: Knots,
+    preselectedDescentSpeed: Knots,
     takeoffFlapsSetting?: FlapConf
 
     approachQnh: Millibar,
@@ -94,6 +96,8 @@ export class VerticalProfileComputationParametersObserver {
             descentSpeedLimit: this.fmgc.getDescentSpeedLimit(),
             flightPhase: this.fmgc.getFlightPhase(),
             preselectedClbSpeed: this.fmgc.getPreSelectedClbSpeed(),
+            preselectedCruiseSpeed: this.fmgc.getPreSelectedCruiseSpeed(),
+            preselectedDescentSpeed: this.fmgc.getPreSelectedDescentSpeed(),
             takeoffFlapsSetting: this.fmgc.getTakeoffFlapsSetting(),
 
             approachQnh: this.fmgc.getApproachQnh(),
