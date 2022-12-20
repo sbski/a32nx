@@ -397,10 +397,12 @@ export class VnavDriver implements GuidanceComponent {
         // After computing the tactical profile, we wish to finish it up in managed modes.
         if (this.isLatAutoControlActive() && this.currentNdGeometryProfile) {
             if (shouldApplyDescentPredictions) {
+                const minDistanceToAppend = this.currentNdGeometryProfile.lastCheckpoint?.distanceFromStart ?? -Infinity;
+
                 for (const checkpoint of this.aircraftToDescentProfileRelation.currentProfile.checkpoints) {
                     const tacticalDistanceFromStart = checkpoint.distanceFromStart + tacticalToGuidanceProfileOffset;
 
-                    if (this.currentNdGeometryProfile.checkpoints.length < 0 || tacticalDistanceFromStart > this.currentNdGeometryProfile.lastCheckpoint.distanceFromStart) {
+                    if (tacticalDistanceFromStart > minDistanceToAppend) {
                         this.currentNdGeometryProfile.checkpoints.push(
                             { ...checkpoint, distanceFromStart: tacticalDistanceFromStart },
                         );
@@ -616,7 +618,10 @@ export class VnavDriver implements GuidanceComponent {
                 break;
             }
 
-            if (isSpeedChangePoint(checkpoint) && currentDistanceFromStart - checkpoint.distanceFromStart > -1e-4 && checkpoint.targetSpeed >= decelPointSpeed) {
+            const isPastCstrDeceleration = checkpoint.reason === VerticalCheckpointReason.StartDecelerationToConstraint && currentDistanceFromStart - checkpoint.distanceFromStart > -1e-4;
+            const isPastLimitDeceleration = checkpoint.reason === VerticalCheckpointReason.StartDecelerationToLimit && currentAltitude - checkpoint.altitude < 1e-4;
+
+            if (isSpeedChangePoint(checkpoint) && checkpoint.targetSpeed >= decelPointSpeed && (isPastCstrDeceleration || isPastLimitDeceleration)) {
                 newSpeedTarget = Math.min(newSpeedTarget, checkpoint.targetSpeed);
 
                 break;
@@ -736,7 +741,7 @@ export class VnavDriver implements GuidanceComponent {
     }
 
     public findNextSpeedChange(): NauticalMiles | null {
-        const { presentPosition, flightPhase } = this.computationParametersObserver.get();
+        const { presentPosition, flightPhase, fcuAltitude } = this.computationParametersObserver.get();
 
         if (!Simplane.getAutoPilotAirspeedManaged() || SimVar.GetSimVarValue('L:A32NX_FMA_EXPEDITE_MODE', 'number') === 1 || flightPhase === FmgcFlightPhase.Approach) {
             return null;
@@ -767,15 +772,19 @@ export class VnavDriver implements GuidanceComponent {
                 return null;
             }
 
-            if (speedTargetType === ManagedSpeedType.Climb) {
+            if (speedTargetType === ManagedSpeedType.Climb || speedTargetType === ManagedSpeedType.Cruise) {
                 if (Math.min(checkpoint.speed, this.atmosphericConditions.computeCasFromMach(checkpoint.altitude, checkpoint.mach))
                     - Math.max(this.currentNdGeometryProfile.checkpoints[i - 1].speed, speedTarget) > 1) {
                 // Candiate for a climb speed change
                     return this.currentNdGeometryProfile.checkpoints[i - 1].distanceFromStart;
                 }
             } else if (isSpeedChangePoint(checkpoint) && checkpoint.targetSpeed - speedTarget < -1 && checkpoint.targetSpeed >= decelPointSpeed) {
-                // Check if decel point, or `StartDeceleration` point with target spee lower than current target, but larger than the speed the decel point is placed at.
-                return checkpoint.distanceFromStart;
+                // Check if decel point, or `StartDeceleration` point with target speed lower than current target, but larger than the speed the decel point is placed at.
+
+                // Only show deceleration to speed limit if we are going to descend below it.
+                if (checkpoint.reason === VerticalCheckpointReason.StartDecelerationToConstraint || fcuAltitude < checkpoint.altitude) {
+                    return checkpoint.distanceFromStart;
+                }
             }
         }
 
