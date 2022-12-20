@@ -793,5 +793,5 @@ export class VnavDriver implements GuidanceComponent {
 
 /// To check whether the value changed from old to new, but not if both values are NaN. (NaN !== NaN in JS)
 export function numberOrNanChanged(oldValue: number, newValue: number): boolean {
-    return Number.isNaN(oldValue) !== Number.isNaN(newValue) && oldValue !== newValue;
+    return (!Number.isNaN(oldValue) || !Number.isNaN(newValue)) && oldValue !== newValue;
 }
