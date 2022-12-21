@@ -34,6 +34,7 @@ import { procedureLegIdentAndAnnotation } from '@fmgc/flightplanning/new/legs/Fl
 import { FlightPlanSyncEvents } from '@fmgc/flightplanning/new/sync/FlightPlanSyncEvents';
 import { EventBus, Publisher } from 'msfssdk';
 import { FlightPlan } from '@fmgc/flightplanning/new/plans/FlightPlan';
+import { FlightPlanService } from '@fmgc/flightplanning/new/FlightPlanService';
 
 export enum FlightPlanQueuedOperation {
     Restring,
@@ -50,7 +51,7 @@ export abstract class BaseFlightPlan {
         const subs = this.bus.getSubscriber<FlightPlanSyncEvents>();
 
         subs.on('flightPlan.setActiveLegIndex').handle((event) => {
-            if (!this.ignoreSync) {
+            if (!FlightPlanService.ignoreSync) {
                 if (event.planIndex !== this.index) {
                     return;
                 }
@@ -60,7 +61,7 @@ export abstract class BaseFlightPlan {
         });
 
         subs.on('flightPlan.setSegmentLegs').handle((event) => {
-            if (!this.ignoreSync) {
+            if (!FlightPlanService.ignoreSync) {
                 if (event.planIndex !== this.index) {
                     return;
                 }
@@ -79,7 +80,7 @@ export abstract class BaseFlightPlan {
         });
 
         subs.on('flightPlan.setFixInfoEntry').handle((event) => {
-            if (!this.ignoreSync) {
+            if (!FlightPlanService.ignoreSync) {
                 if (event.planIndex !== this.index) {
                     return;
                 }
@@ -157,9 +158,9 @@ export abstract class BaseFlightPlan {
     protected ignoreSync = false;
 
     sendEvent<K extends keyof FlightPlanSyncEvents>(topic: K, data: FlightPlanSyncEvents[K]) {
-        this.ignoreSync = true;
+        FlightPlanService.ignoreSync = true;
         this.syncPub.pub(topic, data, true, false);
-        this.ignoreSync = false;
+        FlightPlanService.ignoreSync = false;
     }
 
     syncSegmentLegsChange(segment: FlightPlanSegment) {

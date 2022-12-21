@@ -25,6 +25,8 @@ export class FlightPlanService {
 
     static version = 0;
 
+    static ignoreSync = false;
+
     static createFlightPlans() {
         this.flightPlanManager.create(0);
         this.flightPlanManager.create(1);
