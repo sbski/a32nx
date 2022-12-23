@@ -188,7 +188,11 @@ export class GeometricPathBuilder {
         };
 
         // If we figured that we should add the speed limit as a target, but haven't yet, add it now.
-        targets.push(shouldAddSpeedLimit ? speedLimitTarget : econSpeedTarget);
+        if (shouldAddSpeedLimit) {
+            targets.push(speedLimitTarget);
+        }
+
+        targets.push(econSpeedTarget);
 
         // Propagate speed constraints forwards
         targets.reduceRight((maxSpeed, target) => {
