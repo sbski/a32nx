@@ -20,8 +20,8 @@ import { getFlightPhaseManager } from '@fmgc/flightphase';
 import { FmgcFlightPhase } from '@shared/flightphase';
 import { ApproachType } from 'msfs-navdata';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
+import { FlightPlan } from '@fmgc/flightplanning/new/plans/FlightPlan';
 import { LnavDriver } from './lnav/LnavDriver';
-import { FlightPlanManager } from '../flightplanning/FlightPlanManager';
 import { VnavDriver } from './vnav/VnavDriver';
 
 // How often the (milliseconds)
@@ -36,11 +36,29 @@ export class GuidanceController {
 
     efisVectors: EfisVectors;
 
-    activeGeometry: Geometry | null;
+    get activeGeometry(): Geometry | null {
+        return this.getGeometryForFlightPlan(FlightPlanIndex.Active);
+    }
 
-    temporaryGeometry: Geometry | null;
+    get temporaryGeometry(): Geometry | null {
+        return this.getGeometryForFlightPlan(FlightPlanIndex.Temporary);
+    }
 
-    secondaryGeometry: Geometry | null;
+    get secondaryGeometry(): Geometry | null {
+        return this.getGeometryForFlightPlan(FlightPlanIndex.FirstSecondary);
+    }
+
+    hasGeometryForFlightPlan(index: number) {
+        return this.flightPlanGeometries.has(index);
+    }
+
+    getGeometryForFlightPlan(index: number) {
+        if (!this.hasGeometryForFlightPlan(index)) {
+            // throw new Error(`[GuidanceController] No geometry present for flight plan #${index}`);
+        }
+
+        return this.flightPlanGeometries.get(index);
+    }
 
     get activeLegIndex(): number {
         return FlightPlanService.active.activeLegIndex;
@@ -208,8 +226,6 @@ export class GuidanceController {
         this.lnavDriver.ppos.lat = SimVar.GetSimVarValue('PLANE LATITUDE', 'degree latitude');
         this.lnavDriver.ppos.long = SimVar.GetSimVarValue('PLANE LONGITUDE', 'degree longitude');
 
-        this.updateGeometries();
-
         this.leftEfisState = { mode: Mode.ARC, range: 10, dataLimitReached: false, legsCulled: false };
         this.rightEfisState = { mode: Mode.ARC, range: 10, dataLimitReached: false, legsCulled: false };
         this.efisStateForSide = {
@@ -238,9 +254,11 @@ export class GuidanceController {
         }, undefined);
     }
 
-    private lastFlightPlanVersion = SimVar.GetSimVarValue(FlightPlanManager.FlightPlanVersionKey, 'number');
-
     private geometryRecomputationTimer = GEOMETRY_RECOMPUTATION_TIMER + 1;
+
+    private lastFlightPlanVersions = new Map<number, number>();
+
+    private flightPlanGeometries = new Map<number, Geometry>();
 
     update(deltaTime: number) {
         this.geometryRecomputationTimer += deltaTime;
@@ -249,26 +267,19 @@ export class GuidanceController {
         this.updateEfisState('R', this.rightEfisState);
 
         try {
-            // Generate new geometry when flight plan changes
-            // const newFlightPlanVersion = FlightPlanService.activeOrTemporary.version;
-            // if (newFlightPlanVersion !== this.lastFlightPlanVersion) {
-            //     this.lastFlightPlanVersion = newFlightPlanVersion;
-            //
-            //     this.updateGeometries();
-            //     this.geometryRecomputationTimer = 0;
-            // }
+            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Active);
+            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Temporary);
+            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.FirstSecondary);
 
             if (this.geometryRecomputationTimer > GEOMETRY_RECOMPUTATION_TIMER) {
                 this.geometryRecomputationTimer = 0;
 
-                this.updateGeometries();
-                // this.recomputeGeometries();
-                //
-                // if (this.activeGeometry) {
-                //     this.vnavDriver.acceptMultipleLegGeometry(this.activeGeometry);
-                //     this.pseudoWaypoints.acceptMultipleLegGeometry(this.activeGeometry);
-                // }
+                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Active, true);
+                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Temporary, true);
+                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.FirstSecondary, true);
             }
+
+            this.updateEfisIdent();
         } catch (e) {
             console.error('[FMS] Error during LNAV update. See exception below.');
             console.error(e);
@@ -324,107 +335,52 @@ export class GuidanceController {
         }
     }
 
-    /**
-     * Called when the lateral flight plan is changed
-     */
-    updateGeometries() {
-        if (FlightPlanService.has(FlightPlanIndex.Active)) {
-            this.updateActiveGeometry();
+    tryUpdateFlightPlanGeometry(flightPlanIndex: number, force = false) {
+        const lastVersion = this.lastFlightPlanVersions.get(flightPlanIndex);
+
+        if (!FlightPlanService.has(flightPlanIndex)) {
+            this.flightPlanGeometries.delete(flightPlanIndex);
+            return;
         }
 
-        if (FlightPlanService.hasTemporary) {
-            this.updateTemporaryGeometry();
-        } else {
-            this.temporaryGeometry = null;
+        const plan = FlightPlanService.get(flightPlanIndex);
+
+        const currentVersion = plan.version;
+
+        if (!force && lastVersion === currentVersion) {
+            return;
         }
 
-        if (FlightPlanService.has(FlightPlanIndex.FirstSecondary)) {
-            this.updateSecondaryGeometry();
+        this.lastFlightPlanVersions.set(flightPlanIndex, currentVersion);
+
+        const geometry = this.flightPlanGeometries.get(flightPlanIndex);
+
+        if (geometry) {
+            GeometryFactory.updateFromFlightPlan(geometry, plan, flightPlanIndex < FlightPlanIndex.FirstSecondary);
+
+            this.recomputeGeometry(geometry, FlightPlanService.active);
         } else {
-            this.secondaryGeometry = null;
-        }
+            const newGeometry = GeometryFactory.createFromFlightPlan(plan, flightPlanIndex < FlightPlanIndex.FirstSecondary);
 
-        this.recomputeGeometries();
+            this.recomputeGeometry(newGeometry, FlightPlanService.active);
 
-        this.updateEfisIdent();
-
-        this.geometryRecomputationTimer = 0;
-        // this.vnavDriver.acceptMultipleLegGeometry(this.activeGeometry);
-        this.pseudoWaypoints.acceptMultipleLegGeometry(this.activeGeometry);
-    }
-
-    private updateActiveGeometry() {
-        if (this.activeGeometry) {
-            GeometryFactory.updateFromFlightPlan(this.activeGeometry, FlightPlanService.active);
-        } else {
-            this.activeGeometry = GeometryFactory.createFromFlightPlan(FlightPlanService.active);
+            this.flightPlanGeometries.set(flightPlanIndex, newGeometry);
         }
     }
 
-    private updateTemporaryGeometry() {
-        if (this.temporaryGeometry) {
-            GeometryFactory.updateFromFlightPlan(this.temporaryGeometry, FlightPlanService.temporary);
-        } else {
-            this.temporaryGeometry = GeometryFactory.createFromFlightPlan(FlightPlanService.temporary);
-        }
-    }
-
-    private updateSecondaryGeometry() {
-        if (this.secondaryGeometry) {
-            GeometryFactory.updateFromFlightPlan(this.secondaryGeometry, FlightPlanService.secondary(1), false);
-        } else {
-            this.secondaryGeometry = GeometryFactory.createFromFlightPlan(FlightPlanService.secondary(1), false);
-        }
-    }
-
-    recomputeGeometries() {
+    recomputeGeometry(geometry: Geometry, plan: FlightPlan) {
         const tas = SimVar.GetSimVarValue('AIRSPEED TRUE', 'Knots');
         const gs = SimVar.GetSimVarValue('GPS GROUND SPEED', 'Knots');
         const trueTrack = SimVar.GetSimVarValue('GPS GROUND TRUE TRACK', 'degree');
 
-        if (this.activeGeometry) {
-            this.activeGeometry.recomputeWithParameters(
-                tas,
-                gs,
-                this.lnavDriver.ppos,
-                trueTrack,
-                this.activeLegIndex,
-                this.activeTransIndex,
-            );
-        }
-
-        if (this.temporaryGeometry) {
-            this.temporaryGeometry.recomputeWithParameters(
-                tas,
-                gs,
-                this.lnavDriver.ppos,
-                trueTrack,
-                this.temporaryLegIndex,
-                this.temporaryLegIndex - 1,
-            );
-        }
-
-        if (this.secondaryGeometry) {
-            this.secondaryGeometry.recomputeWithParameters(
-                tas,
-                gs,
-                this.lnavDriver.ppos,
-                trueTrack,
-                this.activeLegIndex,
-                this.activeTransIndex,
-            );
-        }
-
-        if (this.secondaryGeometry) {
-            this.secondaryGeometry.recomputeWithParameters(
-                tas,
-                gs,
-                this.lnavDriver.ppos,
-                trueTrack,
-                this.activeLegIndex,
-                this.activeTransIndex,
-            );
-        }
+        geometry.recomputeWithParameters(
+            tas,
+            gs,
+            this.lnavDriver.ppos,
+            trueTrack,
+            plan.activeLegIndex,
+            plan.activeLegIndex, // TODO active transition index for temporary plan...?
+        );
     }
 
     /**

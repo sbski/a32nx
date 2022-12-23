@@ -86,6 +86,8 @@ export namespace GeometryFactory {
     }
 
     export function updateFromFlightPlan(geometry: Geometry, flightPlan: BaseFlightPlan, doGenerateTransitions = true) {
+        geometry.version++;
+
         if (LnavConfig.DEBUG_GEOMETRY) {
             console.log('[Fms/Geometry/Update] Starting geometry update.');
         }

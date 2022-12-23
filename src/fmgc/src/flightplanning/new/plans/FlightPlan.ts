@@ -36,6 +36,7 @@ export class FlightPlan extends BaseFlightPlan {
     clone(newIndex: number): FlightPlan {
         const newPlan = FlightPlan.empty(newIndex, this.bus);
 
+        newPlan.version = this.version;
         newPlan.originSegment = this.originSegment.clone(newPlan);
         newPlan.departureRunwayTransitionSegment = this.departureRunwayTransitionSegment.clone(newPlan);
         newPlan.departureSegment = this.departureSegment.clone(newPlan);

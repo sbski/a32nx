@@ -32,6 +32,10 @@ export class FlightPlanService {
         this.flightPlanManager.create(3);
     }
 
+    static get(index: number) {
+        return this.flightPlanManager.get(index);
+    }
+
     static has(index: number) {
         return this.flightPlanManager.has(index);
     }
@@ -308,6 +312,10 @@ export class FlightPlanService {
         // TODO maybe encapsulate this behaviour in BaseFlightPlan
         plan.redistributeLegsAt(targetLegIndex);
         const indexInEnrouteSegment = plan.enrouteSegment.allLegs.findIndex((it) => it === targetLeg);
+
+        if (indexInEnrouteSegment === -1) {
+            throw new Error('[FPM] Target leg of a direct to not found in enroute segment after leg redistribution!');
+        }
 
         plan.enrouteSegment.allLegs.splice(indexInEnrouteSegment, 0, { isDiscontinuity: true });
         plan.enrouteSegment.allLegs.splice(indexInEnrouteSegment + 1, 0, turningPoint);
