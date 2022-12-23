@@ -84,11 +84,7 @@ class CDUFlightPlanPage {
         }
 
         const waypointsAndMarkers = [];
-        const activeFirst = Math.max(0, mcdu.flightPlanService.active.activeLegIndex - 1);
-
-        // If we're still on the ground, force the active leg to be the first one even if we're close enough that the
-        // FPM is trying to advance to the next one.
-        const first = activeFirst;
+        const first = Math.max(0, mcdu.flightPlanService.activeOrTemporary.activeLegIndex - 1);
 
         // PWPs
         const fmsPseudoWaypoints = mcdu.guidanceController.currentPseudoWaypoints;
