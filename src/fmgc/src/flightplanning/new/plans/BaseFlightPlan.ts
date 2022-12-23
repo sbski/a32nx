@@ -51,7 +51,7 @@ export abstract class BaseFlightPlan {
         const subs = this.bus.getSubscriber<FlightPlanSyncEvents>();
 
         subs.on('flightPlan.setActiveLegIndex').handle((event) => {
-            if (!FlightPlanService.ignoreSync) {
+            if (!this.ignoreSync) {
                 if (event.planIndex !== this.index) {
                     return;
                 }
@@ -61,7 +61,7 @@ export abstract class BaseFlightPlan {
         });
 
         subs.on('flightPlan.setSegmentLegs').handle((event) => {
-            if (!FlightPlanService.ignoreSync) {
+            if (!this.ignoreSync) {
                 if (event.planIndex !== this.index) {
                     return;
                 }
@@ -80,7 +80,7 @@ export abstract class BaseFlightPlan {
         });
 
         subs.on('flightPlan.setFixInfoEntry').handle((event) => {
-            if (!FlightPlanService.ignoreSync) {
+            if (!this.ignoreSync) {
                 if (event.planIndex !== this.index) {
                     return;
                 }
@@ -158,9 +158,9 @@ export abstract class BaseFlightPlan {
     protected ignoreSync = false;
 
     sendEvent<K extends keyof FlightPlanSyncEvents>(topic: K, data: FlightPlanSyncEvents[K]) {
-        FlightPlanService.ignoreSync = true;
+        this.ignoreSync = true;
         this.syncPub.pub(topic, data, true, false);
-        FlightPlanService.ignoreSync = false;
+        this.ignoreSync = false;
     }
 
     syncSegmentLegsChange(segment: FlightPlanSegment) {

@@ -111,7 +111,7 @@ export class FlightPlanManager {
     copy(from: number, to: number, notify = true) {
         this.assertFlightPlanExists(from);
 
-        const newPlan = this.get(from).clone();
+        const newPlan = this.get(from).clone(to);
 
         this.set(to, newPlan);
 
