@@ -296,7 +296,7 @@ class CDUFlightPlanPage {
                 // TODO FIXME: actually use the correct prediction
                 if (fpIndex === fpm.getActiveWaypointIndex()) {
                     distance = stats.get(fpIndex).distanceFromPpos.toFixed(0);
-                } else {
+                } else if (wp.distanceFromLastLine > 0) {
                     distance = wp.distanceFromLastLine.toFixed(0);
                 }
                 if (distance > 9999) {
@@ -530,7 +530,7 @@ class CDUFlightPlanPage {
                     active: false,
                     ident: pwp.mcduIdent || pwp.ident,
                     color,
-                    distance: !shouldHidePredictions && pwp.distanceInFP ? Math.round(pwp.distanceInFP).toFixed(0) : "",
+                    distance: !shouldHidePredictions && pwp.distanceInFP > 0 ? Math.round(pwp.distanceInFP).toFixed(0) : "",
                     spdColor,
                     speedConstraint: speed,
                     altColor,
@@ -639,7 +639,7 @@ class CDUFlightPlanPage {
         let firstWp = scrollWindow.length;
         const scrollText = [];
         for (let rowI = 0; rowI < scrollWindow.length; rowI++) {
-            const { marker: cMarker, pwp: cPwp, holdResumeExit: cHold, speedConstraint: cSpd, altitudeConstraint: cAlt } = scrollWindow[rowI];
+            const { marker: cMarker, holdResumeExit: cHold, speedConstraint: cSpd, altitudeConstraint: cAlt, ident: cIdent } = scrollWindow[rowI];
             let spdRpt = false;
             let altRpt = false;
             let showFix = true;
@@ -650,7 +650,7 @@ class CDUFlightPlanPage {
                 const { color, immExit, resumeHold, holdSpeed, turnDirection } = scrollWindow[rowI];
                 scrollText[(rowI * 2)] = ['', `{amber}${immExit ? 'IMM\xa0\xa0' : ''}${resumeHold ? 'RESUME\xa0' : ''}{end}`, 'HOLD\xa0\xa0\xa0\xa0'];
                 scrollText[(rowI * 2) + 1] = [`{${color}}HOLD ${turnDirection}{end}`, `{amber}${immExit ? 'EXIT*' : ''}${resumeHold ? 'HOLD*' : ''}{end}`, `\xa0{${color}}{small}{white}SPD{end}\xa0${holdSpeed}{end}{end}`];
-            } else if (!cMarker && !cPwp) { // Waypoint
+            } else if (!cMarker) { // Waypoint
                 if (rowI > 0) {
                     const { marker: pMarker, pwp: pPwp, holdResumeExit: pHold, speedConstraint: pSpd, altitudeConstraint: pAlt} = scrollWindow[rowI - 1];
                     if (!pMarker && !pPwp && !pHold) {
@@ -667,10 +667,10 @@ class CDUFlightPlanPage {
                             cAlt.altPrefix === pAlt.altPrefix) {
                             altRpt = true;
                         }
-                    // If previous row is a marker, clear all headers
+                    // If previous row is a marker, clear all headers unless it's a speed limit
                     } else if (!pHold) {
                         showDist = false;
-                        showFix = false;
+                        showFix = cIdent === "(LIM)";
                     }
                 }
 
