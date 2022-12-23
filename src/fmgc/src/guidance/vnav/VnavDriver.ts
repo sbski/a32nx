@@ -593,7 +593,7 @@ export class VnavDriver implements GuidanceComponent {
         const { flightPhase, managedDescentSpeed, managedDescentSpeedMach, presentPosition, approachSpeed } = this.computationParametersObserver.get();
         const isExpediteModeActive = SimVar.GetSimVarValue('L:A32NX_FMA_EXPEDITE_MODE', 'number') === 1;
         const isHoldActive = this.guidanceController.isManualHoldActive() || this.guidanceController.isManualHoldNext();
-        const currentDistanceFromStart = this.constraintReader.distanceToPresentPosition;
+        const currentDistanceFromStart = this.isLatAutoControlActive() ? this.constraintReader.distanceToPresentPosition : 0;
         const currentAltitude = presentPosition.alt;
 
         // Speed guidance for holds is handled elsewhere for now, so we don't want to interfere here
@@ -606,7 +606,8 @@ export class VnavDriver implements GuidanceComponent {
 
         let newSpeedTarget = Math.min(managedDescentSpeed, this.previousManagedDescentSpeedTarget);
         if (this.isLatAutoControlActive()) {
-            const targetFromProfile = this.currentMcduSpeedProfile.getTarget(currentDistanceFromStart, currentAltitude, ManagedSpeedType.Descent);
+            // We get the managed target here because this function is only supposed to update the managed speed
+            const targetFromProfile = this.currentMcduSpeedProfile.getManagedTarget(currentDistanceFromStart, currentAltitude, ManagedSpeedType.Descent);
 
             newSpeedTarget = Math.min(newSpeedTarget, targetFromProfile);
         }

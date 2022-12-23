@@ -182,7 +182,8 @@ export class DescentGuidance {
             ? SimVar.GetSimVarValue('L:A32NX_SPEEDS_MANAGED_ATHR', 'knots')
             : Math.round(this.iasOrMach(SimVar.GetSimVarValue('L:A32NX_SPEEDS_MANAGED_PFD', 'knots'), managedDescentSpeedMach));
 
-        this.speedTarget = inManagedSpeed ? managedSpeedTarget : fcuSpeed;
+        const fcuSpeedIas = fcuSpeed < 1 ? SimVar.GetGameVarValue('FROM MACH TO KIAS', 'number', fcuSpeed) : fcuSpeed;
+        this.speedTarget = inManagedSpeed ? managedSpeedTarget : fcuSpeedIas;
     }
 
     private writeToSimVars() {

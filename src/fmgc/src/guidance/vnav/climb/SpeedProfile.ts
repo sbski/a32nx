@@ -140,7 +140,7 @@ export class McduSpeedProfile implements SpeedProfile {
         return managedSpeed;
     }
 
-    private getManagedTarget(distanceFromStart: NauticalMiles, altitude: Feet, managedSpeedType: ManagedSpeedType): Knots {
+    getManagedTarget(distanceFromStart: NauticalMiles, altitude: Feet, managedSpeedType: ManagedSpeedType): Knots {
         let managedSpeed = this.getManagedSpeedForType(managedSpeedType);
         const { climbSpeedLimit, descentSpeedLimit } = this.parameters.get();
 
