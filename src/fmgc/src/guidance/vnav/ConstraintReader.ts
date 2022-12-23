@@ -193,10 +193,6 @@ export class ConstraintReader {
             const waypoint = fpm.getWaypoint(i, FlightPlans.Active);
             const nextWaypoint = fpm.getWaypoint(i + 1, FlightPlans.Active);
 
-            if (!leg || leg.isNull) {
-                continue;
-            }
-
             if (waypoint.endsInDiscontinuity) {
                 const startingPointOfDisco = waypoint.discontinuityCanBeCleared
                     ? waypoint
@@ -206,6 +202,10 @@ export class ConstraintReader {
             }
 
             waypoint.additionalData.distanceToEnd = this.totalFlightPlanDistance;
+
+            if (!leg || leg.isNull) {
+                continue;
+            }
 
             const inboundTransition = transitions.get(i - 1);
             const outboundTransition = transitions.get(i);
