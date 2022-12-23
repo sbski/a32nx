@@ -583,9 +583,9 @@ class FMCMainDisplay extends BaseAirliners {
         this.navRadioManager.update(_deltaTime, this.manualNavTuning, this.backupNavTuning);
 
         // this.flightPlanManager.update(_deltaTime);
-        const flightPlanChanged = this.flightPlanService.version !== this.lastFlightPlanVersion;
+        const flightPlanChanged = this.flightPlanService.activeOrTemporary.version !== this.lastFlightPlanVersion;
         if (flightPlanChanged) {
-            this.lastFlightPlanVersion = this.flightPlanService.version;
+            this.lastFlightPlanVersion = this.flightPlanService.activeOrTemporary.version;
         }
 
         Fmgc.updateFmgcLoop(_deltaTime);
@@ -615,8 +615,7 @@ class FMCMainDisplay extends BaseAirliners {
         this.A32NXCore.update();
 
         if (flightPlanChanged) {
-            // replaced by bbk vnav
-            // this.updateManagedProfile();
+            this.updateManagedProfile();
             this.updateDestinationData();
         }
 
@@ -1343,37 +1342,38 @@ class FMCMainDisplay extends BaseAirliners {
                 }
             }
 
-            // TODO port constraints over
-            // if (this.isAltitudeManaged()) {
-            //     const prevWaypoint = this.flightPlanManager.getPreviousActiveWaypoint();
-            //     const nextWaypoint = this.flightPlanManager.getActiveWaypoint();
-            //
-            //     if (prevWaypoint && nextWaypoint) {
-            //         const activeWpIdx = this.flightPlanManager.getActiveWaypointIndex();
-            //
-            //         if (activeWpIdx !== this.activeWpIdx) {
-            //             this.activeWpIdx = activeWpIdx;
-            //             this.updateConstraints();
-            //         }
-            //         if (this.constraintAlt) {
-            //             Coherent.call("AP_ALT_VAR_SET_ENGLISH", 2, this.constraintAlt, this._forceNextAltitudeUpdate).catch(console.error);
-            //             this._forceNextAltitudeUpdate = false;
-            //         } else {
-            //             const altitude = Simplane.getAutoPilotSelectedAltitudeLockValue("feet");
-            //             if (isFinite(altitude)) {
-            //                 Coherent.call("AP_ALT_VAR_SET_ENGLISH", 2, altitude, this._forceNextAltitudeUpdate).catch(console.error);
-            //                 this._forceNextAltitudeUpdate = false;
-            //             }
-            //         }
-            //     } else {
-            //         const altitude = Simplane.getAutoPilotSelectedAltitudeLockValue("feet");
-            //         if (isFinite(altitude)) {
-            //             SimVar.SetSimVarValue("L:A32NX_FG_ALTITUDE_CONSTRAINT", "feet", 0);
-            //             Coherent.call("AP_ALT_VAR_SET_ENGLISH", 2, altitude, this._forceNextAltitudeUpdate).catch(console.error);
-            //             this._forceNextAltitudeUpdate = false;
-            //         }
-            //     }
-            // }
+            if (this.isAltitudeManaged()) {
+                const plan = this.flightPlanService.active;
+
+                const prevWaypoint = plan.elementAt(plan.activeLegIndex - 1);
+                const nextWaypoint = plan.elementAt(plan.activeLegIndex - 1);
+
+                if (prevWaypoint && nextWaypoint) {
+                    const activeWpIdx = plan.activeLegIndex;
+
+                    if (activeWpIdx !== this.activeWpIdx) {
+                        this.activeWpIdx = activeWpIdx;
+                        this.updateConstraints();
+                    }
+                    if (this.constraintAlt) {
+                        Coherent.call("AP_ALT_VAR_SET_ENGLISH", 2, this.constraintAlt, this._forceNextAltitudeUpdate).catch(console.error);
+                        this._forceNextAltitudeUpdate = false;
+                    } else {
+                        const altitude = Simplane.getAutoPilotSelectedAltitudeLockValue("feet");
+                        if (isFinite(altitude)) {
+                            Coherent.call("AP_ALT_VAR_SET_ENGLISH", 2, altitude, this._forceNextAltitudeUpdate).catch(console.error);
+                            this._forceNextAltitudeUpdate = false;
+                        }
+                    }
+                } else {
+                    const altitude = Simplane.getAutoPilotSelectedAltitudeLockValue("feet");
+                    if (isFinite(altitude)) {
+                        SimVar.SetSimVarValue("L:A32NX_FG_ALTITUDE_CONSTRAINT", "feet", 0);
+                        Coherent.call("AP_ALT_VAR_SET_ENGLISH", 2, altitude, this._forceNextAltitudeUpdate).catch(console.error);
+                        this._forceNextAltitudeUpdate = false;
+                    }
+                }
+            }
 
             if (Simplane.getAutoPilotAltitudeManaged() && this.flightPlanService.hasActive && SimVar.GetSimVarValue("L:A320_NEO_FCU_STATE", "number") !== 1) {
                 const currentWaypointIndex = this.flightPlanService.active.activeLegIndex;
@@ -1421,10 +1421,7 @@ class FMCMainDisplay extends BaseAirliners {
     }
 
     updateConstraints() {
-        // TODO
-        return;
-
-        const activeFpIndex = this.flightPlanManager.getActiveWaypointIndex();
+        const activeFpIndex = this.flightPlanService.activeLegIndex;
         const constraints = this.managedProfile.get(activeFpIndex);
         const fcuSelAlt = Simplane.getAutoPilotDisplayedAltitudeLockValue("feet");
 
@@ -1474,23 +1471,31 @@ class FMCMainDisplay extends BaseAirliners {
     updateManagedProfile() {
         this.managedProfile.clear();
 
-        const origin = this.flightPlanManager.getPersistentOrigin(FlightPlans.Active);
-        const originElevation = origin ? origin.infos.coordinates.alt : 0;
-        const destination = this.flightPlanManager.getDestination(FlightPlans.Active);
-        const destinationElevation = destination ? destination.infos.coordinates.alt : 0;
+        const plan = this.flightPlanService.active;
+
+        const origin = plan.originAirport;
+        const originElevation = origin ? origin.location.alt : 0;
+        const destination = plan.destinationAirport;
+        const destinationElevation = destination ? destination.location.alt : 0;
 
         // TODO should we save a constraint already propagated to the current leg?
 
         // propagate descent speed constraints forward
         let currentSpeedConstraint = Infinity;
         let previousSpeedConstraint = Infinity;
-        for (let index = 0; index < this.flightPlanManager.getWaypointsCount(FlightPlans.Active); index++) {
-            const wp = this.flightPlanManager.getWaypoint(index, FlightPlans.Active);
-            if (wp.additionalData.constraintType === 2 /* DES */) {
-                if (wp.speedConstraint > 0) {
-                    currentSpeedConstraint = Math.min(currentSpeedConstraint, Math.round(wp.speedConstraint));
+        for (let index = 0; index < plan.legCount; index++) {
+            const leg = plan.elementAt(index);
+
+            if (leg.isDiscontinuity === true) {
+                continue;
+            }
+
+            if (leg.segment.class === 2 /** DES */) {
+                if (leg.definition.speed > 0) {
+                    currentSpeedConstraint = Math.min(currentSpeedConstraint, Math.round(leg.definition.speed));
                 }
             }
+
             this.managedProfile.set(index, {
                 descentSpeed: currentSpeedConstraint,
                 previousDescentSpeed: previousSpeedConstraint,
@@ -1499,6 +1504,7 @@ class FMCMainDisplay extends BaseAirliners {
                 climbAltitude: Infinity,
                 descentAltitude: -Infinity,
             });
+
             previousSpeedConstraint = currentSpeedConstraint;
         }
 
@@ -1508,34 +1514,41 @@ class FMCMainDisplay extends BaseAirliners {
         previousSpeedConstraint = Infinity;
         let currentDesConstraint = -Infinity;
         let currentClbConstraint = Infinity;
-        for (let index = this.flightPlanManager.getWaypointsCount(FlightPlans.Active) - 1; index >= 0; index--) {
-            const wp = this.flightPlanManager.getWaypoint(index, FlightPlans.Active);
-            if (wp.additionalData.constraintType === 1 /* CLB */) {
-                if (wp.speedConstraint > 0) {
-                    currentSpeedConstraint = Math.min(currentSpeedConstraint, Math.round(wp.speedConstraint));
+        for (let index = plan.legCount - 1; index >= 0; index--) {
+            const leg = plan.elementAt(index);
+
+            if (leg.isDiscontinuity === true) {
+                continue;
+            }
+
+            if (leg.segment.class === 0 /** CLB */) {
+                if (leg.definition.speed > 0) {
+                    currentSpeedConstraint = Math.min(currentSpeedConstraint, Math.round(leg.definition.speed));
                 }
-                switch (wp.legAltitudeDescription) {
-                    case 1: // at alt 1
-                    case 3: // at or below alt 1
-                    case 4: // between alt 1 and alt 2
-                        currentClbConstraint = Math.min(currentClbConstraint, Math.round(wp.legAltitude1));
+
+                switch (leg.definition.altitudeDescriptor) {
+                    case "@": // at alt 1
+                    case "-": // at or below alt 1
+                    case "B": // between alt 1 and alt 2
+                        currentClbConstraint = Math.min(currentClbConstraint, Math.round(leg.definition.altitude1));
                         break;
                     default:
                     // not constraining
                 }
-            } else if (wp.additionalData.constraintType === 2 /* DES */) {
-                switch (wp.legAltitudeDescription) {
-                    case 1: // at alt 1
-                    case 2: // at or above alt 1
-                        currentDesConstraint = Math.max(currentDesConstraint, Math.round(wp.legAltitude1));
+            } else if (leg.segment.class === 2 /** DES */) {
+                switch (leg.definition.altitudeDescriptor) {
+                    case "@": // at alt 1
+                    case "-": // at or above alt 1
+                        currentDesConstraint = Math.max(currentDesConstraint, Math.round(leg.definition.altitude1));
                         break;
-                    case 4: // between alt 1 and alt 2
-                        currentDesConstraint = Math.max(currentDesConstraint, Math.round(wp.legAltitude2));
+                    case "B": // between alt 1 and alt 2
+                        currentDesConstraint = Math.max(currentDesConstraint, Math.round(leg.definition.altitude2));
                         break;
                     default:
                     // not constraining
                 }
             }
+
             const profilePoint = this.managedProfile.get(index);
             profilePoint.climbSpeed = currentSpeedConstraint;
             profilePoint.previousClimbSpeed = previousSpeedConstraint;
@@ -1543,31 +1556,32 @@ class FMCMainDisplay extends BaseAirliners {
             profilePoint.descentAltitude = Math.max(destinationElevation, currentDesConstraint);
             previousSpeedConstraint = currentSpeedConstraint;
 
+            // TODO to be replaced with bbk vnav
             // set some data for LNAV to use for coarse predictions while we lack vnav
-            if (wp.additionalData.constraintType === 1 /* CLB */) {
-                wp.additionalData.predictedSpeed = Math.min(profilePoint.climbSpeed, this.managedSpeedClimb);
-                if (this.climbSpeedLimitAlt && profilePoint.climbAltitude < this.climbSpeedLimitAlt) {
-                    wp.additionalData.predictedSpeed = Math.min(wp.additionalData.predictedSpeed, this.climbSpeedLimit);
-                }
-                wp.additionalData.predictedAltitude = Math.min(profilePoint.climbAltitude, this._cruiseFlightLevel * 100);
-            } else if (wp.additionalData.constraintType === 2 /* DES */) {
-                wp.additionalData.predictedSpeed = Math.min(profilePoint.descentSpeed, this.managedSpeedDescend);
-                if (this.descentSpeedLimitAlt && profilePoint.climbAltitude < this.descentSpeedLimitAlt) {
-                    wp.additionalData.predictedSpeed = Math.min(wp.additionalData.predictedSpeed, this.descentSpeedLimit);
-                }
-                wp.additionalData.predictedAltitude = Math.min(profilePoint.descentAltitude, this._cruiseFlightLevel * 100); ;
-            } else {
-                wp.additionalData.predictedSpeed = this.managedSpeedCruise;
-                wp.additionalData.predictedAltitude = this._cruiseFlightLevel * 100;
-            }
-            // small hack to ensure the terminal procedures and transitions to/from enroute look nice despite lack of altitude predictions
-            if (index <= this.flightPlanManager.getEnRouteWaypointsFirstIndex(FlightPlans.Active)) {
-                wp.additionalData.predictedAltitude = Math.min(originElevation + 10000, wp.additionalData.predictedAltitude);
-                wp.additionalData.predictedSpeed = Math.min(250, wp.additionalData.predictedSpeed);
-            } else if (index >= this.flightPlanManager.getEnRouteWaypointsLastIndex(FlightPlans.Active)) {
-                wp.additionalData.predictedAltitude = Math.min(destinationElevation + 10000, wp.additionalData.predictedAltitude);
-                wp.additionalData.predictedSpeed = Math.min(250, wp.additionalData.predictedSpeed);
-            }
+            // if (wp.additionalData.constraintType === 1 /* CLB */) {
+            //     wp.additionalData.predictedSpeed = Math.min(profilePoint.climbSpeed, this.managedSpeedClimb);
+            //     if (this.climbSpeedLimitAlt && profilePoint.climbAltitude < this.climbSpeedLimitAlt) {
+            //         wp.additionalData.predictedSpeed = Math.min(wp.additionalData.predictedSpeed, this.climbSpeedLimit);
+            //     }
+            //     wp.additionalData.predictedAltitude = Math.min(profilePoint.climbAltitude, this._cruiseFlightLevel * 100);
+            // } else if (wp.additionalData.constraintType === 2 /* DES */) {
+            //     wp.additionalData.predictedSpeed = Math.min(profilePoint.descentSpeed, this.managedSpeedDescend);
+            //     if (this.descentSpeedLimitAlt && profilePoint.climbAltitude < this.descentSpeedLimitAlt) {
+            //         wp.additionalData.predictedSpeed = Math.min(wp.additionalData.predictedSpeed, this.descentSpeedLimit);
+            //     }
+            //     wp.additionalData.predictedAltitude = Math.min(profilePoint.descentAltitude, this._cruiseFlightLevel * 100); ;
+            // } else {
+            //     wp.additionalData.predictedSpeed = this.managedSpeedCruise;
+            //     wp.additionalData.predictedAltitude = this._cruiseFlightLevel * 100;
+            // }
+            // // small hack to ensure the terminal procedures and transitions to/from enroute look nice despite lack of altitude predictions
+            // if (index <= this.flightPlanManager.getEnRouteWaypointsFirstIndex(FlightPlans.Active)) {
+            //     wp.additionalData.predictedAltitude = Math.min(originElevation + 10000, wp.additionalData.predictedAltitude);
+            //     wp.additionalData.predictedSpeed = Math.min(250, wp.additionalData.predictedSpeed);
+            // } else if (index >= this.flightPlanManager.getEnRouteWaypointsLastIndex(FlightPlans.Active)) {
+            //     wp.additionalData.predictedAltitude = Math.min(destinationElevation + 10000, wp.additionalData.predictedAltitude);
+            //     wp.additionalData.predictedSpeed = Math.min(250, wp.additionalData.predictedSpeed);
+            // }
         }
     }
 
@@ -1576,16 +1590,20 @@ class FMCMainDisplay extends BaseAirliners {
         let latitude;
         let longitude;
 
-        /** @type {OneWayRunway} */
-        const runway = this.flightPlanManager.getDestinationRunway(FlightPlans.Active);
+        /** @type {import('msfs-navdata').Runway} */
+        const runway = this.flightPlanService.active.destinationRunway;
+
         if (runway) {
-            landingElevation = A32NX_Util.meterToFeet(runway.thresholdElevation);
+            landingElevation = runway.thresholdLocation.alt;
             latitude = runway.thresholdCoordinates.lat;
             longitude = runway.thresholdCoordinates.long;
         } else {
-            const airport = this.flightPlanManager.getDestination(FlightPlans.Active);
+            /** @type {import('msfs-navdata').Airport} */
+            const airport = this.flightPlanService.active.destinationAirport;
+
             if (airport) {
-                const ele = await this.facilityLoader.GetAirportFieldElevation(airport.icao);
+                const ele = airport.location.alt;
+
                 landingElevation = isFinite(ele) ? ele : undefined;
                 latitude = airport.GetInfos().coordinates.lat;
                 longitude = airport.GetInfos().coordinates.long;
