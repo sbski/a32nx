@@ -13,8 +13,6 @@ import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanS
  * An alternate flight plan shares its origin with the destination of a regular flight plan
  */
 export class AlternateFlightPlan extends BaseFlightPlan {
-    isAlternateFlightPlan = true;
-
     constructor(
         index: number,
         private mainFlightPlan: BaseFlightPlan,
