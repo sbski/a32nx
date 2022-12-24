@@ -44,8 +44,9 @@ const ArrivalPagination = Object.freeze(
     }
 );
 class CDUAvailableArrivalsPage {
-    static ShowPage(mcdu, airport, pageCurrent = 0, starSelection = false) {
-        const targetPlan = mcdu.flightPlanService.activeOrTemporary;
+    static ShowPage(mcdu, airport, pageCurrent = 0, starSelection = false, forPlan = Fmgc.FlightPlanIndex.Active) {
+        const isForActiveOrTemporary = forPlan === Fmgc.FlightPlanIndex.Active;
+        const targetPlan = isForActiveOrTemporary ? mcdu.flightPlanService.activeOrTemporary : mcdu.flightPlanService.get(forPlan);
         const isTemporary = mcdu.flightPlanService.hasTemporary;
 
         const selectedStarIdent = targetPlan.arrival ? targetPlan.arrival.ident : undefined;
@@ -133,9 +134,9 @@ class CDUAvailableArrivalsPage {
                     mcdu.onLeftInput[i + 2] = async () => {
                         // TODO we need to set the runway, but cannot correlate runway from approach yet
 
-                        await mcdu.flightPlanService.setApproach(approach.ident);
+                        await mcdu.flightPlanService.setApproach(approach.ident, forPlan);
 
-                        CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true);
+                        CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true, forPlan);
                     };
                 }
             }
@@ -179,9 +180,9 @@ class CDUAvailableArrivalsPage {
                     rows[2 * i] = ["{NO STAR[color]" + color];
 
                     mcdu.onLeftInput[i + 2] = async () => {
-                        await mcdu.flightPlanService.setArrival(undefined);
+                        await mcdu.flightPlanService.setArrival(undefined, forPlan);
 
-                        CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true);
+                        CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true, forPlan);
                     };
                 } else {
                     index--;
@@ -202,17 +203,17 @@ class CDUAvailableArrivalsPage {
                             }) : undefined;
 
                             if (arrivalRunway !== undefined) {
-                                await mcdu.flightPlanService.setDestinationRunway(arrivalRunway.ident);
+                                await mcdu.flightPlanService.setDestinationRunway(arrivalRunway.ident, forPlan);
                             }
 
-                            await mcdu.flightPlanService.setArrival(starIdent);
+                            await mcdu.flightPlanService.setArrival(starIdent, forPlan);
 
                             const approachIdent = targetPlan.approach.ident;
 
                             if (approachIdent !== undefined) {
-                                CDUAvailableArrivalsPage.ShowViasPage(mcdu, airport);
+                                CDUAvailableArrivalsPage.ShowViasPage(mcdu, airport, 0, forPlan);
                             } else {
-                                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true);
+                                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true, forPlan);
                             }
 
                         };
@@ -224,9 +225,9 @@ class CDUAvailableArrivalsPage {
             }
 
             mcdu.onRightInput[2] = async () => {
-                await mcdu.flightPlanService.setArrival(undefined);
+                await mcdu.flightPlanService.setArrival(undefined, forPlan);
 
-                CDUAvailableArrivalsPage.ShowPage(mcdu, airport);
+                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, false, forPlan);
             };
 
             for (let i = 0; i < ArrivalPagination.TRNS_PAGE; i++) {
@@ -237,9 +238,9 @@ class CDUAvailableArrivalsPage {
                         rows[2 * (i + 1)][1] = `${transition.ident}${selectedTransitionIdent === transition.ident ? " " : "}"}[color]cyan`;
 
                         mcdu.onRightInput[i + 3] = async () => {
-                            await mcdu.flightPlanService.setArrivalEnrouteTransition(transition.ident);
+                            await mcdu.flightPlanService.setArrivalEnrouteTransition(transition.ident, forPlan);
 
-                            CDUAvailableArrivalsPage.ShowPage(mcdu, airport, pageCurrent, true);
+                            CDUAvailableArrivalsPage.ShowPage(mcdu, airport, pageCurrent, true, forPlan);
                         };
                     }
                 }
@@ -252,7 +253,7 @@ class CDUAvailableArrivalsPage {
                 viasPageLabel = "{sp}APPR";
                 viasPageLine = "<VIAS";
                 mcdu.onLeftInput[1] = () => {
-                    CDUAvailableArrivalsPage.ShowViasPage(mcdu, airport, 0);
+                    CDUAvailableArrivalsPage.ShowViasPage(mcdu, airport, 0, forPlan);
                 };
             }
         }
@@ -261,7 +262,7 @@ class CDUAvailableArrivalsPage {
             bottomLine = ["{ERASE[color]amber", "INSERT*[color]amber"];
             mcdu.onLeftInput[5] = async () => {
                 mcdu.eraseTemporaryFlightPlan(() => {
-                    CDUFlightPlanPage.ShowPage(mcdu);
+                    CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
                 });
             };
             mcdu.onRightInput[5] = async () => {
@@ -269,12 +270,12 @@ class CDUAvailableArrivalsPage {
                     mcdu.updateTowerHeadwind();
                     mcdu.updateConstraints();
                     CDUPerformancePage.UpdateThrRedAccFromDestination(mcdu);
-                    CDUFlightPlanPage.ShowPage(mcdu);
+                    CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
                 });
             };
         } else {
             mcdu.onLeftInput[5] = () => {
-                CDUFlightPlanPage.ShowPage(mcdu);
+                CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
             };
         }
         let up = false;
@@ -286,7 +287,7 @@ class CDUAvailableArrivalsPage {
                 if (pageCurrent < 0) {
                     pageCurrent = 0;
                 }
-                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, pageCurrent, starSelection);
+                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, pageCurrent, starSelection, forPlan);
             };
             up = true;
         }
@@ -296,7 +297,7 @@ class CDUAvailableArrivalsPage {
                 if (pageCurrent < 0) {
                     pageCurrent = 0;
                 }
-                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, pageCurrent, starSelection);
+                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, pageCurrent, starSelection, forPlan);
             };
             down = true;
         }
@@ -317,15 +318,16 @@ class CDUAvailableArrivalsPage {
             bottomLine
         ]);
         mcdu.onPrevPage = () => {
-            CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, !starSelection);
+            CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, !starSelection, forPlan);
         };
         mcdu.onNextPage = mcdu.onPrevPage;
     }
 
-    static ShowViasPage(mcdu, airport, pageCurrent = 0) {
+    static ShowViasPage(mcdu, airport, pageCurrent = 0, forPlan = Fmgc.FlightPlanIndex.Active) {
         const appr_page = 3;
 
-        const targetPlan = mcdu.flightPlanService.activeOrTemporary;
+        const isForActiveOrTemporary = forPlan === Fmgc.FlightPlanIndex.Active;
+        const targetPlan = isForActiveOrTemporary ? mcdu.flightPlanService.activeOrTemporary : mcdu.flightPlanService.get(forPlan);
         const planColor = mcdu.flightPlanService.hasTemporary ? "yellow" : "green";
 
         const availableApproachVias = targetPlan.availableApproachVias;
@@ -370,9 +372,9 @@ class CDUAvailableArrivalsPage {
                 rows[2 * i + 1][0] = `${via.ident === (selectedApproachVia ? selectedApproachVia.ident : undefined) ? " " : "{"}${via.ident}[color]cyan`;
 
                 mcdu.onLeftInput[i + 2] = async () => {
-                    await mcdu.flightPlanService.setApproachVia(via.ident);
+                    await mcdu.flightPlanService.setApproachVia(via.ident, forPlan);
 
-                    CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true);
+                    CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true, forPlan);
                 };
             }
         }
@@ -384,7 +386,7 @@ class CDUAvailableArrivalsPage {
 
             mcdu.onLeftInput[5] = async () => {
                 mcdu.eraseTemporaryFlightPlan(() => {
-                    CDUFlightPlanPage.ShowPage(mcdu);
+                    CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
                 });
             };
 
@@ -393,12 +395,12 @@ class CDUAvailableArrivalsPage {
                     mcdu.updateTowerHeadwind();
                     mcdu.updateConstraints();
                     CDUPerformancePage.UpdateThrRedAccFromDestination(mcdu);
-                    CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true);
+                    CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true, forPlan);
                 });
             };
         } else {
             mcdu.onLeftInput[5] = () => {
-                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true);
+                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true, forPlan);
             };
         }
 
@@ -419,7 +421,7 @@ class CDUAvailableArrivalsPage {
         ]);
         mcdu.onLeftInput[1] = () => {
             mcdu.setApproachTransitionIndex(-1, () => {
-                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true);
+                CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true, forPlan);
             });
         };
         let up = false;
@@ -431,7 +433,7 @@ class CDUAvailableArrivalsPage {
                 if (pageCurrent < 0) {
                     pageCurrent = 0;
                 }
-                CDUAvailableArrivalsPage.ShowViasPage(mcdu, airport, pageCurrent);
+                CDUAvailableArrivalsPage.ShowViasPage(mcdu, airport, pageCurrent, forPlan);
             };
             up = true;
         }
@@ -441,13 +443,13 @@ class CDUAvailableArrivalsPage {
                 if (pageCurrent < 0) {
                     pageCurrent = 0;
                 }
-                CDUAvailableArrivalsPage.ShowViasPage(mcdu, airport, pageCurrent);
+                CDUAvailableArrivalsPage.ShowViasPage(mcdu, airport, pageCurrent, forPlan);
             };
             down = true;
         }
         mcdu.setArrows(up, down, true, true);
         mcdu.onPrevPage = () => {
-            CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true);
+            CDUAvailableArrivalsPage.ShowPage(mcdu, airport, 0, true, forPlan);
         };
         mcdu.onNextPage = mcdu.onPrevPage;
     }

@@ -9,6 +9,7 @@ import { FixInfoEntry } from '@fmgc/flightplanning/new/plans/FixInfo';
 
 export interface FlightPlanSyncEvent {
     planIndex: number,
+    forAlternate: boolean,
 }
 
 export interface FlightPlanManagerEvent extends FlightPlanSyncEvent {

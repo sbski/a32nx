@@ -16,7 +16,7 @@ export class OriginSegment extends FlightPlanSegment {
 
     allLegs: FlightPlanElement[] = []
 
-    private airport: Airport;
+    protected airport: Airport;
 
     public runway?: Runway;
 

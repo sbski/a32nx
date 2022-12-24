@@ -2696,7 +2696,7 @@ class FMCMainDisplay extends BaseAirliners {
         this._getOrSelectWaypoints(this.navigationDatabase.searchFix.bind(this.navigationDatabase), ident, callback);
     }
 
-    insertWaypoint(newWaypointTo, index, callback = EmptyCallback.Boolean, immediately) {
+    insertWaypoint(newWaypointTo, fpIndex, index, callback = EmptyCallback.Boolean, immediately) {
         if (newWaypointTo === "" || newWaypointTo === FMCMainDisplay.clrValue) {
             return callback(false);
         }
@@ -2710,16 +2710,16 @@ class FMCMainDisplay extends BaseAirliners {
                         return callback(false);
                     }
                     if (immediately) {
-                        if (this.flightPlanService.hasTemporary) {
+                        if (fpIndex === Fmgc.FlightPlanIndex.Active && this.flightPlanService.hasTemporary) {
                             this.setScratchpadMessage(NXSystemMessages.notAllowed);
                             return callback(false);
                         }
 
-                        this.flightPlanService.nextWaypoint(index, waypoint);
+                        this.flightPlanService.nextWaypoint(index, waypoint, fpIndex);
 
                         return callback(true);
                     } else {
-                        this.flightPlanService.nextWaypoint(index, waypoint);
+                        this.flightPlanService.nextWaypoint(index, waypoint, fpIndex);
 
                         return callback(true);
                         // this.ensureCurrentFlightPlanIsTemporary(async () => {

@@ -48,16 +48,20 @@ export class GuidanceController {
         return this.getGeometryForFlightPlan(FlightPlanIndex.FirstSecondary);
     }
 
-    hasGeometryForFlightPlan(index: number) {
-        return this.flightPlanGeometries.has(index);
+    hasGeometryForFlightPlan(index: number, alternate = false) {
+        const finalIndex = (alternate ? 100 : 0) + index;
+
+        return this.flightPlanGeometries.has(finalIndex);
     }
 
-    getGeometryForFlightPlan(index: number) {
-        if (!this.hasGeometryForFlightPlan(index)) {
+    getGeometryForFlightPlan(index: number, alternate = false) {
+        const finalIndex = (alternate ? 100 : 0) + index;
+
+        if (!this.hasGeometryForFlightPlan(finalIndex)) {
             // throw new Error(`[GuidanceController] No geometry present for flight plan #${index}`);
         }
 
-        return this.flightPlanGeometries.get(index);
+        return this.flightPlanGeometries.get(finalIndex);
     }
 
     get activeLegIndex(): number {
@@ -121,21 +125,31 @@ export class GuidanceController {
 
         // PLAN mode center
 
-        const focusedWpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT', 'number');
+        const focusedWpFpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_FP_INDEX', 'number');
+        const focusedWpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_INDEX', 'number');
 
-        // FIXME plans other than active primary
-        if (!FlightPlanService.active.hasElement(focusedWpIndex)) {
+        if (!FlightPlanService.has(focusedWpFpIndex)) {
             return;
         }
 
-        const matchingLeg = FlightPlanService.active.elementAt(focusedWpIndex);
+        const plan = FlightPlanService.get(focusedWpFpIndex);
+
+        if (!plan.hasElement(focusedWpIndex)) {
+            return;
+        }
+
+        const matchingLeg = plan.elementAt(focusedWpIndex);
 
         if (!matchingLeg || matchingLeg.isDiscontinuity === true || !matchingLeg.isXF()) {
             return;
         }
 
+        if (!this.hasGeometryForFlightPlan(focusedWpFpIndex)) {
+            return;
+        }
+
         // FIXME HAX
-        const matchingGeometryLeg = this.activeGeometry.legs.get(focusedWpIndex);
+        const matchingGeometryLeg = this.getGeometryForFlightPlan(focusedWpFpIndex).legs.get(focusedWpIndex);
 
         if (!matchingGeometryLeg) {
             // throw new Error('[FMS/MRP] Could not find matching geometry leg');
@@ -267,16 +281,20 @@ export class GuidanceController {
         this.updateEfisState('R', this.rightEfisState);
 
         try {
-            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Active);
-            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Temporary);
-            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.FirstSecondary);
+            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Active, false);
+            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Active, true);
+            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Temporary, false);
+            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.FirstSecondary, false);
+            this.tryUpdateFlightPlanGeometry(FlightPlanIndex.FirstSecondary, true);
 
             if (this.geometryRecomputationTimer > GEOMETRY_RECOMPUTATION_TIMER) {
                 this.geometryRecomputationTimer = 0;
 
-                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Active, true);
-                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Temporary, true);
-                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.FirstSecondary, true);
+                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Active, false, true);
+                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Active, true, true);
+                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.Temporary, false, true);
+                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.FirstSecondary, false, true);
+                this.tryUpdateFlightPlanGeometry(FlightPlanIndex.FirstSecondary, true, true);
             }
 
             this.updateEfisIdent();
@@ -335,15 +353,17 @@ export class GuidanceController {
         }
     }
 
-    tryUpdateFlightPlanGeometry(flightPlanIndex: number, force = false) {
+    tryUpdateFlightPlanGeometry(flightPlanIndex: number, alternate = false, force = false) {
+        const geometryPIndex = (alternate ? 100 : 0) + flightPlanIndex;
+
         const lastVersion = this.lastFlightPlanVersions.get(flightPlanIndex);
 
         if (!FlightPlanService.has(flightPlanIndex)) {
-            this.flightPlanGeometries.delete(flightPlanIndex);
+            this.flightPlanGeometries.delete(geometryPIndex);
             return;
         }
 
-        const plan = FlightPlanService.get(flightPlanIndex);
+        const plan = alternate ? FlightPlanService.get(flightPlanIndex).alternateFlightPlan : FlightPlanService.get(flightPlanIndex);
 
         const currentVersion = plan.version;
 
@@ -353,18 +373,18 @@ export class GuidanceController {
 
         this.lastFlightPlanVersions.set(flightPlanIndex, currentVersion);
 
-        const geometry = this.flightPlanGeometries.get(flightPlanIndex);
+        const geometry = this.flightPlanGeometries.get(geometryPIndex);
 
         if (geometry) {
-            GeometryFactory.updateFromFlightPlan(geometry, plan, flightPlanIndex < FlightPlanIndex.FirstSecondary);
+            GeometryFactory.updateFromFlightPlan(geometry, plan, !alternate && flightPlanIndex < FlightPlanIndex.FirstSecondary);
 
             this.recomputeGeometry(geometry, FlightPlanService.active);
         } else {
-            const newGeometry = GeometryFactory.createFromFlightPlan(plan, flightPlanIndex < FlightPlanIndex.FirstSecondary);
+            const newGeometry = GeometryFactory.createFromFlightPlan(plan, !alternate && flightPlanIndex < FlightPlanIndex.FirstSecondary);
 
             this.recomputeGeometry(newGeometry, FlightPlanService.active);
 
-            this.flightPlanGeometries.set(flightPlanIndex, newGeometry);
+            this.flightPlanGeometries.set(geometryPIndex, newGeometry);
         }
     }
 

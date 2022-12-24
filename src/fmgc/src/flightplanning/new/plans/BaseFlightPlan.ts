@@ -34,7 +34,7 @@ import { procedureLegIdentAndAnnotation } from '@fmgc/flightplanning/new/legs/Fl
 import { FlightPlanSyncEvents } from '@fmgc/flightplanning/new/sync/FlightPlanSyncEvents';
 import { EventBus, Publisher } from 'msfssdk';
 import { FlightPlan } from '@fmgc/flightplanning/new/plans/FlightPlan';
-import { FlightPlanService } from '@fmgc/flightplanning/new/FlightPlanService';
+import { AlternateFlightPlan } from '@fmgc/flightplanning/new/plans/AlternateFlightPlan';
 
 export enum FlightPlanQueuedOperation {
     Restring,
@@ -50,9 +50,11 @@ export abstract class BaseFlightPlan {
 
         const subs = this.bus.getSubscriber<FlightPlanSyncEvents>();
 
+        const isAlternatePlan = this instanceof AlternateFlightPlan;
+
         subs.on('flightPlan.setActiveLegIndex').handle((event) => {
             if (!this.ignoreSync) {
-                if (event.planIndex !== this.index) {
+                if (event.planIndex !== this.index || isAlternatePlan !== event.forAlternate) {
                     return;
                 }
 
@@ -62,7 +64,7 @@ export abstract class BaseFlightPlan {
 
         subs.on('flightPlan.setSegmentLegs').handle((event) => {
             if (!this.ignoreSync) {
-                if (event.planIndex !== this.index) {
+                if (event.planIndex !== this.index || isAlternatePlan !== event.forAlternate) {
                     return;
                 }
 
@@ -81,7 +83,7 @@ export abstract class BaseFlightPlan {
 
         subs.on('flightPlan.setFixInfoEntry').handle((event) => {
             if (!this.ignoreSync) {
-                if (event.planIndex !== this.index) {
+                if (event.planIndex !== this.index || isAlternatePlan !== event.forAlternate) {
                     return;
                 }
 
@@ -113,7 +115,7 @@ export abstract class BaseFlightPlan {
     sequence() {
         this.activeLegIndex++;
 
-        this.sendEvent('flightPlan.setActiveLegIndex', { planIndex: this.index, activeLegIndex: this.activeLegIndex });
+        this.sendEvent('flightPlan.setActiveLegIndex', { planIndex: this.index, forAlternate: false, activeLegIndex: this.activeLegIndex });
     }
 
     version = 0;
@@ -168,7 +170,7 @@ export abstract class BaseFlightPlan {
 
         const legs = segment.allLegs.map((it) => (it.isDiscontinuity === false ? it.serialize() : it));
 
-        this.sendEvent('flightPlan.setSegmentLegs', { planIndex: this.index, segmentIndex, legs });
+        this.sendEvent('flightPlan.setSegmentLegs', { planIndex: this.index, forAlternate: false, segmentIndex, legs });
     }
 
     originSegment = new OriginSegment(this);
@@ -430,6 +432,10 @@ export abstract class BaseFlightPlan {
         this.enrouteSegment.allLegs.length = 0;
         await this.arrivalSegment.setArrivalProcedure(undefined);
         await this.approachSegment.setApproachProcedure(undefined);
+
+        if (this instanceof FlightPlan) {
+            this.performanceData.databaseTransitionAltitude.set(this.originAirport.transitionAltitude);
+        }
 
         await this.flushOperationQueue();
         this.incrementVersion();
@@ -983,6 +989,10 @@ export abstract class BaseFlightPlan {
         for (const segment of this.orderedSegments) {
             for (let j = 0; j < segment.allLegs.length; j++) {
                 i = a + j;
+
+                if (i < this.activeLegIndex) {
+                    continue;
+                }
 
                 const leg = segment.allLegs[j];
 

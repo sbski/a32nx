@@ -18,6 +18,7 @@ import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
 import { FlightPlan } from '@fmgc/flightplanning/new/plans/FlightPlan';
 import { FlightPlanIndex } from '@fmgc/flightplanning/new/FlightPlanManager';
+import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 import { RunwaySurface, VorType } from '../types/fstypes/FSEnums';
 import { NearbyFacilities } from './NearbyFacilities';
 
@@ -103,16 +104,23 @@ export class EfisSymbols {
         }
 
         // FIXME map reference point should be per side
-        const planCentreIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT', 'number');
+        const planCentreFpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_FP_INDEX', 'number');
+        const planCentreIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_INDEX', 'number');
 
-        if (!FlightPlanService.active.hasElement(planCentreIndex)) {
+        if (!FlightPlanService.has(planCentreFpIndex)) {
             return;
         }
 
-        let planCentre = FlightPlanService.active.elementAt(planCentreIndex);
+        const plan = FlightPlanService.get(planCentreFpIndex);
+
+        if (!plan.hasElement(planCentreIndex)) {
+            return;
+        }
+
+        let planCentre = plan.elementAt(planCentreIndex);
 
         if (planCentre?.isDiscontinuity === true) {
-            planCentre = FlightPlanService.active.elementAt(Math.max(0, (planCentreIndex - 1)));
+            planCentre = plan.elementAt(Math.max(0, (planCentreIndex - 1)));
         }
 
         if (planCentre?.isDiscontinuity === true) {
@@ -301,6 +309,7 @@ export class EfisSymbols {
 
             if (FlightPlanService.hasActive) {
                 const symbols = this.getFlightPlanSymbols(
+                    true,
                     FlightPlanService.active,
                     this.guidanceController.activeGeometry,
                     range,
@@ -313,10 +322,28 @@ export class EfisSymbols {
                 for (const symbol of symbols) {
                     upsertSymbol(symbol);
                 }
+
+                if (FlightPlanService.active.alternateFlightPlan.legCount > 0) {
+                    const symbols = this.getFlightPlanSymbols(
+                        true,
+                        FlightPlanService.active.alternateFlightPlan,
+                        this.guidanceController.getGeometryForFlightPlan(FlightPlanIndex.Active, true),
+                        range,
+                        efisOption,
+                        () => true,
+                        formatConstraintAlt,
+                        formatConstraintSpeed,
+                    );
+
+                    for (const symbol of symbols) {
+                        upsertSymbol(symbol);
+                    }
+                }
             }
 
             if (FlightPlanService.hasTemporary) {
                 const symbols = this.getFlightPlanSymbols(
+                    true,
                     FlightPlanService.temporary,
                     this.guidanceController.temporaryGeometry,
                     range,
@@ -333,6 +360,7 @@ export class EfisSymbols {
 
             if (FlightPlanService.hasSecondary(1)) {
                 const symbols = this.getFlightPlanSymbols(
+                    false,
                     FlightPlanService.secondary(1),
                     this.guidanceController.secondaryGeometry,
                     range,
@@ -350,6 +378,8 @@ export class EfisSymbols {
             const airports: [Airport, Runway][] = [
                 [FlightPlanService.active.originAirport, FlightPlanService.active.originRunway],
                 [FlightPlanService.active.destinationAirport, FlightPlanService.active.destinationRunway],
+                [FlightPlanService.secondary(1).originAirport, FlightPlanService.secondary(1).originRunway],
+                [FlightPlanService.secondary(1).destinationAirport, FlightPlanService.secondary(1).destinationRunway],
             ];
 
             for (const [airport, runway] of airports) {
@@ -408,7 +438,8 @@ export class EfisSymbols {
     }
 
     private getFlightPlanSymbols(
-        flightPlan: FlightPlan,
+        activeOrTemporary: boolean,
+        flightPlan: BaseFlightPlan,
         geometry: Geometry,
         range: NauticalMiles,
         efisOption: EfisOption,
@@ -416,6 +447,12 @@ export class EfisSymbols {
         formatConstraintAlt: (alt: number, descent: boolean, prefix?: string) => string,
         formatConstraintSpeed: (speed: number, prefix?: string) => string,
     ): NdSymbol[] {
+        const planCentreFpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_FP_INDEX', 'number');
+        const planCentreIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_INDEX', 'number');
+
+        const correctPlanOnMcdu = activeOrTemporary ? planCentreFpIndex === FlightPlanIndex.Active : planCentreFpIndex === flightPlan.index;
+        const transmitMissed = correctPlanOnMcdu && flightPlan.firstMissedApproachLeg - planCentreIndex < 4;
+
         const ret: NdSymbol[] = [];
 
         // FP legs
@@ -447,12 +484,14 @@ export class EfisSymbols {
             if (geometryLeg) {
                 const terminationWaypoint = geometryLeg.terminationWaypoint;
 
-                if ('lat' in terminationWaypoint) {
-                    location = terminationWaypoint;
-                    databaseId = `X${Math.round(Math.random() * 1_000).toString().padStart(6, '0')}${leg.ident.substring(0, 5)}`;
-                } else {
-                    location = terminationWaypoint.location;
-                    databaseId = terminationWaypoint.databaseId;
+                if (terminationWaypoint) {
+                    if ('lat' in terminationWaypoint) {
+                        location = terminationWaypoint;
+                        databaseId = `X${Math.round(Math.random() * 1_000).toString().padStart(6, '0')}${leg.ident.substring(0, 5)}`;
+                    } else {
+                        location = terminationWaypoint.location;
+                        databaseId = terminationWaypoint.databaseId;
+                    }
                 }
             }
 
@@ -489,8 +528,8 @@ export class EfisSymbols {
                 direction = leg.definition.magneticCourse; // TODO true
             }
 
-            if (i >= flightPlan.firstMissedApproachLeg) {
-                type |= NdSymbolTypeFlags.MissedApproach;
+            if (i >= flightPlan.firstMissedApproachLeg && !transmitMissed) {
+                continue;
             }
 
             if (leg.definition.altitudeDescriptor > 0 && leg.definition.altitudeDescriptor < 6) {
@@ -534,22 +573,24 @@ export class EfisSymbols {
             });
         }
 
-        // FP fix info
-        for (let i = 0; i < 4; i++) {
-            const fixInfo = flightPlan.fixInfos[i];
+        if (flightPlan instanceof FlightPlan) {
+            // FP fix info
+            for (let i = 0; i < 4; i++) {
+                const fixInfo = flightPlan.fixInfos[i];
 
-            if (!fixInfo) {
-                continue;
+                if (!fixInfo) {
+                    continue;
+                }
+
+                ret.push({
+                    databaseId: fixInfo.fix.databaseId,
+                    ident: fixInfo.fix.ident,
+                    location: fixInfo.fix.location,
+                    type: NdSymbolTypeFlags.FixInfo,
+                    radials: fixInfo.radials.map((it) => it.trueBearing),
+                    radii: fixInfo.radii.map((it) => it.radius),
+                });
             }
-
-            ret.push({
-                databaseId: fixInfo.fix.databaseId,
-                ident: fixInfo.fix.ident,
-                location: fixInfo.fix.location,
-                type: NdSymbolTypeFlags.FixInfo,
-                radials: fixInfo.radials.map((it) => it.trueBearing),
-                radii: fixInfo.radii.map((it) => it.radius),
-            });
         }
 
         return ret;

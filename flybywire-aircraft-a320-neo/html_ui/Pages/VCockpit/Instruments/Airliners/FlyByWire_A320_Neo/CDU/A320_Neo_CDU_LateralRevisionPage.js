@@ -6,7 +6,7 @@ class CDULateralRevisionPage {
      * @param waypointIndexFP
      * @constructor
      */
-    static ShowPage(mcdu, waypoint, waypointIndexFP) {
+    static ShowPage(mcdu, waypoint, waypointIndexFP, forPlan = Fmgc.FlightPlanIndex.Active, inAlternate = false) {
         mcdu.clearDisplay();
         mcdu.page.Current = mcdu.page.LateralRevisionPage;
 
@@ -17,12 +17,21 @@ class CDULateralRevisionPage {
         //     const long = CDUInitPage.ConvertDDToDMS(waypoint.infos.coordinates['long'], true);
         //     coordinates = `${lat.deg}°${lat.min}.${Math.ceil(Number(lat.sec / 100))}${lat.dir}/${long.deg}°${long.min}.${Math.ceil(Number(long.sec / 100))}${long.dir}[color]green`;
         // }
-        const activeOrTemporaryPlan = mcdu.flightPlanService.activeOrTemporary;
+        let targetPlan;
+        if (forPlan === Fmgc.FlightPlanIndex.Active) {
+            if (inAlternate) {
+                targetPlan = mcdu.flightPlanService.activeOrTemporary.alternateFlightPlan;
+            } else {
+                targetPlan = mcdu.flightPlanService.activeOrTemporary;
+            }
+        } else {
+            targetPlan = mcdu.flightPlanService.get(forPlan);
+        }
 
-        const isPpos = waypoint === undefined || waypointIndexFP === 0 && waypoint !== activeOrTemporaryPlan.originLeg;
-        const isFrom = waypointIndexFP === activeOrTemporaryPlan.activeWaypointIndex - 1;
-        const isDeparture = waypointIndexFP === activeOrTemporaryPlan.originLegIndex && !isPpos; // TODO this is bogus... compare icaos
-        const isDestination = waypointIndexFP === activeOrTemporaryPlan.destinationLegIndex && !isPpos; // TODO this is bogus... compare icaos
+        const isPpos = waypoint === undefined || waypointIndexFP === 0 && waypoint !== targetPlan.originLeg;
+        const isFrom = waypointIndexFP === targetPlan.activeLegIndex - 1;
+        const isDeparture = waypointIndexFP === targetPlan.originLegIndex && !isPpos; // TODO this is bogus... compare icaos
+        const isDestination = waypointIndexFP === targetPlan.destinationLegIndex && !isPpos; // TODO this is bogus... compare icaos
         const isWaypoint = !isDeparture && !isDestination && !isPpos;
 
         let waypointIdent = isPpos ? "PPOS" : '---';
@@ -38,7 +47,7 @@ class CDULateralRevisionPage {
                 return mcdu.getDelaySwitchPage();
             };
             mcdu.onLeftInput[0] = () => {
-                CDUAvailableDeparturesPage.ShowPage(mcdu, activeOrTemporaryPlan.originAirport);
+                CDUAvailableDeparturesPage.ShowPage(mcdu, targetPlan.originAirport, -1, false, forPlan, inAlternate);
             };
         }
 
@@ -49,7 +58,7 @@ class CDULateralRevisionPage {
                 return mcdu.getDelaySwitchPage();
             };
             mcdu.onRightInput[0] = () => {
-                CDUAvailableArrivalsPage.ShowPage(mcdu, waypoint);
+                CDUAvailableArrivalsPage.ShowPage(mcdu, waypoint, 0, false, forPlan);
             };
         } else if (isDeparture || isPpos || isFrom) {
             arrivalFixInfoCell = "FIX INFO>";
@@ -82,11 +91,11 @@ class CDULateralRevisionPage {
                 nextWptLabel = "NEXT WPT{sp}";
                 nextWpt = "[{sp}{sp}{sp}{sp}][color]cyan";
                 mcdu.onRightInput[2] = async (value, scratchpadCallback) => {
-                    mcdu.insertWaypoint(value, waypointIndexFP, (success) => {
+                    mcdu.insertWaypoint(value, forPlan, waypointIndexFP, (success) => {
                         if (!success) {
                             scratchpadCallback();
                         }
-                        CDUFlightPlanPage.ShowPage(mcdu);
+                        CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
                     });
                 };
             }
@@ -125,7 +134,7 @@ class CDULateralRevisionPage {
             mcdu.onRightInput[3] = (value) => {
                 mcdu.setDestinationAfterWaypoint(value, waypointIndexFP + 1, (result) => {
                     if (result) {
-                        CDUFlightPlanPage.ShowPage(mcdu);
+                        CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
                     }
                 });
             };
@@ -166,7 +175,7 @@ class CDULateralRevisionPage {
             return mcdu.getDelaySwitchPage();
         };
         mcdu.onLeftInput[5] = () => {
-            CDUFlightPlanPage.ShowPage(mcdu);
+            CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
         };
     }
 }

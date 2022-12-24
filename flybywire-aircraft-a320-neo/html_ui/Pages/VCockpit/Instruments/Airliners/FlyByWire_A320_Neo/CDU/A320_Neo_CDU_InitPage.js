@@ -49,8 +49,8 @@ class CDUInitPage {
             }
         ).getFieldAsColumnParameters();
 
-        //;
-        const altDest = new Column(0, "----|----------");
+        const altnAirport = mcdu.flightPlanService.active.alternateDestinationAirport;
+        const altDest = new Column(0, `${altnAirport ? altnAirport.ident : '----'}|----------`);
         let costIndexText = "---";
         let costIndexAction;
         let costIndexColor = Column.white;
@@ -145,9 +145,6 @@ class CDUInitPage {
                     alignOption = "IRS INIT>";
                 }
 
-                // Since CoRte isn't implemented, AltDest defaults to None Ref: Ares's documents
-                altDest.update(mcdu.altDestination ? mcdu.altDestination.ident : "NONE", Column.cyan);
-
                 mcdu.onLeftInput[1] = async (value, scratchpadCallback) => {
                     switch (altDest.raw) {
                         case "NONE":
@@ -178,6 +175,12 @@ class CDUInitPage {
         }
 
         mcdu.onLeftInput[0] = coRouteAction;
+
+        mcdu.onLeftInput[1] = (value, scratchpadCallback) => {
+            mcdu.flightPlanService.setAlternate(value).then(() => {
+                CDUInitPage.ShowPage1(mcdu);
+            }).catch(() => scratchpadCallback());
+        };
 
         if (mcdu.tropo) {
             tropo.update("" + mcdu.tropo, Column.big);

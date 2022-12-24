@@ -5,9 +5,9 @@
 
 import { MappedSubject, Subject } from 'msfssdk';
 
-type VSpeedValue = 0 | undefined;
+type VSpeedValue = number | undefined;
 
-type AltitudeValue = 0 | undefined;
+type AltitudeValue = number | undefined;
 
 export class FlightPlanPerformanceData {
     /**

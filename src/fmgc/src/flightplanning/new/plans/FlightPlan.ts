@@ -8,6 +8,7 @@ import { AlternateFlightPlan } from '@fmgc/flightplanning/new/plans/AlternateFli
 import { PendingAirways } from '@fmgc/flightplanning/new/plans/PendingAirways';
 import { EventBus } from 'msfssdk';
 import { FixInfoEntry } from '@fmgc/flightplanning/new/plans/FixInfo';
+import { loadAllDepartures, loadAllRunways } from '@fmgc/flightplanning/new/DataLoading';
 import { FlightPlanPerformanceData } from './performance/FlightPlanPerformanceData';
 import { BaseFlightPlan } from './BaseFlightPlan';
 
@@ -49,6 +50,7 @@ export class FlightPlan extends BaseFlightPlan {
         newPlan.approachSegment = this.approachSegment.clone(newPlan);
         newPlan.destinationSegment = this.destinationSegment.clone(newPlan);
         newPlan.missedApproachSegment = this.missedApproachSegment.clone(newPlan);
+
         newPlan.alternateFlightPlan = this.alternateFlightPlan.clone(newPlan);
 
         newPlan.availableOriginRunways = [...this.availableOriginRunways];
@@ -69,7 +71,14 @@ export class FlightPlan extends BaseFlightPlan {
     }
 
     async setAlternateDestinationAirport(icao: string) {
-        return this.alternateFlightPlan.setDestinationAirport(icao);
+        await this.alternateFlightPlan.setDestinationAirport(icao);
+
+        if (this.alternateFlightPlan.originAirport) {
+            this.alternateFlightPlan.availableOriginRunways = await loadAllRunways(this.alternateFlightPlan.originAirport);
+            this.alternateFlightPlan.availableDepartures = await loadAllDepartures(this.alternateFlightPlan.originAirport);
+        }
+
+        return this.alternateFlightPlan.originSegment.refreshOriginLegs();
     }
 
     startAirwayEntry(revisedLegIndex: number) {
@@ -92,7 +101,7 @@ export class FlightPlan extends BaseFlightPlan {
         planFixInfo[index] = fixInfo;
 
         if (notify) {
-            this.sendEvent('flightPlan.setFixInfoEntry', { planIndex: this.index, index, fixInfo });
+            this.sendEvent('flightPlan.setFixInfoEntry', { planIndex: this.index, forAlternate: false, index, fixInfo });
         }
 
         this.incrementVersion();
@@ -108,7 +117,7 @@ export class FlightPlan extends BaseFlightPlan {
         }
 
         if (notify) {
-            this.sendEvent('flightPlan.setFixInfoEntry', { planIndex: this.index, index, fixInfo: res });
+            this.sendEvent('flightPlan.setFixInfoEntry', { planIndex: this.index, forAlternate: false, index, fixInfo: res });
         }
 
         this.incrementVersion();

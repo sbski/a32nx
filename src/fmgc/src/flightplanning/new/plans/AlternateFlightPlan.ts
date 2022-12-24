@@ -6,13 +6,15 @@
 import { Airport } from 'msfs-navdata';
 import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 import { DestinationSegment } from '@fmgc/flightplanning/new/segments/DestinationSegment';
-import { FlightPlanElement } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { OriginSegment } from '@fmgc/flightplanning/new/segments/OriginSegment';
+import { FlightPlanSegment } from '@fmgc/flightplanning/new/segments/FlightPlanSegment';
 
 /**
  * An alternate flight plan shares its origin with the destination of a regular flight plan
  */
 export class AlternateFlightPlan extends BaseFlightPlan {
+    isAlternateFlightPlan = true;
+
     constructor(
         index: number,
         private mainFlightPlan: BaseFlightPlan,
@@ -26,16 +28,11 @@ export class AlternateFlightPlan extends BaseFlightPlan {
         return this.mainFlightPlan.destinationAirport;
     }
 
-    get allLegs(): FlightPlanElement[] {
-        return [
-            ...this.originSegment.allLegs,
-            ...this.destinationSegment.allLegs,
-        ];
-    }
-
     clone(fromMainFlightPlan: BaseFlightPlan): AlternateFlightPlan {
         const newPlan = new AlternateFlightPlan(this.index, fromMainFlightPlan);
 
+        newPlan.version = this.version;
+        newPlan.originSegment = this.originSegment.clone(newPlan);
         newPlan.departureRunwayTransitionSegment = this.departureRunwayTransitionSegment.clone(newPlan);
         newPlan.departureSegment = this.departureSegment.clone(newPlan);
         newPlan.departureEnrouteTransitionSegment = this.departureEnrouteTransitionSegment.clone(newPlan);
@@ -48,7 +45,27 @@ export class AlternateFlightPlan extends BaseFlightPlan {
         newPlan.destinationSegment = this.destinationSegment.clone(newPlan);
         newPlan.missedApproachSegment = this.missedApproachSegment.clone(newPlan);
 
+        newPlan.availableOriginRunways = [...this.availableOriginRunways];
+        newPlan.availableDepartures = [...this.availableDepartures];
+        newPlan.availableDestinationRunways = [...this.availableDestinationRunways];
+        newPlan.availableArrivals = [...this.availableArrivals];
+        newPlan.availableApproaches = [...this.availableApproaches];
+        newPlan.availableApproachVias = [...this.availableApproachVias];
+
         return newPlan;
+    }
+
+    incrementVersion() {
+        this.version++;
+        this.mainFlightPlan.incrementVersion();
+    }
+
+    syncSegmentLegsChange(segment: FlightPlanSegment) {
+        const segmentIndex = this.orderedSegments.indexOf(segment);
+
+        const legs = segment.allLegs.map((it) => (it.isDiscontinuity === false ? it.serialize() : it));
+
+        this.sendEvent('flightPlan.setSegmentLegs', { planIndex: this.index, forAlternate: true, segmentIndex, legs });
     }
 }
 
@@ -62,5 +79,16 @@ export class AlternateOriginSegment extends OriginSegment {
 
     get originAirport(): Airport {
         return this.mainDestinationSegment.destinationAirport;
+    }
+
+    clone(forPlan: BaseFlightPlan): AlternateOriginSegment {
+        const newSegment = new AlternateOriginSegment(forPlan, this.mainDestinationSegment);
+
+        newSegment.strung = this.strung;
+        newSegment.allLegs = [...this.allLegs];
+        newSegment.airport = this.airport;
+        newSegment.runway = this.runway;
+
+        return newSegment;
     }
 }

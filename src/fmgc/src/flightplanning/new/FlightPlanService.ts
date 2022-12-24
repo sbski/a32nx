@@ -12,6 +12,7 @@ import { Coordinates } from 'msfs-geo';
 import { EventBus } from 'msfssdk';
 import { MagVar } from '@shared/MagVar';
 import { FixInfoEntry } from '@fmgc/flightplanning/new/plans/FixInfo';
+import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 
 export class FlightPlanService {
     private constructor() {
@@ -156,15 +157,34 @@ export class FlightPlanService {
     }
 
     /**
+     * Sets the alternate destination in the flight plan.
+     *
+     * @param altnIcao  ICAo of the ALTN airport
+     * @param planIndex which flight plan (excluding temporary) to make the change on
+     */
+    static async setAlternate(altnIcao: string, planIndex = FlightPlanIndex.Active) {
+        if (planIndex === FlightPlanIndex.Temporary) {
+            throw new Error('[FMS/FPM] Cannot set alternate on temporary flight plan');
+        }
+
+        const plan = this.flightPlanManager.get(planIndex);
+
+        return plan.setAlternateDestinationAirport(altnIcao);
+    }
+
+    /**
      * Sets the origin runway in the flight plan. Creates a temporary flight plan if target is active.
      *
      * @param runwayIdent the runway identifier (e.g., RW27C)
      * @param planIndex   which flight plan to make the change on
+     * @param alternate   whether to edit the plan's alternate flight plan
      */
-    static setOriginRunway(runwayIdent: string, planIndex = FlightPlanIndex.Active) {
+    static setOriginRunway(runwayIdent: string, planIndex = FlightPlanIndex.Active, alternate = false) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
-        return this.flightPlanManager.get(finalIndex).setOriginRunway(runwayIdent);
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
+
+        return plan.setOriginRunway(runwayIdent);
     }
 
     /**
@@ -172,11 +192,14 @@ export class FlightPlanService {
      *
      * @param procedureIdent the procedure identifier (e.g., BAVE6P)
      * @param planIndex      which flight plan to make the change on
+     * @param alternate      whether to edit the plan's alternate flight plan
      */
-    static setDepartureProcedure(procedureIdent: string | undefined, planIndex = FlightPlanIndex.Active) {
+    static setDepartureProcedure(procedureIdent: string | undefined, planIndex = FlightPlanIndex.Active, alternate = false) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
-        return this.flightPlanManager.get(finalIndex).setDeparture(procedureIdent);
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
+
+        return plan.setDeparture(procedureIdent);
     }
 
     /**
@@ -184,11 +207,14 @@ export class FlightPlanService {
      *
      * @param transitionIdent the enroute transition identifier (e.g., KABIN)
      * @param planIndex       which flight plan to make the change on
+     * @param alternate       whether to edit the plan's alternate flight plan
      */
-    static setDepartureEnrouteTransition(transitionIdent: string | undefined, planIndex = FlightPlanIndex.Active) {
+    static setDepartureEnrouteTransition(transitionIdent: string | undefined, planIndex = FlightPlanIndex.Active, alternate = false) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
-        return this.flightPlanManager.get(finalIndex).setDepartureEnrouteTransition(transitionIdent);
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
+
+        return plan.setDepartureEnrouteTransition(transitionIdent);
     }
 
     /**
@@ -196,11 +222,14 @@ export class FlightPlanService {
      *
      * @param transitionIdent the enroute transition identifier (e.g., PLYMM)
      * @param planIndex       which flight plan to make the change on
+     * @param alternate       whether to edit the plan's alternate flight plan
      */
-    static setArrivalEnrouteTransition(transitionIdent: string | undefined, planIndex = FlightPlanIndex.Active) {
+    static setArrivalEnrouteTransition(transitionIdent: string | undefined, planIndex = FlightPlanIndex.Active, alternate = false) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
-        return this.flightPlanManager.get(finalIndex).setArrivalEnrouteTransition(transitionIdent);
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
+
+        return plan.setArrivalEnrouteTransition(transitionIdent);
     }
 
     /**
@@ -208,11 +237,14 @@ export class FlightPlanService {
      *
      * @param procedureIdent the procedure identifier (e.g., BOXUM5)
      * @param planIndex      which flight plan to make the change on
+     * @param alternate      whether to edit the plan's alternate flight plan
      */
-    static setArrival(procedureIdent: string | undefined, planIndex = FlightPlanIndex.Active) {
+    static setArrival(procedureIdent: string | undefined, planIndex = FlightPlanIndex.Active, alternate = false) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
-        return this.flightPlanManager.get(finalIndex).setArrival(procedureIdent);
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
+
+        return plan.setArrival(procedureIdent);
     }
 
     /**
@@ -220,11 +252,14 @@ export class FlightPlanService {
      *
      * @param procedureIdent the procedure identifier (e.g., DIREX)
      * @param planIndex      which flight plan to make the change on
+     * @param alternate      whether to edit the plan's alternate flight plan
      */
-    static setApproachVia(procedureIdent: string | undefined, planIndex = FlightPlanIndex.Active) {
+    static setApproachVia(procedureIdent: string | undefined, planIndex = FlightPlanIndex.Active, alternate = false) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
-        return this.flightPlanManager.get(finalIndex).setApproachVia(procedureIdent);
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
+
+        return plan.setApproachVia(procedureIdent);
     }
 
     /**
@@ -232,11 +267,14 @@ export class FlightPlanService {
      *
      * @param procedureIdent the procedure identifier (e.g., R05-X)
      * @param planIndex      which flight plan to make the change on
+     * @param alternate      whether to edit the plan's alternate flight plan
      */
-    static setApproach(procedureIdent: string | undefined, planIndex = FlightPlanIndex.Active) {
+    static setApproach(procedureIdent: string | undefined, planIndex = FlightPlanIndex.Active, alternate = false) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
-        return this.flightPlanManager.get(finalIndex).setApproach(procedureIdent);
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
+
+        return plan.setApproach(procedureIdent);
     }
 
     /**
@@ -244,11 +282,14 @@ export class FlightPlanService {
      *
      * @param runwayIdent the runway identifier (e.g., RW27C)
      * @param planIndex   which flight plan to make the change on
+     * @param alternate   whether to edit the plan's alternate flight plan
      */
-    static setDestinationRunway(runwayIdent: string, planIndex = FlightPlanIndex.Active) {
+    static setDestinationRunway(runwayIdent: string, planIndex = FlightPlanIndex.Active, alternate = false) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
-        return this.flightPlanManager.get(finalIndex).setDestinationRunway(runwayIdent);
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
+
+        return plan.setDestinationRunway(runwayIdent);
     }
 
     /**

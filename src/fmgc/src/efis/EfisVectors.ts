@@ -122,10 +122,27 @@ export class EfisVectors {
                 this.transmitGroup(vectors, EfisVectorsGroup.ACTIVE);
                 this.transmitGroup([], EfisVectorsGroup.DASHED);
 
-                // TODO don't always transmit those
-                const missedVectors = geometry.getAllPathVectors(plan.activeLegIndex, true).filter((it) => EfisVectors.isVectorReasonable(it));
+                const planCentreFpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_FP_INDEX', 'number');
+                const planCentreIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_INDEX', 'number');
 
-                this.transmitGroup(missedVectors, EfisVectorsGroup.MISSED);
+                const transmitMissed = planCentreFpIndex === FlightPlanIndex.Active && plan.firstMissedApproachLeg - planCentreIndex < 4;
+
+                if (transmitMissed) {
+                    const missedVectors = geometry.getAllPathVectors(plan.activeLegIndex, true).filter((it) => EfisVectors.isVectorReasonable(it));
+
+                    this.transmitGroup(missedVectors, EfisVectorsGroup.MISSED);
+                } else {
+                    this.transmitGroup([], EfisVectorsGroup.MISSED);
+                }
+
+                if (plan.alternateFlightPlan.allLegs.length > 0) {
+                    const geometry = this.guidanceController.getGeometryForFlightPlan(planIndex, true);
+                    const vectors = geometry.getAllPathVectors(0).filter((it) => EfisVectors.isVectorReasonable(it));
+
+                    this.transmitGroup(vectors, EfisVectorsGroup.ALTERNATE);
+                } else {
+                    this.transmitGroup([], EfisVectorsGroup.ALTERNATE);
+                }
             } else {
                 this.transmitGroup([], EfisVectorsGroup.ACTIVE);
                 this.transmitGroup([], EfisVectorsGroup.MISSED);
@@ -136,6 +153,24 @@ export class EfisVectors {
             this.transmitGroup(vectors, EfisVectorsGroup.TEMPORARY);
             break;
         default:
+            const planCentreFpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_FP_INDEX', 'number');
+            const planCentreIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_INDEX', 'number');
+
+            const transmitMissed = planCentreFpIndex === FlightPlanIndex.FirstSecondary && plan.firstMissedApproachLeg - planCentreIndex < 4;
+
+            if (transmitMissed) {
+                const missedVectors = geometry.getAllPathVectors(plan.activeLegIndex, true).filter((it) => EfisVectors.isVectorReasonable(it));
+
+                vectors.push(...missedVectors);
+            }
+
+            if (plan.alternateFlightPlan.allLegs.length > 0) {
+                const geometry = this.guidanceController.getGeometryForFlightPlan(planIndex, true);
+                const altnVectors = geometry.getAllPathVectors(0).filter((it) => EfisVectors.isVectorReasonable(it));
+
+                vectors.push(...altnVectors);
+            }
+
             this.transmitGroup(vectors, EfisVectorsGroup.SECONDARY);
             break;
         }

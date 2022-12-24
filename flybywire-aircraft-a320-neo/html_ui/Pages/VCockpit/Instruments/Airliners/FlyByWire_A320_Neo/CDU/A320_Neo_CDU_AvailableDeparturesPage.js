@@ -5,7 +5,7 @@ const DeparturePagination = Object.freeze(
 );
 
 class CDUAvailableDeparturesPage {
-    static ShowPage(mcdu, airport, pageCurrent = -1, sidSelection = false) {
+    static ShowPage(mcdu, airport, pageCurrent = -1, sidSelection = false, forPlan = Fmgc.FlightPlanIndex.Active, inAlternate = false) {
         mcdu.clearDisplay();
         mcdu.page.Current = mcdu.page.AvailableDeparturesPage;
 
@@ -18,12 +18,22 @@ class CDUAvailableDeparturesPage {
 
         // --- figure out which data is available for the page ---
 
-        const editingTmpy = mcdu.flightPlanService.hasTemporary;
+        const editingTmpy = forPlan === Fmgc.FlightPlanIndex.Active && mcdu.flightPlanService.hasTemporary;
 
         // TODO SEC F-PLN
         /** @type {import('../../../../../../../../src/fmgc/src/flightplanning/new/plans/BaseFlightPlan').BaseFlightPlan} */
-        const targetPlan = mcdu.flightPlanService.activeOrTemporary;
-        const planColor = mcdu.flightPlanService.hasTemporary ? "yellow" : "green";
+        let targetPlan;
+        if (forPlan === Fmgc.FlightPlanIndex.Active) {
+            if (inAlternate) {
+                targetPlan = mcdu.flightPlanService.activeOrTemporary.alternateFlightPlan;
+            } else {
+                targetPlan = mcdu.flightPlanService.activeOrTemporary;
+            }
+        } else {
+            targetPlan = mcdu.flightPlanService.get(forPlan);
+        }
+
+        const planColor = forPlan === Fmgc.FlightPlanIndex.Active ? mcdu.flightPlanService.hasTemporary ? "yellow" : "green" : "white";
 
         /** @type {import('msfs-navdata').Runway} */
         const selectedRunway = targetPlan.originRunway;
@@ -135,12 +145,12 @@ class CDUAvailableDeparturesPage {
                     rows[2 * i + 1] = [`${selected ? "{green}" : "{cyan}"}{sp}{sp}{sp}${Utils.leadingZeros(Math.round(runway.magneticBearing), 3)}${ilsText}{end}`];
                     mcdu.onLeftInput[i + 1] = async () => {
                         try {
-                            await mcdu.flightPlanService.setOriginRunway(runway.ident);
+                            await mcdu.flightPlanService.setOriginRunway(runway.ident, forPlan, inAlternate);
                         } catch (e) {
                             console.error(e);
                             mcdu.setScratchpadMessage(NXFictionalMessages.internalError);
                         }
-                        CDUAvailableDeparturesPage.ShowPage(mcdu, airport, 0, true);
+                        CDUAvailableDeparturesPage.ShowPage(mcdu, airport, 0, true, forPlan, inAlternate);
                     };
                 }
             }
@@ -160,17 +170,18 @@ class CDUAvailableDeparturesPage {
                         try {
                             if (sid === "NO SID") {
                                 // TODO we need to remember this explicit selection somehow
-                                await mcdu.flightPlanService.setDepartureProcedure();
+                                await mcdu.flightPlanService.setDepartureProcedure(undefined, forPlan, inAlternate);
                             } else {
                                 /*const transitionRunway = targetPlan.availableOriginRunways.find((it) => it.ident === runwayTransitionIdent);
                                 await mcdu.flightPlanService.setOriginRunway(transitionRunway.ident);*/
-                                await mcdu.flightPlanService.setDepartureProcedure(sid.ident);
+                                await mcdu.flightPlanService.setDepartureProcedure(sid.ident, forPlan, inAlternate);
                             }
                         } catch (e) {
                             console.error(e);
                             mcdu.setScratchpadMessage(NXFictionalMessages.internalError);
                         }
-                        CDUAvailableDeparturesPage.ShowPage(mcdu, airport, pageCurrent, true);
+
+                        CDUAvailableDeparturesPage.ShowPage(mcdu, airport, pageCurrent, true, forPlan, inAlternate);
                     };
                 }
             }
@@ -186,12 +197,12 @@ class CDUAvailableDeparturesPage {
                         rows[2 * i][1] = `${selected ? "{green}" : "{cyan}"}${typeof trans === 'string' ? trans : trans.ident}${selected ? " " : "}"}{end}`;
                         mcdu.onRightInput[i + 1] = async () => {
                             try {
-                                await mcdu.flightPlanService.setDepartureEnrouteTransition(trans.ident);
+                                await mcdu.flightPlanService.setDepartureEnrouteTransition(trans.ident, forPlan, inAlternate);
                             } catch (e) {
                                 console.error(e);
                                 mcdu.setScratchpadMessage(NXFictionalMessages.internalError);
                             }
-                            CDUAvailableDeparturesPage.ShowPage(mcdu, airport, pageCurrent, true);
+                            CDUAvailableDeparturesPage.ShowPage(mcdu, airport, pageCurrent, true, forPlan, inAlternate);
                         };
                     }
                 }
@@ -216,7 +227,7 @@ class CDUAvailableDeparturesPage {
                 if (pageCurrent < 0) {
                     pageCurrent = 0;
                 }
-                CDUAvailableDeparturesPage.ShowPage(mcdu, airport, pageCurrent, sidSelection);
+                CDUAvailableDeparturesPage.ShowPage(mcdu, airport, pageCurrent, sidSelection, forPlan, inAlternate);
             };
             up = true;
         }
@@ -226,7 +237,7 @@ class CDUAvailableDeparturesPage {
                 if (pageCurrent < 0) {
                     pageCurrent = 0;
                 }
-                CDUAvailableDeparturesPage.ShowPage(mcdu, airport, pageCurrent, sidSelection);
+                CDUAvailableDeparturesPage.ShowPage(mcdu, airport, pageCurrent, sidSelection, forPlan, inAlternate);
             };
             down = true;
         }
@@ -235,7 +246,7 @@ class CDUAvailableDeparturesPage {
         if (editingTmpy) {
             mcdu.onLeftInput[5] = () => {
                 mcdu.eraseTemporaryFlightPlan(() => {
-                    CDUFlightPlanPage.ShowPage(mcdu, 0);
+                    CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
                 });
             };
             mcdu.onRightInput[5] = () => {
@@ -244,12 +255,12 @@ class CDUAvailableDeparturesPage {
                     mcdu.onToRwyChanged();
                     CDUPerformancePage.UpdateThrRedAccFromOrigin(mcdu, true, true);
                     CDUPerformancePage.UpdateEngOutAccFromOrigin(mcdu);
-                    CDUFlightPlanPage.ShowPage(mcdu, 0);
+                    CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
                 });
             };
         } else {
             mcdu.onLeftInput[5] = () => {
-                CDUFlightPlanPage.ShowPage(mcdu);
+                CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
             };
         }
 
@@ -273,7 +284,7 @@ class CDUAvailableDeparturesPage {
             [editingTmpy ? "{ERASE[color]amber" : "{RETURN", editingTmpy ? "INSERT*[color]amber" : "", showEosid ? `{${selectedColour}}{sp}NONE{end}` : '']
         ]);
         mcdu.onPrevPage = () => {
-            CDUAvailableDeparturesPage.ShowPage(mcdu, airport, -1, !sidSelection);
+            CDUAvailableDeparturesPage.ShowPage(mcdu, airport, -1, !sidSelection, forPlan);
         };
         mcdu.onNextPage = mcdu.onPrevPage;
     }
