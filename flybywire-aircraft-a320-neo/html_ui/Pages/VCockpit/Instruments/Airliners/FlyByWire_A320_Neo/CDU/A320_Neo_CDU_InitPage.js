@@ -205,12 +205,10 @@ class CDUInitPage {
                         scratchpadCallback();
                     }
                 });
-            } else if (mcdu.flightPlanManager.getPersistentOrigin() && mcdu.flightPlanManager.getPersistentOrigin().ident) {
-                if (mcdu.flightPlanManager.getDestination() && mcdu.flightPlanManager.getDestination().ident) {
-                    mcdu.getCoRouteList(mcdu).then(() => {
-                        CDUAvailableFlightPlanPage.ShowPage(mcdu);
-                    });
-                }
+            } else if (mcdu.flightPlanService.active.originAirport && mcdu.flightPlanService.active.destinationAirport) {
+                mcdu.getCoRouteList(mcdu).then(() => {
+                    CDUAvailableFlightPlanPage.ShowPage(mcdu);
+                });
             }
         };
         mcdu.onRightInput[1] = () => {
