@@ -78,7 +78,9 @@ export class FlightPlan extends BaseFlightPlan {
             this.alternateFlightPlan.availableDepartures = await loadAllDepartures(this.alternateFlightPlan.originAirport);
         }
 
-        return this.alternateFlightPlan.originSegment.refreshOriginLegs();
+        await this.alternateFlightPlan.originSegment.refreshOriginLegs();
+
+        this.alternateFlightPlan.incrementVersion();
     }
 
     startAirwayEntry(revisedLegIndex: number) {

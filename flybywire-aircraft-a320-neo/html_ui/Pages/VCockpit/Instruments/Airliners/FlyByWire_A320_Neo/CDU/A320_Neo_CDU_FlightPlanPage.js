@@ -366,7 +366,6 @@ class CDUFlightPlanPage {
                     ident: ident,
                     color: color,
                     distance: distance,
-                    gp,
                     spdColor: spdColor,
                     speedConstraint: speedConstraint,
                     altColor: altColor,

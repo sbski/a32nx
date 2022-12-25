@@ -13,12 +13,6 @@ class CDUAvailableFlightPlanPage {
 
         const hasCoRoutes = mcdu.coRoute.routes.length > 0;
 
-        if (mcdu.flightPlanManager.getOrigin()) {
-            if (mcdu.flightPlanManager.getDestination()) {
-                fromTo = mcdu.flightPlanManager.getOrigin().ident + "/" + mcdu.flightPlanManager.getDestination().ident;
-            }
-        }
-
         if (hasCoRoutes) {
             const coRoutesListSize = mcdu.coRoute.routes.length;
 

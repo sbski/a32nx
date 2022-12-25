@@ -77,6 +77,7 @@ class FMCDataManager {
         });
     }
     async GetAirportByIdent(ident) {
+        return this.curr;
         if (!(await this.IsAirportValid(ident).catch(console.error))) {
             return undefined;
         }

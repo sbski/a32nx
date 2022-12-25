@@ -19,6 +19,7 @@ import { NavigationDatabase } from '@fmgc/NavigationDatabase';
 import { FlightPlan } from '@fmgc/flightplanning/new/plans/FlightPlan';
 import { FlightPlanIndex } from '@fmgc/flightplanning/new/FlightPlanManager';
 import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
+import { AlternateFlightPlan } from '@fmgc/flightplanning/new/plans/AlternateFlightPlan';
 import { RunwaySurface, VorType } from '../types/fstypes/FSEnums';
 import { NearbyFacilities } from './NearbyFacilities';
 
@@ -375,38 +376,6 @@ export class EfisSymbols {
                 }
             }
 
-            const airports: [Airport, Runway][] = [
-                [FlightPlanService.active.originAirport, FlightPlanService.active.originRunway],
-                [FlightPlanService.active.destinationAirport, FlightPlanService.active.destinationRunway],
-                [FlightPlanService.secondary(1).originAirport, FlightPlanService.secondary(1).originRunway],
-                [FlightPlanService.secondary(1).destinationAirport, FlightPlanService.secondary(1).destinationRunway],
-            ];
-
-            for (const [airport, runway] of airports) {
-                if (!airport) {
-                    continue;
-                }
-                if (runway) {
-                    if (withinEditArea(runway.thresholdLocation)) {
-                        upsertSymbol({
-                            databaseId: airport.databaseId,
-                            ident: NavigationDatabase.formatLongRunwayIdent(airport.ident, runway.ident),
-                            location: runway.thresholdLocation,
-                            direction: runway.bearing,
-                            length: runway.length / MathUtils.DIV_METRES_TO_NAUTICAL_MILES,
-                            type: NdSymbolTypeFlags.Runway,
-                        });
-                    }
-                } else if (withinEditArea(airport.location)) {
-                    upsertSymbol({
-                        databaseId: airport.databaseId,
-                        ident: airport.ident,
-                        location: airport.location,
-                        type: NdSymbolTypeFlags.Airport,
-                    });
-                }
-            }
-
             // Pseudo waypoints
 
             for (const pwp of this.guidanceController.currentPseudoWaypoints.filter((it) => it)) {
@@ -573,8 +542,47 @@ export class EfisSymbols {
             });
         }
 
+        // FP airports/runways
+
+        const airports: [Airport | undefined, Runway | undefined][] = [
+            [flightPlan.originAirport, flightPlan.originRunway],
+            [flightPlan.destinationAirport, flightPlan.destinationRunway],
+        ];
+
+        for (const [airport, runway] of airports) {
+            if (!airport) {
+                continue;
+            }
+
+            const planAltnStr = flightPlan instanceof AlternateFlightPlan ? 'A' : ' ';
+            const planIndexStr = flightPlan.index.toString();
+            const runwayIdentStr = runway?.ident.replace('RW', '').padEnd(4, ' ') ?? '    ';
+
+            const databaseId = `A${airport.ident}${(planAltnStr)}${planIndexStr}${runwayIdentStr}`;
+
+            if (runway) {
+                if (withinEditArea(runway.thresholdLocation)) {
+                    ret.push({
+                        databaseId,
+                        ident: NavigationDatabase.formatLongRunwayIdent(airport.ident, runway.ident),
+                        location: runway.thresholdLocation,
+                        direction: runway.bearing,
+                        length: runway.length / MathUtils.DIV_METRES_TO_NAUTICAL_MILES,
+                        type: NdSymbolTypeFlags.Runway,
+                    });
+                }
+            } else if (withinEditArea(airport.location)) {
+                ret.push({
+                    databaseId,
+                    ident: airport.ident,
+                    location: airport.location,
+                    type: NdSymbolTypeFlags.Airport,
+                });
+            }
+        }
+
+        // FP fix info
         if (flightPlan instanceof FlightPlan) {
-            // FP fix info
             for (let i = 0; i < 4; i++) {
                 const fixInfo = flightPlan.fixInfos[i];
 

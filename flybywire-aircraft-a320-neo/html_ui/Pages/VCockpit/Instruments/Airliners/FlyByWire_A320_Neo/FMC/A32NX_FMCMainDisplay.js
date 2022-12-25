@@ -1605,8 +1605,8 @@ class FMCMainDisplay extends BaseAirliners {
                 const ele = airport.location.alt;
 
                 landingElevation = isFinite(ele) ? ele : undefined;
-                latitude = airport.GetInfos().coordinates.lat;
-                longitude = airport.GetInfos().coordinates.long;
+                latitude = airport.location.lat;
+                longitude = airport.location.long;
             }
         }
 
@@ -2050,8 +2050,9 @@ class FMCMainDisplay extends BaseAirliners {
     async setFromTo(from, to) {
         let airportFrom, airportTo;
         try {
-            airportFrom = await this.dataManager.GetAirportByIdent(from);
-            airportTo = await this.dataManager.GetAirportByIdent(to);
+            airportFrom = await this.navigationDatabaseService.activeDatabase.searchAirport(from);
+            airportTo = await this.navigationDatabaseService.activeDatabase.searchAirport(from);
+
             if (!airportFrom || !airportTo) {
                 throw NXSystemMessages.notInDatabase;
             }
@@ -2062,16 +2063,10 @@ class FMCMainDisplay extends BaseAirliners {
 
         this.atsu.atc.resetAtisAutoUpdate();
 
-        return new Promise((resolve, reject) => {
-            this.eraseTemporaryFlightPlan(() => {
-                this.flightPlanManager.clearFlightPlan(() => {
-                    this.tempFpPendingAutoTune = true;
-                    this.flightPlanManager.setOrigin(airportFrom.icao, () => {
-                        this.setGroundTempFromOrigin();
-                        this.flightPlanManager.setDestination(airportTo.icao, () => resolve(true)).catch(reject);
-                    }).catch(reject);
-                }).catch(reject);
-            });
+        return this.flightPlanService.newCityPair(from, to).then(() => {
+            this.tempFpPendingAutoTune = true;
+
+            this.setGroundTempFromOrigin();
         });
     }
 
@@ -2601,9 +2596,9 @@ class FMCMainDisplay extends BaseAirliners {
 
     async getCoRouteList() {
         try {
-            const origin = this.flightPlanManager.getOrigin().ident;
-            const dest = this.flightPlanManager.getDestination().ident;
-            const {success, data} = await SimBridgeClient.CompanyRoute.getRouteList(origin, dest);
+            const origin = this.flightPlanService.active.originAirport.ident;
+            const dest = this.flightPlanService.active.destinationAirport.ident;
+            const { success, data } = await SimBridgeClient.CompanyRoute.getRouteList(origin, dest);
 
             if (success) {
                 data.forEach((route => {
@@ -3099,10 +3094,11 @@ class FMCMainDisplay extends BaseAirliners {
         let updateAccAlt = false;
         let updateThrRedAlt = false;
 
-        const origin = this.flightPlanManager.getOrigin();
+        const origin = this.flightPlanService.active.originAirport;
+
         let elevation = SimVar.GetSimVarValue("GROUND ALTITUDE", "feet");
         if (origin) {
-            elevation = await this.facilityLoader.GetAirportFieldElevation(origin.icao);
+            elevation = origin.location.alt;
         }
 
         const minimumAltitude = elevation + 400;
@@ -4816,12 +4812,13 @@ class FMCMainDisplay extends BaseAirliners {
     }
 
     setGroundTempFromOrigin() {
-        const origin = this.flightPlanManager.getPersistentOrigin(FlightPlans.Active);
+        const origin = this.flightPlanService.active.originAirport;
+
         if (!origin) {
             return;
         }
 
-        this.groundTempAuto = A32NX_Util.getIsaTemp(origin.infos.coordinates.alt);
+        this.groundTempAuto = A32NX_Util.getIsaTemp(origin.location.alt);
     }
 
     trySetGroundTemp(scratchpadValue) {

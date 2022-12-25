@@ -59,6 +59,8 @@ export abstract class BaseFlightPlan {
                 }
 
                 this.activeLegIndex = event.activeLegIndex;
+
+                this.incrementVersion();
             }
         });
 
@@ -78,6 +80,8 @@ export abstract class BaseFlightPlan {
                 });
 
                 segment.allLegs = elements;
+
+                this.incrementVersion();
             }
         });
 
@@ -89,6 +93,8 @@ export abstract class BaseFlightPlan {
 
                 if (this instanceof FlightPlan) {
                     this.setFixInfoEntry(event.index, event.fixInfo, false);
+
+                    this.incrementVersion();
                 }
             }
         });
@@ -210,7 +216,7 @@ export abstract class BaseFlightPlan {
     availableApproachVias: ProcedureTransition[] = [];
 
     get originLeg() {
-        return this.originSegment.allLegs[0];
+        return this.allLegs[0];
     }
 
     get originLegIndex() {

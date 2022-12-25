@@ -6,8 +6,7 @@ class CDUInitPage {
         mcdu.activeSystem = 'FMGC';
         mcdu.coRoute.routes = [];
 
-        const haveFlightPlan = mcdu.flightPlanManager.getPersistentOrigin()
-            && mcdu.flightPlanManager.getDestination();
+        const haveFlightPlan = mcdu.flightPlanService.active.originAirport && mcdu.flightPlanService.active.destinationAirport;
 
         const fromTo = new Column(23, "____|____", Column.amber, Column.right);
         const [coRouteAction, coRouteText, coRouteColor] = new CDU_SingleValueField(
@@ -75,12 +74,7 @@ class CDUInitPage {
 
         if (origin) {
             if (dest) {
-                fromTo.update(origin.ident + "/" + dest.ident);
-                fromTo.color = Column.cyan;
-
-                if (coRoute.raw.includes("__________[color]amber")) {
-                    coRoute.text = "";
-                }
+                fromTo.update(origin.ident + "/" + dest.ident, Column.cyan);
 
                 // If an active SimBrief OFP matches the FP, hide the request option
                 // This allows loading a new OFP via INIT/REVIEW loading a different orig/dest to the current one
