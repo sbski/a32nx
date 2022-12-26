@@ -29,4 +29,4 @@ if EXIST %communityFolder%\Community\flybywire-aircraft-a320-neo (
 	RD %communityFolder%\Community\flybywire-aircraft-a320-neo
 )
 
-MKLINK /J %communityFolder%\Community\flybywire-aircraft-a320-neo %a32nx%\flybywire-aircraft-a320-neo
+MKLINK /J %communityFolder%\Community\flybywire-aircraft-a320-neo %a32nx%\fbw-a32nx\out\flybywire-aircraft-a320-neo
