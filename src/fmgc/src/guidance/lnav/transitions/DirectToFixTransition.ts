@@ -264,7 +264,7 @@ export class DirectToFixTransition extends Transition {
 
             dtg += straightDtg;
 
-            if (dtg >= straightDist) {
+            if (dtg - straightDist > 0.01) {
                 return false;
             }
         }
