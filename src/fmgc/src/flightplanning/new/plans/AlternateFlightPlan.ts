@@ -27,7 +27,7 @@ export class AlternateFlightPlan extends BaseFlightPlan {
     }
 
     clone(fromMainFlightPlan: BaseFlightPlan): AlternateFlightPlan {
-        const newPlan = new AlternateFlightPlan(this.index, fromMainFlightPlan);
+        const newPlan = new AlternateFlightPlan(fromMainFlightPlan.index, fromMainFlightPlan);
 
         newPlan.version = this.version;
         newPlan.originSegment = this.originSegment.clone(newPlan);

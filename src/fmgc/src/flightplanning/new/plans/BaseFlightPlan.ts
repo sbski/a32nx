@@ -52,6 +52,8 @@ export abstract class BaseFlightPlan {
 
         const isAlternatePlan = this instanceof AlternateFlightPlan;
 
+        // FIXME we need to destroy those subscriptions, this is a memory leak
+
         subs.on('flightPlan.setActiveLegIndex').handle((event) => {
             if (!this.ignoreSync) {
                 if (event.planIndex !== this.index || isAlternatePlan !== event.forAlternate) {
