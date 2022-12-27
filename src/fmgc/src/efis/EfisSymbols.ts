@@ -308,6 +308,7 @@ export class EfisSymbols {
             // (currently sequences with guidance which is too early)
             // eslint-disable-next-line no-lone-blocks
 
+            // ALTN
             if (FlightPlanService.hasActive) {
                 const symbols = this.getFlightPlanSymbols(
                     true,
@@ -324,6 +325,7 @@ export class EfisSymbols {
                     upsertSymbol(symbol);
                 }
 
+                // ACTIVE ALTN
                 if (FlightPlanService.active.alternateFlightPlan.legCount > 0) {
                     const symbols = this.getFlightPlanSymbols(
                         true,
@@ -342,6 +344,7 @@ export class EfisSymbols {
                 }
             }
 
+            // TMPY
             if (FlightPlanService.hasTemporary) {
                 const symbols = this.getFlightPlanSymbols(
                     true,
@@ -359,6 +362,7 @@ export class EfisSymbols {
                 }
             }
 
+            // SEC
             if (FlightPlanService.hasSecondary(1)) {
                 const symbols = this.getFlightPlanSymbols(
                     false,
@@ -373,6 +377,24 @@ export class EfisSymbols {
 
                 for (const symbol of symbols) {
                     upsertSymbol(symbol);
+                }
+
+                // SEC ALTN
+                if (FlightPlanService.secondary((1)).alternateFlightPlan.legCount > 0) {
+                    const symbols = this.getFlightPlanSymbols(
+                        true,
+                        FlightPlanService.secondary(1).alternateFlightPlan,
+                        this.guidanceController.getGeometryForFlightPlan(FlightPlanIndex.FirstSecondary, true),
+                        range,
+                        efisOption,
+                        () => true,
+                        formatConstraintAlt,
+                        formatConstraintSpeed,
+                    );
+
+                    for (const symbol of symbols) {
+                        upsertSymbol(symbol);
+                    }
                 }
             }
 
