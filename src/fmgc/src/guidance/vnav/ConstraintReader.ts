@@ -131,7 +131,9 @@ export class ConstraintReader {
             return;
         }
 
-        const nextWaypoint = fpm.getWaypoint(activeLegIndex, FlightPlans.Active);
+        const nextWaypoint: WayPoint | undefined = leg instanceof VMLeg
+            ? fpm.getWaypoint(activeLegIndex + 1, FlightPlans.Active)
+            : fpm.getWaypoint(activeLegIndex, FlightPlans.Active);
 
         const inboundTransition = geometry.transitions.get(activeLegIndex - 1);
         const outboundTransition = geometry.transitions.get(activeLegIndex);
@@ -140,17 +142,11 @@ export class ConstraintReader {
             leg, (inboundTransition?.isNull || !inboundTransition?.isComputed) ? null : inboundTransition, outboundTransition,
         );
 
-        if (activeTransIndex < 0) {
-            const distanceToGo = leg instanceof VMLeg || leg instanceof IFLeg
-                ? Avionics.Utils.computeGreatCircleDistance(ppos, nextWaypoint.infos.coordinates)
-                : leg.getDistanceToGo(ppos);
-
-            this.distanceToEnd = distanceToGo + outboundLength + (nextWaypoint.additionalData.distanceToEnd ?? 0);
-        } else if (activeTransIndex === activeLegIndex) {
+        if (activeTransIndex === activeLegIndex) {
             // On an outbound transition
             // We subtract `outboundLength` because getDistanceToGo will include the entire distance while we only want the part that's on this leg.
             // For a FixedRadiusTransition, there's also a part on the next leg.
-            this.distanceToEnd = outboundTransition.getDistanceToGo(ppos) - outboundLength + (nextWaypoint.additionalData.distanceToEnd ?? 0);
+            this.distanceToEnd = outboundTransition.getDistanceToGo(ppos) - outboundLength + (nextWaypoint?.additionalData?.distanceToEnd ?? 0);
         } else if (activeTransIndex === activeLegIndex - 1) {
             // On an inbound transition
             const trueTrack = SimVar.GetSimVarValue('GPS GROUND TRUE TRACK', 'degree');
@@ -163,9 +159,13 @@ export class ConstraintReader {
                 transitionDistanceToGo = inboundTransition.revertTo.getActualDistanceToGo(ppos, trueTrack);
             }
 
-            this.distanceToEnd = transitionDistanceToGo + legDistance + outboundLength + (nextWaypoint.additionalData.distanceToEnd ?? 0);
+            this.distanceToEnd = transitionDistanceToGo + legDistance + outboundLength + (nextWaypoint?.additionalData?.distanceToEnd ?? 0);
         } else {
-            console.error(`[FMS/VNAV] Unexpected transition index (legIndex: ${activeLegIndex}, transIndex: ${activeTransIndex})`);
+            const distanceToGo = leg instanceof VMLeg || leg instanceof IFLeg
+                ? Avionics.Utils.computeGreatCircleDistance(ppos, nextWaypoint?.infos?.coordinates)
+                : leg.getDistanceToGo(ppos);
+
+            this.distanceToEnd = distanceToGo + outboundLength + (nextWaypoint?.additionalData?.distanceToEnd ?? 0);
         }
     }
 
