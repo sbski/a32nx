@@ -136,25 +136,27 @@ class CDUFlightPlanPage {
         }
 
         // Primary ALTN F-PLAN
-        for (let i = first; i < targetPlan.alternateFlightPlan.legCount; i++) {
-            /** @type {FlightPlanElement} */
-            const wp = targetPlan.alternateFlightPlan.allLegs[i];
+        if (targetPlan.alternateDestinationAirport) {
+            for (let i = first; i < targetPlan.alternateFlightPlan.legCount; i++) {
+                /** @type {FlightPlanElement} */
+                const wp = targetPlan.alternateFlightPlan.allLegs[i];
 
-            if (wp.isDiscontinuity) {
-                waypointsAndMarkers.push({ marker: Markers.FPLN_DISCONTINUITY, fpIndex: i});
-                continue;
-            }
+                if (wp.isDiscontinuity) {
+                    waypointsAndMarkers.push({ marker: Markers.FPLN_DISCONTINUITY, fpIndex: i});
+                    continue;
+                }
 
-            if (i >= targetPlan.alternateFlightPlan.activeLegIndex && wp.definition.type === 'HM') {
-                waypointsAndMarkers.push({ holdResumeExit: wp, fpIndex: i });
-            }
+                if (i >= targetPlan.alternateFlightPlan.activeLegIndex && wp.definition.type === 'HM') {
+                    waypointsAndMarkers.push({ holdResumeExit: wp, fpIndex: i });
+                }
 
-            waypointsAndMarkers.push({ wp, fpIndex: i, inAlternate: true });
+                waypointsAndMarkers.push({ wp, fpIndex: i, inAlternate: true });
 
-            if (i === targetPlan.alternateFlightPlan.lastLegIndex) {
-                waypointsAndMarkers.push({ marker: Markers.END_OF_FPLN, fpIndex: i});
-                // TODO: Rewrite once alt fpln exists
-                waypointsAndMarkers.push({ marker: Markers.NO_ALTN_FPLN, fpIndex: i});
+                if (i === targetPlan.alternateFlightPlan.lastLegIndex) {
+                    waypointsAndMarkers.push({ marker: Markers.END_OF_FPLN, fpIndex: i});
+                    // TODO: Rewrite once alt fpln exists
+                    waypointsAndMarkers.push({ marker: Markers.NO_ALTN_FPLN, fpIndex: i});
+                }
             }
         }
 
@@ -621,12 +623,16 @@ class CDUFlightPlanPage {
 
             if (targetPlan.destinationAirport) {
                 const destStats = stats.get(targetPlan.legCount - 1);
-                destDistCell = destStats.distanceFromPpos.toFixed(0);
-                destEFOBCell = (NXUnits.kgToUser(mcdu.getDestEFOB(isFlying))).toFixed(1);
-                if (isFlying) {
-                    destTimeCell = FMCMainDisplay.secondsToUTC(destStats.etaFromPpos);
-                } else {
-                    destTimeCell = FMCMainDisplay.secondsTohhmm(destStats.timeFromPpos);
+
+                if (destStats) {
+                    destDistCell = destStats.distanceFromPpos.toFixed(0);
+                    destEFOBCell = (NXUnits.kgToUser(mcdu.getDestEFOB(isFlying))).toFixed(1);
+
+                    if (isFlying) {
+                        destTimeCell = FMCMainDisplay.secondsToUTC(destStats.etaFromPpos);
+                    } else {
+                        destTimeCell = FMCMainDisplay.secondsTohhmm(destStats.timeFromPpos);
+                    }
                 }
             }
             if (!CDUInitPage.fuelPredConditionsMet(mcdu)) {

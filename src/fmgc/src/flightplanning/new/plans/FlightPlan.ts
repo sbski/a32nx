@@ -3,14 +3,17 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { Airport } from 'msfs-navdata';
+import { Airport, Waypoint } from 'msfs-navdata';
 import { AlternateFlightPlan } from '@fmgc/flightplanning/new/plans/AlternateFlightPlan';
 import { PendingAirways } from '@fmgc/flightplanning/new/plans/PendingAirways';
 import { EventBus } from 'msfssdk';
 import { FixInfoEntry } from '@fmgc/flightplanning/new/plans/FixInfo';
 import { loadAllDepartures, loadAllRunways } from '@fmgc/flightplanning/new/DataLoading';
+import { Coordinates, Degrees } from 'msfs-geo';
+import { MagVar } from '@shared/MagVar';
+import { FlightPlanLeg, FlightPlanLegFlags } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { FlightPlanPerformanceData } from './performance/FlightPlanPerformanceData';
-import { BaseFlightPlan } from './BaseFlightPlan';
+import { BaseFlightPlan, FlightPlanQueuedOperation } from './BaseFlightPlan';
 
 export class FlightPlan extends BaseFlightPlan {
     static empty(index: number, bus: EventBus): FlightPlan {
@@ -70,7 +73,7 @@ export class FlightPlan extends BaseFlightPlan {
         return this.alternateFlightPlan.destinationAirport;
     }
 
-    async setAlternateDestinationAirport(icao: string) {
+    async setAlternateDestinationAirport(icao: string | undefined) {
         await this.alternateFlightPlan.setDestinationAirport(icao);
 
         if (this.alternateFlightPlan.originAirport) {
@@ -81,6 +84,94 @@ export class FlightPlan extends BaseFlightPlan {
         await this.alternateFlightPlan.originSegment.refreshOriginLegs();
 
         this.alternateFlightPlan.incrementVersion();
+    }
+
+    deleteAlternateFlightPlan() {
+        this.setAlternateDestinationAirport(undefined);
+
+        this.alternateFlightPlan.setOriginRunway(undefined);
+        this.alternateFlightPlan.setDeparture(undefined);
+        this.alternateFlightPlan.setDepartureEnrouteTransition(undefined);
+        this.alternateFlightPlan.setArrivalEnrouteTransition(undefined);
+        this.alternateFlightPlan.setArrival(undefined);
+        this.alternateFlightPlan.setApproach(undefined);
+        this.alternateFlightPlan.setApproachVia(undefined);
+
+        this.alternateFlightPlan.allLegs.length = 0;
+
+        this.alternateFlightPlan.incrementVersion();
+    }
+
+    directTo(ppos: Coordinates, trueTrack: Degrees, waypoint: Waypoint, withAbeam = false) {
+        // TODO withAbeam
+        // TODO handle direct-to into the alternate (make alternate active...?
+
+        const targetLeg = this.allLegs.find((it) => it.isDiscontinuity === false && it.terminatesWithWaypoint(waypoint));
+        const targetLegIndex = this.allLegs.findIndex((it) => it === targetLeg);
+
+        if (targetLeg.isDiscontinuity === true || !targetLeg.isXF()) {
+            throw new Error('[FPM] Target leg of a direct to cannot be a discontinuity or non-XF leg');
+        }
+
+        const magVar = MagVar.getMagVar(ppos);
+        const magneticCourse = MagVar.trueToMagnetic(trueTrack, magVar);
+
+        const turningPoint = FlightPlanLeg.turningPoint(this.enrouteSegment, ppos, magneticCourse);
+        const turnEnd = FlightPlanLeg.directToTurnEnd(this.enrouteSegment, targetLeg.definition.waypoint);
+
+        turningPoint.flags |= FlightPlanLegFlags.DirectToTurningPoint;
+
+        this.redistributeLegsAt(targetLegIndex);
+
+        const indexInEnrouteSegment = this.enrouteSegment.allLegs.findIndex((it) => it === targetLeg);
+
+        if (indexInEnrouteSegment === -1) {
+            throw new Error('[FPM] Target leg of a direct to not found in enroute segment after leg redistribution!');
+        }
+
+        this.enrouteSegment.allLegs.splice(indexInEnrouteSegment, 0, { isDiscontinuity: true });
+        this.enrouteSegment.allLegs.splice(indexInEnrouteSegment + 1, 0, turningPoint);
+        this.enrouteSegment.allLegs.splice(indexInEnrouteSegment + 2, 0, turnEnd);
+        this.enrouteSegment.allLegs.splice(indexInEnrouteSegment + 3, 1);
+        this.incrementVersion();
+
+        const turnStartLegIndexInPlan = this.allLegs.findIndex((it) => it === turnEnd);
+
+        this.activeLegIndex = turnStartLegIndexInPlan;
+
+        this.incrementVersion();
+    }
+
+    enableAltn(atIndexInAlternate: number) {
+        if (!this.alternateDestinationAirport) {
+            throw new Error('[FMS/FPM] Cannot enable alternate with no alternate destination defined');
+        }
+
+        this.redistributeLegsAt(this.activeLegIndex);
+
+        this.removeRange(this.activeLegIndex + 1, this.legCount);
+        this.incrementVersion();
+
+        this.enrouteSegment.allLegs.push({ isDiscontinuity: true });
+
+        const altnLegs = this.alternateFlightPlan.allLegs.slice(atIndexInAlternate, this.alternateFlightPlan.legCount);
+
+        // TODO correctly place shit in segments
+
+        for (const leg of altnLegs) {
+            if (leg.isDiscontinuity === false) {
+                const newLeg = FlightPlanLeg.deserialize(leg.serialize(), this.enrouteSegment);
+
+                this.enrouteSegment.allLegs.push(newLeg);
+            } else {
+                this.enrouteSegment.allLegs.push({ isDiscontinuity: true });
+            }
+        }
+
+        this.deleteAlternateFlightPlan();
+
+        this.enqueueOperation(FlightPlanQueuedOperation.Restring);
+        this.flushOperationQueue();
     }
 
     startAirwayEntry(revisedLegIndex: number) {

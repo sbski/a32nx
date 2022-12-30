@@ -5,14 +5,12 @@
 
 import { FlightPlanIndex, FlightPlanManager } from '@fmgc/flightplanning/new/FlightPlanManager';
 import { FpmConfig, FpmConfigs } from '@fmgc/flightplanning/new/FpmConfig';
-import { FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
+import { FlightPlanLeg, FlightPlanLegFlags } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { Waypoint } from 'msfs-navdata';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
-import { Coordinates } from 'msfs-geo';
+import { Coordinates, Degrees } from 'msfs-geo';
 import { EventBus } from 'msfssdk';
-import { MagVar } from '@shared/MagVar';
 import { FixInfoEntry } from '@fmgc/flightplanning/new/plans/FixInfo';
-import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 
 export class FlightPlanService {
     private constructor() {
@@ -88,6 +86,15 @@ export class FlightPlanService {
 
         if (temporaryPlan.pendingAirways) {
             temporaryPlan.pendingAirways.finalize();
+        }
+
+        const fromLeg = temporaryPlan.maybeElementAt(temporaryPlan.activeLegIndex - 1);
+
+        // Update T-P
+        if (fromLeg?.isDiscontinuity === false && fromLeg.flags & FlightPlanLegFlags.DirectToTurningPoint) {
+            // TODO fm pos
+            fromLeg.definition.waypoint.location.lat = SimVar.GetSimVarValue('PLANE LATITUDE', 'Degrees');
+            fromLeg.definition.waypoint.location.long = SimVar.GetSimVarValue('PLANE LONGITUDE', 'Degrees');
         }
 
         this.flightPlanManager.copy(FlightPlanIndex.Temporary, FlightPlanIndex.Active);
@@ -332,42 +339,20 @@ export class FlightPlanService {
         plan.startAirwayEntry(at);
     }
 
-    static directTo(ppos: Coordinates, trueTrack: Degrees, waypoint: Waypoint, planIndex = FlightPlanIndex.Active) {
+    static directTo(ppos: Coordinates, trueTrack: Degrees, waypoint: Waypoint, withAbeam = false, planIndex = FlightPlanIndex.Active) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
         const plan = this.flightPlanManager.get(finalIndex);
 
-        const targetLeg = plan.allLegs.find((it) => it.isDiscontinuity === false && it.terminatesWithWaypoint(waypoint));
-        const targetLegIndex = plan.allLegs.findIndex((it) => it === targetLeg);
+        plan.directTo(ppos, trueTrack, waypoint, withAbeam);
+    }
 
-        if (targetLeg.isDiscontinuity === true || !targetLeg.isXF()) {
-            throw new Error('[FPM] Target leg of a direct to cannot be a discontinuity or non-XF leg');
-        }
+    static enableAltn(atIndexInAlternate: number, planIndex = FlightPlanIndex.Active) {
+        const finalIndex = this.prepareDestructiveModification(planIndex);
 
-        const magVar = MagVar.getMagVar(ppos);
-        const magneticCourse = MagVar.trueToMagnetic(trueTrack, magVar);
+        const plan = this.flightPlanManager.get(finalIndex);
 
-        const turningPoint = FlightPlanLeg.turningPoint(plan.enrouteSegment, ppos, magneticCourse);
-        const turnEnd = FlightPlanLeg.directToTurnEnd(plan.enrouteSegment, targetLeg.definition.waypoint);
-
-        // TODO maybe encapsulate this behaviour in BaseFlightPlan
-        plan.redistributeLegsAt(targetLegIndex);
-        const indexInEnrouteSegment = plan.enrouteSegment.allLegs.findIndex((it) => it === targetLeg);
-
-        if (indexInEnrouteSegment === -1) {
-            throw new Error('[FPM] Target leg of a direct to not found in enroute segment after leg redistribution!');
-        }
-
-        plan.enrouteSegment.allLegs.splice(indexInEnrouteSegment, 0, { isDiscontinuity: true });
-        plan.enrouteSegment.allLegs.splice(indexInEnrouteSegment + 1, 0, turningPoint);
-        plan.enrouteSegment.allLegs.splice(indexInEnrouteSegment + 2, 0, turnEnd);
-        plan.enrouteSegment.allLegs.splice(indexInEnrouteSegment + 3, 1);
-        plan.incrementVersion();
-
-        const turnStartLegIndexInPlan = plan.allLegs.findIndex((it) => it === turnEnd);
-
-        plan.activeLegIndex = turnStartLegIndexInPlan;
-        plan.incrementVersion();
+        plan.enableAltn(atIndexInAlternate);
     }
 
     static setOverfly(atIndex: number, overfly: boolean, planIndex = FlightPlanIndex.Active) {

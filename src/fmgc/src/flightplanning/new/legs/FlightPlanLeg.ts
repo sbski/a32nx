@@ -21,11 +21,17 @@ export interface SerializedFlightPlanLeg {
     definition: FlightPlanLegDefinition,
 }
 
+export enum FlightPlanLegFlags {
+    DirectToTurningPoint = 1 << 0,
+}
+
 /**
  * A leg in a flight plan. Not to be confused with a geometry leg or a procedure leg
  */
 export class FlightPlanLeg {
     type: LegType;
+
+    flags = 0;
 
     private constructor(
         public segment: FlightPlanSegment,

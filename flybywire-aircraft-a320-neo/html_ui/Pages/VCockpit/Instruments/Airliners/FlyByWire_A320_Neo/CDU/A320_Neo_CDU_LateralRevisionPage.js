@@ -119,10 +119,18 @@ class CDULateralRevisionPage {
 
         let enableAltnLabel = "";
         let enableAltnCell = "";
-        if (!isDeparture && mcdu.altDestination) {
-            // TODO this should be hidden if we're already enroute to our alternate (see "Alternate Diversion" 11-5)
-            enableAltnLabel = "{sp}ENABLE[color]inop";
-            enableAltnCell = "{ALTN[color]inop";
+        if (!isDeparture && inAlternate) {
+            enableAltnLabel = "{sp}ENABLE[color]cyan";
+            enableAltnCell = "{ALTN[color]cyan";
+
+            mcdu.leftInputDelay[3] = () => {
+                return mcdu.getDelaySwitchPage();
+            };
+            mcdu.onLeftInput[3] = () => {
+                mcdu.flightPlanService.enableAltn(waypointIndexFP);
+
+                CDUFlightPlanPage.ShowPage(mcdu, 0, forPlan);
+            };
         }
 
         let newDestLabel = "";

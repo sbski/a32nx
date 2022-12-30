@@ -9,7 +9,6 @@ import { FixInfoEntry } from '@fmgc/flightplanning/new/plans/FixInfo';
 
 export interface FlightPlanSyncEvent {
     planIndex: number,
-    forAlternate: boolean,
 }
 
 export interface FlightPlanManagerEvent extends FlightPlanSyncEvent {
@@ -20,17 +19,21 @@ export interface FlightPlanSetActiveLegIndexEvent extends FlightPlanSyncEvent {
     activeLegIndex: number,
 }
 
-export interface FlightPlanSetSegmentLegsEvent extends FlightPlanSyncEvent {
+export interface FlightPlanEditSyncEvent extends FlightPlanSyncEvent {
+    forAlternate: boolean,
+}
+
+export interface FlightPlanSetSegmentLegsEvent extends FlightPlanEditSyncEvent {
     segmentIndex: number,
     legs: (SerializedFlightPlanLeg | Discontinuity)[],
 }
 
-export interface FlightPlanLegDefinitionEditEvent extends FlightPlanSyncEvent {
+export interface FlightPlanLegDefinitionEditEvent extends FlightPlanEditSyncEvent {
     atIndex: number,
     newDefinition: FlightPlanLegDefinition,
 }
 
-export interface FlightPlanSetFixInfoEntryEvent extends FlightPlanSyncEvent {
+export interface FlightPlanSetFixInfoEntryEvent extends FlightPlanEditSyncEvent {
     index: 1 | 2 | 3 | 4,
     fixInfo: FixInfoEntry | null,
 }

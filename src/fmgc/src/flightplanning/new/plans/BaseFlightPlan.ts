@@ -290,7 +290,7 @@ export abstract class BaseFlightPlan {
         return element;
     }
 
-    maybeElementAt(index: number): FlightPlanElement {
+    maybeElementAt(index: number): FlightPlanElement | undefined {
         const legs = this.allLegs;
 
         return legs[index];
@@ -553,7 +553,7 @@ export abstract class BaseFlightPlan {
         return this.destinationSegment.destinationAirport;
     }
 
-    async setDestinationAirport(icao: string) {
+    async setDestinationAirport(icao: string | undefined) {
         await this.destinationSegment.setDestinationIcao(icao).then(() => this.incrementVersion());
 
         await this.flushOperationQueue();
@@ -1017,7 +1017,7 @@ export abstract class BaseFlightPlan {
                 const duplicate = this.findDuplicate(fix, i);
 
                 if (duplicate) {
-                    const [duplicateSegment, , duplicatePlanIndex] = duplicate;
+                    const [duplicateSegment, duplicateIndexInSegment, duplicatePlanIndex] = duplicate;
 
                     // We can have duplicates if they are the origin and destination airport
                     if (segment === this.originSegment && duplicateSegment === this.destinationSegment) {
@@ -1026,6 +1026,17 @@ export abstract class BaseFlightPlan {
 
                     // We can have duplicates in the missed approach
                     if (duplicateSegment === this.missedApproachSegment) {
+                        continue;
+                    }
+
+                    const duplicateLeg = duplicateSegment.allLegs[duplicateIndexInSegment];
+
+                    if (duplicateLeg.isDiscontinuity === true) {
+                        continue;
+                    }
+
+                    // We can have duplicates with different leg types
+                    if (leg.type !== duplicateLeg.type) {
                         continue;
                     }
 
@@ -1067,16 +1078,16 @@ export abstract class BaseFlightPlan {
         await this.destinationSegment.refresh(false);
     }
 
-    public removeRange(start: number, end: number) {
+    protected removeRange(start: number, end: number) {
         const [startSegment, indexInStartSegment] = this.segmentPositionForIndex(start);
-        const [endSegment, indexInEndSegment] = this.segmentPositionForIndex(end);
+        const [endSegment, indexInEndSegment] = this.segmentPositionForIndex(end - 1);
 
         if (!startSegment || !endSegment) {
             throw new Error('[FMS/FPM] Range out of bounds');
         }
 
         if (startSegment === endSegment) {
-            startSegment.removeRange(indexInStartSegment, indexInEndSegment);
+            startSegment.removeRange(indexInStartSegment, indexInEndSegment + 1);
         } else {
             let startFound = false;
             for (const segment of this.orderedSegments) {
@@ -1092,7 +1103,7 @@ export abstract class BaseFlightPlan {
                 }
 
                 if (segment === endSegment) {
-                    segment.removeBefore(indexInEndSegment);
+                    segment.removeBefore(indexInEndSegment + 1);
                     break;
                 }
 
