@@ -221,7 +221,7 @@ export class VnavDriver implements GuidanceComponent {
     }
 
     private computeVerticalProfileForMcdu(geometry: Geometry) {
-        const { flightPhase, presentPosition, fuelOnBoard } = this.computationParametersObserver.get();
+        const { flightPhase, presentPosition, fuelOnBoard, approachSpeed } = this.computationParametersObserver.get();
 
         this.currentNavGeometryProfile = new NavGeometryProfile(this.guidanceController, this.constraintReader, this.atmosphericConditions, this.flightPlanManager.getWaypointsCount());
 
@@ -232,7 +232,7 @@ export class VnavDriver implements GuidanceComponent {
         console.time('VNAV computation');
         // TODO: This is where the return to trajectory would go:
         if (flightPhase >= FmgcFlightPhase.Climb) {
-            this.currentNavGeometryProfile.addPresentPositionCheckpoint(presentPosition, fuelOnBoard, this.currentMcduSpeedProfile.getManagedMachTarget());
+            this.currentNavGeometryProfile.addPresentPositionCheckpoint(presentPosition, fuelOnBoard, this.currentMcduSpeedProfile.getManagedMachTarget(), this.getVman(approachSpeed));
         }
 
         this.finishProfileInManagedModes(this.currentNavGeometryProfile, Math.max(FmgcFlightPhase.Takeoff, flightPhase));
@@ -244,12 +244,12 @@ export class VnavDriver implements GuidanceComponent {
 
         if (VnavConfig.DEBUG_PROFILE) {
             console.log('this.currentNavGeometryProfile:', this.currentNavGeometryProfile);
-            this.currentMcduSpeedProfile.showDebugStats();
         }
     }
 
     private computeVerticalProfileForNd() {
         const {
+            approachSpeed,
             fcuAltitude,
             fcuArmedVerticalMode,
             fcuVerticalMode,
@@ -270,7 +270,7 @@ export class VnavDriver implements GuidanceComponent {
 
         if (flightPhase >= FmgcFlightPhase.Climb) {
             // TODO: Using the current managed Mach target is probably not right when in selected speed?
-            this.currentNdGeometryProfile.addPresentPositionCheckpoint(presentPosition, fuelOnBoard, this.currentMcduSpeedProfile.getManagedMachTarget());
+            this.currentNdGeometryProfile.addPresentPositionCheckpoint(presentPosition, fuelOnBoard, this.currentMcduSpeedProfile.getManagedMachTarget(), this.getVman(approachSpeed));
         } else {
             this.takeoffPathBuilder.buildTakeoffPath(this.currentNdGeometryProfile);
         }
@@ -536,8 +536,9 @@ export class VnavDriver implements GuidanceComponent {
 
     computeVerticalProfileForExpediteClimb(): SelectedGeometryProfile | undefined {
         try {
-            const { fcuAltitude, presentPosition, fuelOnBoard } = this.computationParametersObserver.get();
+            const { approachSpeed, fcuAltitude, presentPosition, fuelOnBoard } = this.computationParametersObserver.get();
 
+            // TODO: I wonder where GD speed comes from IRL. Should probably be an FMGC computation rather than FAC since it's just for predictions
             const greenDotSpeed = Simplane.getGreenDotSpeed();
             if (!greenDotSpeed) {
                 return undefined;
@@ -548,7 +549,7 @@ export class VnavDriver implements GuidanceComponent {
             const climbStrategy = new ClimbThrustClimbStrategy(this.computationParametersObserver, this.atmosphericConditions);
             const climbWinds = new HeadwindProfile(this.windProfileFactory.getClimbWinds(), this.headingProfile);
 
-            expediteGeometryProfile.addPresentPositionCheckpoint(presentPosition, fuelOnBoard, this.currentMcduSpeedProfile.getManagedMachTarget());
+            expediteGeometryProfile.addPresentPositionCheckpoint(presentPosition, fuelOnBoard, this.currentMcduSpeedProfile.getManagedMachTarget(), this.getVman(approachSpeed));
             this.climbPathBuilder.computeClimbPath(expediteGeometryProfile, climbStrategy, selectedSpeedProfile, climbWinds, fcuAltitude);
 
             expediteGeometryProfile.finalizeProfile();
@@ -638,6 +639,7 @@ export class VnavDriver implements GuidanceComponent {
     }
 
     private getVman(vApp: Knots): Knots {
+        // TODO: I wonder where these speeds come from IRL. It's probably the FAC.
         switch (SimVar.GetSimVarValue('L:A32NX_FLAPS_HANDLE_INDEX', 'Number')) {
         case 0: return SimVar.GetSimVarValue('L:A32NX_SPEEDS_GD', 'number');
         case 1: return SimVar.GetSimVarValue('L:A32NX_SPEEDS_S', 'number');
