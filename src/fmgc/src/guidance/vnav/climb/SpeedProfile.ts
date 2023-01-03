@@ -24,10 +24,6 @@ export interface SpeedProfile {
      */
     getTargetWithoutConstraints(altitude: NauticalMiles, managedSpeedType: ManagedSpeedType): Knots;
 
-    /**
-     * This is used for guidance.
-     */
-    getCurrentSpeedTarget(): Knots;
     shouldTakeClimbSpeedLimitIntoAccount(): boolean;
     shouldTakeDescentSpeedLimitIntoAccount(): boolean;
 
@@ -52,12 +48,6 @@ function constraintToSpeed(constraint?: MaxSpeedConstraint): Knots {
  * This class's purpose is to provide a predicted speed at a given position and altitude.
  */
 export class McduSpeedProfile implements SpeedProfile {
-    private maxSpeedCacheHits: number = 0;
-
-    private maxSpeedLookups: number = 0;
-
-    private maxSpeedCache: Map<number, Knots> = new Map();
-
     /**
      *
      * @param parameters
@@ -84,8 +74,6 @@ export class McduSpeedProfile implements SpeedProfile {
 
     update(aircraftDistanceAlongTrack: NauticalMiles) {
         this.aircraftDistanceAlongTrack = aircraftDistanceAlongTrack;
-
-        this.resetCache();
     }
 
     getTarget(distanceFromStart: NauticalMiles, altitude: Feet, managedSpeedType: ManagedSpeedType): Knots {
@@ -141,41 +129,14 @@ export class McduSpeedProfile implements SpeedProfile {
     }
 
     getManagedTarget(distanceFromStart: NauticalMiles, altitude: Feet, managedSpeedType: ManagedSpeedType): Knots {
-        let managedSpeed = this.getManagedSpeedForType(managedSpeedType);
-        const { climbSpeedLimit, descentSpeedLimit } = this.parameters.get();
+        const constraintSpeed = constraintToSpeed(managedSpeedType === ManagedSpeedType.Climb || managedSpeedType === ManagedSpeedType.Cruise
+            ? this.getMaxClimbSpeedConstraint(distanceFromStart)
+            : this.getMaxDescentSpeedConstraint(distanceFromStart));
 
-        if (managedSpeedType === ManagedSpeedType.Climb || managedSpeedType === ManagedSpeedType.Cruise) {
-            if (this.shouldTakeClimbSpeedLimitIntoAccount() && altitude < climbSpeedLimit.underAltitude) {
-                managedSpeed = Math.min(climbSpeedLimit.speed, managedSpeed);
-            }
-        } else if (this.shouldTakeDescentSpeedLimitIntoAccount() && altitude < descentSpeedLimit.underAltitude) {
-            managedSpeed = Math.min(descentSpeedLimit.speed, managedSpeed);
-        }
-
-        return Math.min(managedSpeed, this.findMaxSpeedAtDistanceAlongTrack(distanceFromStart));
-    }
-
-    getCurrentSpeedTarget(): Knots {
-        return this.findMaxSpeedAtDistanceAlongTrack(this.aircraftDistanceAlongTrack);
-    }
-
-    private findMaxSpeedAtDistanceAlongTrack(distanceAlongTrack: NauticalMiles): Knots {
-        this.maxSpeedLookups++;
-
-        const cachedMaxSpeed = this.maxSpeedCache.get(distanceAlongTrack);
-        if (cachedMaxSpeed) {
-            this.maxSpeedCacheHits++;
-            return cachedMaxSpeed;
-        }
-
-        const maxSpeed = Math.min(
-            constraintToSpeed(this.getMaxClimbSpeedConstraint(distanceAlongTrack)),
-            constraintToSpeed(this.getMaxDescentSpeedConstraint(distanceAlongTrack)),
+        return Math.min(
+            this.getTargetWithoutConstraints(altitude, managedSpeedType),
+            constraintSpeed,
         );
-
-        this.maxSpeedCache.set(distanceAlongTrack, maxSpeed);
-
-        return maxSpeed;
     }
 
     getMaxClimbSpeedConstraint(distanceAlongTrack: NauticalMiles): MaxSpeedConstraint {
@@ -223,17 +184,6 @@ export class McduSpeedProfile implements SpeedProfile {
         return distance;
     }
 
-    showDebugStats() {
-        if (this.maxSpeedLookups === 0) {
-            console.log('[FMS/VNAV] No max speed lookups done so far.');
-            return;
-        }
-
-        console.log(
-            `[FMS/VNAV] Performed ${this.maxSpeedLookups} max speed lookups. Of whics ${this.maxSpeedCacheHits} (${100 * this.maxSpeedCacheHits / this.maxSpeedLookups}%) had been cached`,
-        );
-    }
-
     shouldTakeClimbSpeedLimitIntoAccount(): boolean {
         return this.isValidSpeedLimit(this.parameters.get().climbSpeedLimit);
     }
@@ -270,12 +220,6 @@ export class McduSpeedProfile implements SpeedProfile {
         default:
             return managedClimbSpeedMach;
         }
-    }
-
-    private resetCache() {
-        this.maxSpeedCache.clear();
-        this.maxSpeedLookups = 0;
-        this.maxSpeedCacheHits = 0;
     }
 }
 
