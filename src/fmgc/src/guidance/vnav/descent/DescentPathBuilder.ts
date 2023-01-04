@@ -157,7 +157,7 @@ export class DescentPathBuilder {
         const { distanceFromStart: pposDistanceFromStart, speed: currentSpeed, altitude: currentAltitude } = sequence.lastCheckpoint;
 
         // Find next constraint
-        const nextSpeedConstraint = speedConstraints.find((c) => c.distanceFromStart > pposDistanceFromStart && c.maxSpeed <= currentSpeed);
+        const nextSpeedConstraint = speedConstraints.find((c) => c.distanceFromStart >= pposDistanceFromStart && c.maxSpeed <= currentSpeed);
 
         const isSpeedLimitValidCandidate = speedLimit && currentAltitude > speedLimit.underAltitude && currentSpeed > speedLimit.speed;
 
