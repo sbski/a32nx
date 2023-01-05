@@ -801,6 +801,11 @@ export class VnavDriver implements GuidanceComponent {
             this.currentNavGeometryProfile.invalidate();
         }
     }
+
+    // Only used to check whether T/D PWP should be displayed despite not being in lat auto control
+    public isFlightPhasePreflight(): boolean {
+        return this.computationParametersObserver.get().flightPhase === FmgcFlightPhase.Preflight;
+    }
 }
 
 /// To check whether the value changed from old to new, but not if both values are NaN. (NaN !== NaN in JS)

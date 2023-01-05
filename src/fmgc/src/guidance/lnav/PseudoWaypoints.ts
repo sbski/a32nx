@@ -423,7 +423,6 @@ export class PseudoWaypoints implements GuidanceComponent {
         let [efisSymbolLla, distanceFromLegTermination, alongLegIndex] = [undefined, undefined, undefined];
         // We want the decel point and T/D to be drawn along the track line even if not in NAV mode
         if (this.guidanceController.vnavDriver.isLatAutoControlActive() || isCheckpointForMcduPwp(checkpoint)) {
-            // TODO: Pass in `shouldForcePlacementOnFlightplan`
             const pwp = this.pointFromEndOfPath(geometry, wptCount, totalDistance - checkpoint?.distanceFromStart, checkpoint.reason);
             if (!pwp) {
                 return undefined;
@@ -561,7 +560,7 @@ export class PseudoWaypoints implements GuidanceComponent {
                 distanceFromStart: checkpoint.distanceFromStart,
                 displayedOnMcdu: true,
                 flightPlanInfo: this.formatFlightPlanInfo(checkpoint, geometry, alongLegIndex, distanceFromLegTermination),
-                displayedOnNd: this.guidanceController.vnavDriver.isLatAutoControlActive(),
+                displayedOnNd: this.guidanceController.vnavDriver.isLatAutoControlActive() || this.guidanceController.vnavDriver.isFlightPhasePreflight(),
             };
         case VerticalCheckpointReason.CrossingFcuAltitudeDescent:
             return {
