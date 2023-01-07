@@ -3,7 +3,6 @@ import { ManagedSpeedType, SpeedProfile } from '@fmgc/guidance/vnav/climb/SpeedP
 import { ArmedVerticalMode, isArmed, VerticalMode } from '@shared/autopilot';
 import { ClimbStrategy } from '@fmgc/guidance/vnav/climb/ClimbStrategy';
 import { EngineModel } from '@fmgc/guidance/vnav/EngineModel';
-import { WindComponent } from '@fmgc/guidance/vnav/wind';
 import { HeadwindProfile } from '@fmgc/guidance/vnav/wind/HeadwindProfile';
 import { Predictions, StepResults } from '../Predictions';
 import { VerticalCheckpoint, VerticalCheckpointReason } from '../profile/NavGeometryProfile';
@@ -42,6 +41,8 @@ export class ClimbPathBuilder {
         finalAltitude: Feet,
         finalAltitudeReason: VerticalCheckpointReason = VerticalCheckpointReason.AtmosphericConditions,
     ) {
+        const { managedClimbSpeedMach } = this.computationParametersObserver.get();
+
         for (const constraint of profile.maxAltitudeConstraints) {
             const { maxAltitude: constraintAltitude, distanceFromStart: constraintDistanceFromStart } = constraint;
 
@@ -73,15 +74,13 @@ export class ClimbPathBuilder {
                     // Reset
                     profile.checkpoints.splice(indexToResetTo);
 
-                    const averageDistanceFromStart = (currentSpeedConstraint.distanceFromStart + profile.lastCheckpoint.distanceFromStart) / 2;
-                    const headwind = windProfile.getHeadwindComponent(averageDistanceFromStart, profile.lastCheckpoint.altitude);
-
                     // Use distance step instead
-                    this.distanceStepFromLastCheckpoint(
+                    this.buildIteratedDistanceStep(
                         profile,
                         climbStrategy,
+                        windProfile,
                         currentSpeedConstraint.distanceFromStart - profile.lastCheckpoint.distanceFromStart,
-                        headwind,
+                        managedClimbSpeedMach,
                         VerticalCheckpointReason.SpeedConstraint,
                     );
 
@@ -105,8 +104,6 @@ export class ClimbPathBuilder {
         if (profile.lastCheckpoint.reason === VerticalCheckpointReason.AltitudeConstraint) {
             profile.lastCheckpoint.reason = VerticalCheckpointReason.ContinueClimb;
         }
-
-        const { managedClimbSpeedMach } = this.computationParametersObserver.get();
 
         // We get here if there are still waypoints with speed constrainst after all the altitude constraints
         for (const speedConstraint of profile.maxClimbSpeedConstraints) {
@@ -135,12 +132,12 @@ export class ClimbPathBuilder {
             }
 
             if (speedConstraint.distanceFromStart > profile.lastCheckpoint.distanceFromStart) {
-                const averageDistanceFromStart = (speedConstraint.distanceFromStart + profile.lastCheckpoint.distanceFromStart) / 2;
-                const headwind = windProfile.getHeadwindComponent(averageDistanceFromStart, profile.lastCheckpoint.altitude);
-
-                this.distanceStepFromLastCheckpoint(
-                    profile, climbStrategy, speedConstraint.distanceFromStart - profile.lastCheckpoint.distanceFromStart, headwind, VerticalCheckpointReason.AtmosphericConditions,
-                );
+                this.buildIteratedDistanceStep(profile,
+                    climbStrategy,
+                    windProfile,
+                    speedConstraint.distanceFromStart - profile.lastCheckpoint.distanceFromStart,
+                    managedClimbSpeedMach,
+                    VerticalCheckpointReason.SpeedConstraint);
 
                 // This occurs if we somehow overshot the target altitude
                 if (profile.lastCheckpoint.altitude > finalAltitude) {
@@ -194,10 +191,30 @@ export class ClimbPathBuilder {
         }
     }
 
-    private distanceStepFromLastCheckpoint(profile: BaseGeometryProfile, climbStrategy: ClimbStrategy, distance: NauticalMiles, headwind: WindComponent, reason: VerticalCheckpointReason) {
-        const { managedClimbSpeedMach } = this.computationParametersObserver.get();
-        const { altitude, speed: initialSpeed, remainingFuelOnBoard } = profile.lastCheckpoint;
+    private buildIteratedDistanceStep(
+        profile: BaseGeometryProfile, climbStrategy: ClimbStrategy, windProfile: HeadwindProfile, distance: NauticalMiles, mach: Mach, reason: VerticalCheckpointReason,
+    ) {
+        let distanceCrossed = 0;
+        for (; distanceCrossed + 3 < distance; distanceCrossed += 3) {
+            // The reason we don't check the actual distance travelled is because we don't want to have an infinite loop if the distance step travels no distance for some reason.
+            // With this loop, it terminates at some point at least
+            this.distanceStepFromLastCheckpoint(
+                profile, climbStrategy, windProfile, 3, mach, VerticalCheckpointReason.AtmosphericConditions,
+            );
+        }
 
+        this.distanceStepFromLastCheckpoint(
+            profile, climbStrategy, windProfile, distance - distanceCrossed, mach, reason,
+        );
+    }
+
+    private distanceStepFromLastCheckpoint(
+        profile: BaseGeometryProfile, climbStrategy: ClimbStrategy, windProfile: HeadwindProfile, distance: NauticalMiles, mach: Mach, reason: VerticalCheckpointReason,
+    ) {
+        const { managedClimbSpeedMach } = this.computationParametersObserver.get();
+        const { distanceFromStart, altitude, speed: initialSpeed, remainingFuelOnBoard } = profile.lastCheckpoint;
+
+        const headwind = windProfile.getHeadwindComponent(distanceFromStart, altitude);
         const step = climbStrategy.predictToDistance(altitude, distance, initialSpeed, managedClimbSpeedMach, remainingFuelOnBoard, headwind);
 
         this.addCheckpointFromStep(profile, step, reason);
