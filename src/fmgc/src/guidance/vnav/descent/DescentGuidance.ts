@@ -4,6 +4,7 @@ import { AtmosphericConditions } from '@fmgc/guidance/vnav/AtmosphericConditions
 import { AircraftToDescentProfileRelation } from '@fmgc/guidance/vnav/descent/AircraftToProfileRelation';
 import { NavGeometryProfile } from '@fmgc/guidance/vnav/profile/NavGeometryProfile';
 import { VerticalProfileComputationParametersObserver } from '@fmgc/guidance/vnav/VerticalProfileComputationParameters';
+import { Arinc429Word } from '@shared/arinc429';
 import { VerticalMode } from '@shared/autopilot';
 import { FmgcFlightPhase } from '@shared/flightphase';
 import { SpeedMargin } from './SpeedMargin';
@@ -19,6 +20,12 @@ enum DescentSpeedGuidanceState {
     NotInDescentPhase,
     TargetOnly,
     TargetAndMargins,
+}
+
+enum PathCaptureState {
+    OffPath,
+    OnPath,
+    InPathCapture,
 }
 
 export class DescentGuidance {
@@ -50,6 +57,12 @@ export class DescentGuidance {
 
     private isInUnderspeedCondition: boolean = false;
 
+    private readonly pathCaptureGain: number = 0.1;
+
+    private readonly pathDisengagementGain: number = 0.2;
+
+    private pathCaptureState: PathCaptureState = PathCaptureState.OffPath;
+
     constructor(
         private guidanceController: GuidanceController,
         private aircraftToDescentProfileRelation: AircraftToDescentProfileRelation,
@@ -75,9 +88,11 @@ export class DescentGuidance {
             return;
         }
 
-        if (this.verticalState !== DescentVerticalGuidanceState.InvalidProfile && newState === DescentVerticalGuidanceState.InvalidProfile) {
+        if (newState === DescentVerticalGuidanceState.InvalidProfile) {
             this.reset();
             this.writeToSimVars();
+        } else if (newState === DescentVerticalGuidanceState.Observing) {
+            this.pathCaptureState = PathCaptureState.OffPath;
         }
 
         this.verticalState = newState;
@@ -90,6 +105,7 @@ export class DescentGuidance {
         this.showLinearDeviationOnPfd = false;
         this.showDescentLatchOnPfd = false;
         this.isInOverspeedCondition = false;
+        this.pathCaptureState = PathCaptureState.OffPath;
     }
 
     update(deltaTime: number, distanceToEnd: NauticalMiles) {
@@ -139,15 +155,17 @@ export class DescentGuidance {
         const isSpeedAuto = Simplane.getAutoPilotAirspeedManaged();
         const isApproachPhaseActive = this.observer.get().flightPhase === FmgcFlightPhase.Approach;
         const isHoldActive = this.guidanceController.isManualHoldActive();
+        const targetVerticalSpeed = this.aircraftToDescentProfileRelation.currentTargetVerticalSpeed();
 
-        this.targetAltitudeGuidance = this.atmosphericConditions.estimatePressureAltitudeInMsfs(
-            this.aircraftToDescentProfileRelation.currentTargetAltitude(),
-        );
+        this.targetAltitudeGuidance = this.atmosphericConditions.currentPressureAltitude - linearDeviation;
 
-        if ((!isHoldActive && linearDeviation > 200) || this.isInOverspeedCondition) {
+        this.updatePathCaptureState(linearDeviation, targetVerticalSpeed);
+        const shouldGoOffPath = this.pathCaptureState === PathCaptureState.OffPath;
+
+        if ((!isHoldActive && shouldGoOffPath && linearDeviation > 50) || this.isInOverspeedCondition) {
             // above path
             this.requestedVerticalMode = RequestedVerticalMode.SpeedThrust;
-        } else if (isBeforeTopOfDescent || linearDeviation < -100 || isHoldActive) {
+        } else if (shouldGoOffPath || isBeforeTopOfDescent || isHoldActive) {
             // below path
             if (isHoldActive) {
                 this.requestedVerticalMode = RequestedVerticalMode.VsSpeed;
@@ -163,13 +181,69 @@ export class DescentGuidance {
             // on idle path
 
             this.requestedVerticalMode = RequestedVerticalMode.VpathThrust;
-            this.targetVerticalSpeed = this.aircraftToDescentProfileRelation.currentTargetVerticalSpeed();
+            this.targetVerticalSpeed = targetVerticalSpeed;
         } else {
             // on geometric path
 
             this.requestedVerticalMode = RequestedVerticalMode.VpathSpeed;
-            this.targetVerticalSpeed = this.aircraftToDescentProfileRelation.currentTargetVerticalSpeed();
+            this.targetVerticalSpeed = targetVerticalSpeed;
         }
+    }
+
+    private updatePathCaptureState(linearDeviation: Feet, targetVerticalSpeed: FeetPerMinute): void {
+        const allowPathCapture = this.isPathCaptureConditionMet(linearDeviation, targetVerticalSpeed, this.pathCaptureGain);
+
+        switch (this.pathCaptureState) {
+        case PathCaptureState.OffPath:
+            if (allowPathCapture) {
+                this.pathCaptureState = PathCaptureState.InPathCapture;
+            }
+
+            break;
+        case PathCaptureState.OnPath:
+            if (Math.abs(linearDeviation) > 100 && !allowPathCapture) {
+                this.pathCaptureState = PathCaptureState.OffPath;
+            }
+
+            break;
+        case PathCaptureState.InPathCapture:
+            const shouldDisengageFromActiveCapture = !this.isPathCaptureConditionMet(linearDeviation, targetVerticalSpeed, this.pathDisengagementGain);
+
+            if (shouldDisengageFromActiveCapture) {
+                this.pathCaptureState = PathCaptureState.OffPath;
+            } else if (Math.abs(linearDeviation) < 50) {
+                this.pathCaptureState = PathCaptureState.OnPath;
+            }
+
+            break;
+        default:
+            break;
+        }
+    }
+
+    private isPathCaptureConditionMet(linearDeviation: Feet, targetVerticalSpeed: FeetPerMinute, gain: number): boolean {
+        const verticalSpeed = this.getVerticalSpeed();
+        if (!verticalSpeed) {
+            // Fallback path capture condition
+            return Math.abs(linearDeviation) < 100;
+        }
+
+        return Math.abs(linearDeviation) < gain * Math.abs(verticalSpeed - targetVerticalSpeed);
+    }
+
+    private getVerticalSpeed(): FeetPerMinute | null {
+        const barometricVs = Arinc429Word.fromSimVarValue('L:A32NX_ADIRS_ADR_1_BAROMETRIC_VERTICAL_SPEED');
+        const inertialVs = Arinc429Word.fromSimVarValue('L:A32NX_ADIRS_IR_1_VERTICAL_SPEED');
+
+        if (inertialVs.isNormalOperation()) {
+            return inertialVs.value;
+        }
+
+        if (barometricVs.isNormalOperation()) {
+            return barometricVs.value;
+        }
+
+        return null;
     }
 
     private updateSpeedTarget() {
@@ -199,30 +273,30 @@ export class DescentGuidance {
     private updateSpeedGuidance() {
         if (this.speedState === DescentSpeedGuidanceState.NotInDescentPhase) {
             return;
+        } if (this.speedState === DescentSpeedGuidanceState.TargetOnly) {
+            SimVar.SetSimVarValue('L:A32NX_SPEEDS_MANAGED_ATHR', 'knots', this.speedTarget);
+
+            return;
         }
 
-        const maxBias = 8;
-        const speedBias = this.requestedVerticalMode === RequestedVerticalMode.SpeedThrust
-            ? Math.max(Math.min(this.aircraftToDescentProfileRelation.computeLinearDeviation() / 100, maxBias), 0)
-            : 0;
+        const [lower, upper] = this.speedMargin.getMargins(this.speedTarget);
+        const isOnGeometricPath = this.aircraftToDescentProfileRelation.isOnGeometricPath();
 
-        const airspeed = this.atmosphericConditions.currentAirspeed;
-        const guidanceTarget = this.useDynamicSpeedTarget()
-            ? this.speedMargin.getTarget(airspeed + speedBias, this.speedTarget)
-            : this.speedTarget;
+        let guidanceTarget = this.speedTarget;
+        if (this.requestedVerticalMode === RequestedVerticalMode.SpeedThrust && !this.isInOverspeedCondition) {
+            // If we're above the profile, target the upper speed margin to get back on the profile
+
+            guidanceTarget = upper;
+        } else if (this.requestedVerticalMode === RequestedVerticalMode.VpathThrust || this.requestedVerticalMode === RequestedVerticalMode.VpathSpeed && !isOnGeometricPath) {
+            // In VPATH THRUST, the speed target does not matter, so set it to lower margin already in case we start underspeeding
+            // If we get into VPATH SPEED on the idle path, we must have been underspeeding, so try keeping lower margin speed or go into idle
+
+            guidanceTarget = lower;
+        }
+
         SimVar.SetSimVarValue('L:A32NX_SPEEDS_MANAGED_ATHR', 'knots', guidanceTarget);
-
-        if (this.speedState === DescentSpeedGuidanceState.TargetAndMargins) {
-            const [lower, upper] = this.speedMargin.getMargins(this.speedTarget);
-
-            SimVar.SetSimVarValue('L:A32NX_PFD_LOWER_SPEED_MARGIN', 'Knots', lower);
-            SimVar.SetSimVarValue('L:A32NX_PFD_UPPER_SPEED_MARGIN', 'Knots', upper);
-        }
-    }
-
-    private useDynamicSpeedTarget(): boolean {
-        return this.speedState === DescentSpeedGuidanceState.TargetAndMargins
-            && (this.requestedVerticalMode === RequestedVerticalMode.SpeedThrust || this.requestedVerticalMode === RequestedVerticalMode.VpathThrust);
+        SimVar.SetSimVarValue('L:A32NX_PFD_LOWER_SPEED_MARGIN', 'Knots', lower);
+        SimVar.SetSimVarValue('L:A32NX_PFD_UPPER_SPEED_MARGIN', 'Knots', upper);
     }
 
     private updateSpeedMarginState() {
@@ -285,9 +359,7 @@ export class DescentGuidance {
             this.isInOverspeedCondition = true;
         }
 
-        if (this.isInUnderspeedCondition && airspeed > lowerLimit) {
-            this.isInUnderspeedCondition = false;
-        } else if (!this.isInUnderspeedCondition && airspeed < lowerLimit - 5) {
+        if (!this.isInUnderspeedCondition && airspeed < lowerLimit) {
             this.isInUnderspeedCondition = true;
         }
     }

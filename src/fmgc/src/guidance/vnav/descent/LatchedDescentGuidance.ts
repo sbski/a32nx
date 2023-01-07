@@ -128,9 +128,7 @@ export class LatchedDescentGuidance {
         const isCloseToAirfieldElevation = this.aircraftToDescentProfileRelation.isCloseToAirfieldElevation();
         const isHoldActive = this.guidanceController.isManualHoldActive();
 
-        this.targetAltitudeGuidance = this.atmosphericConditions.estimatePressureAltitudeInMsfs(
-            this.aircraftToDescentProfileRelation.currentTargetAltitude(),
-        );
+        this.targetAltitudeGuidance = this.atmosphericConditions.currentPressureAltitude - linearDeviation;
 
         if ((!isHoldActive && linearDeviation > 200) || this.isInOverspeedCondition) {
             // Above path

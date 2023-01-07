@@ -62,6 +62,10 @@ export class AtmosphericConditions {
         return this.windDirectionFromSim;
     }
 
+    get currentPressureAltitude(): Feet {
+        return this.pressureAltFromSim;
+    }
+
     getCurrentWindVelocityComponent(direction: DegreesTrue): Knots {
         return Math.cos(Avionics.Utils.diffAngle(direction, this.currentWindDirection)) * this.currentWindSpeed;
     }
@@ -107,48 +111,6 @@ export class AtmosphericConditions {
         const deltaSrs = Common.getDelta(altitude, altitude > this.tropoPause);
 
         return Common.CAStoTAS(speed, thetaSrs, deltaSrs);
-    }
-
-    /**
-     * Computes the ambient pressure measured at the static ports that was used to compute the indicated altitude.
-     * @param altitude An indicated altitude
-     * @param qnh The QNH setting at which the indicated altitude is measured
-     * @returns The estimated ambient pressure based on the indicated altitude for this QNH setting
-     */
-    private estimateAmbientPressure(altitude: Feet, qnh: Millibar): Millibar {
-        return qnh * (1 - altitude / 145442.15) ** (1 / 0.190263);
-    }
-
-    /**
-     * Computes the pressure altitude for a given ambient pressure. The pressure altitude is the altitude that would be indicated if the QNH was set to 1013.
-     * @param pressure The ambient pressure
-     * @returns
-     */
-    private computePressureAltitude(pressure: Millibar): Feet {
-        // Equation from Boeing Jet Transport Performance Methods document
-        return 145442.15 * (1 - ((pressure / 1013.25) ** 0.190263));
-    }
-
-    /**
-     * Estimates what the pressure altitude would be at a given altitude that was indicated for some QNH setting.
-     * If the QNH setting is 1013, the returned pressure altitude is the same as the indicated one
-     * @param altitude The indicated altitude to be converted to a pressure altitude
-     * @param qnh The QNH setting at which the indicated altitude is measured
-     * @returns
-     */
-    estimatePressureAltitude(altitude: Feet, qnh: Millibar) {
-        const ambientPressure = this.estimateAmbientPressure(altitude, qnh);
-        return this.computePressureAltitude(ambientPressure);
-    }
-
-    /**
-     * This is a hack because the QNH setting is a bit broken in MSFS as of 09/03/22.
-     * For now, we just linearly extrapolate the pressure altitude based on the linear deviation
-     * @param altitude The indicated altitude at which to estimate the pressure altitude
-     */
-    estimatePressureAltitudeInMsfs(altitude: Feet) {
-        // We add 2000 to avoid a division by zero
-        return this.pressureAltFromSim * (2000 + altitude) / (2000 + this.altitudeFromSim);
     }
 
     /**
