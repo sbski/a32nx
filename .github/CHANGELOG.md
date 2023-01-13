@@ -29,6 +29,7 @@
 1. [MISC] Added aircraft version check and uer notification - @frankkopp (Frank Kopp) 
 1. [EFB] Added QuickControls to flyPad StatusBar - @Benjozork (Benjamin Dupont) @frankkopp (Frank Kopp)
 1. [SOUND] Fix announcements playing twice and adding check for power to PA - @frankkopp (Frank Kopp)
+1. [GENERAL] Added C++ WASM framework and migrated all flypad-backend code to it - @frankkopp (Frank Kopp)
 
 ## 0.9.0
 
