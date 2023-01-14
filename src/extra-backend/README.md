@@ -167,6 +167,29 @@ which can be cached to avoid multiple calls to the sim for the same variable.
 It is still possible tp explicitly read and write the variable from and to the 
 sim if required. 
 
+**Reading**
+               
+| method           | description                                                                                               |
+|:-----------------|:----------------------------------------------------------------------------------------------------------|
+| get()            | Returns cached value - never reads directly from sim                                                      |
+| updateFromSim()  | Returns updated cached value - reads from sim if update criteria are met (maxAge)                         |
+| readFromSim()    | Reads the value from the sim, updates cache, clears dirty flag - does not checks update criteria (maxAge) |
+| rawReadFromSim() | The raw MSFS SDK call to read from the sim. **Must be implemented by specialized classes**                | 
+
+See the documentation of CacheableVariable for more details.
+
+**Writing**
+              
+| method             | description                                                                                                          |
+|--------------------|----------------------------------------------------------------------------------------------------------------------|
+| set()              | Sets cached value - never writes directly to sim - sets dirty flag if set with a different value as the cached value |
+| updateToSim()      | Updates a value to the sim if it is dirty.                                                                           |
+| writeToSim()       | Writes the current cached value to the sim. Clears the dirty flag.                                                   |
+| setAndWriteToSim() | Sets the current value and writes it to the sim. Clears the dirty flag.                                              |
+| rawWriteToSim()    | The raw MSFS SDK call to write the sim. **Must be implemented by specialized classes**                               |
+                
+See the documentation of CacheableVariable for more details.
+
 ##### NamedVariable
 The NamedVariable is a variable which is mapped to a LVAR. It is the most simple
 variable type and can be used to store and retrieve custom numeric data from the 
