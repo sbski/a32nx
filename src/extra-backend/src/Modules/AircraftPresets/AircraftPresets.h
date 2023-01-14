@@ -23,6 +23,9 @@ private:
   NamedVariablePtr progressAircraftPreset{};
   NamedVariablePtr progressAircraftPresetId{};
 
+  // DEBUG
+  NamedVariablePtr efbBrightness{};
+
   // Sim-vars
   AircraftVariablePtr simOnGround{};
 

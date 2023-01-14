@@ -37,9 +37,12 @@ bool AircraftPresets::initialize() {
 
   // LVARs
   loadAircraftPresetRequest = dataManager->make_named_var("AIRCRAFT_PRESET_LOAD", UNITS.Bool, true, true);
-  loadAircraftPresetRequest->setAndWriteToSim(0);
   progressAircraftPreset = dataManager->make_named_var("AIRCRAFT_PRESET_LOAD_PROGRESS");
   progressAircraftPresetId = dataManager->make_named_var("AIRCRAFT_PRESET_LOAD_CURRENT_ID");
+  loadAircraftPresetRequest->setAndWriteToSim(0);
+
+  // DEBUG PURPOSES
+  efbBrightness = dataManager->make_named_var("EFB_BRIGHTNESS", UNITS.Number, false, false, 0, 0);
 
   // Simvars
   simOnGround = dataManager->make_simple_aircraft_var("SIM ON GROUND", UNITS.Number, true);
@@ -56,9 +59,18 @@ bool AircraftPresets::preUpdate([[maybe_unused]] sGaugeDrawData* pData) {
 
 bool AircraftPresets::update(sGaugeDrawData* pData) {
   if (!isInitialized) {
-    std::cerr << "LightingPresets::update() - not initialized" << std::endl;
+    std::cerr << "AircraftPresets::update() - not initialized" << std::endl;
     return false;
   }
+
+  // DEBUG PURPOSES
+  //  std::cout << "efbBrightness =  " << efbBrightness->get() << " changed? "
+  //            << (efbBrightness->hasChanged() ? "yes" : "no") << std::endl;
+  //  std::cout << "efbBrightness time = " << msfsHandler->getPreviousSimulationTime()
+  //            << " tick = " << msfsHandler->getTickCounter()
+  //            << std::endl;
+
+  if (!msfsHandler->getA32NxIsReady()) return true;
 
   // has request to load a preset been received?
   if (loadAircraftPresetRequest->get() > 0) {

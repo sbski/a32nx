@@ -83,6 +83,8 @@ bool Pushback::update(sGaugeDrawData* pData) {
     return false;
   }
 
+  if (!msfsHandler->getA32NxIsReady()) return true;
+
   // Check if the pushback system is enabled and conditions are met
   if (!pushbackSystemEnabled->getAsBool()
       || !pushbackAttached->getAsBool()
