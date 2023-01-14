@@ -25,6 +25,8 @@ include_directories(src/Modules/AircraftPresets)
 
 add_executable(flybywire-a32nx-extra-backend
         src/aircraft_prefix.h
+        src/lib/stringconcat.h
+        src/lib/math_utils.h
         src/lib/Units.h
         src/lib/simple_assert.h
         src/lib/IDGenerator.h
@@ -44,4 +46,4 @@ add_executable(flybywire-a32nx-extra-backend
         src/Modules/Pushback/InertialDampener.cpp src/Modules/Pushback/InertialDampener.h
         src/Modules/AircraftPresets/AircraftPresets.cpp src/Modules/AircraftPresets/AircraftPresets.h
         src/Modules/AircraftPresets/AircraftProcedures.h
-        src/lib/stringconcat.h)
+        )
