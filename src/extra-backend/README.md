@@ -272,6 +272,6 @@ If you want debug information in the build use:<br/>
 - [ ] Implement additional SimConnect data types (Client Data Area)
 -
 - Ideas:
-  - [ ] Use better build tools (CMake, Ninja, etc.) if build times become too long.
-  - [ ] Add Unit Test framework
-  - [ ] Add Logging Framework]
+Use better build tools (CMake, Ninja, etc.) if build times become too long.
+Add Unit Test framework
+Add Logging Framework]

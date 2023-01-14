@@ -58,8 +58,7 @@ and faster implementation.
 
 ## Logging
 
-
-TODO                                                          
+TODO - complete this section                                                          
 - MSFS does not easily allow to attach a debugger for C++
 - MSFS has no permanent logging
 - Logging should not be excessive but allow to see where the code is at
