@@ -45,8 +45,8 @@ public:
     FLOAT64 maxAgeTime = 0.0,
     UINT64 maxAgeTicks = 0);
 
-  FLOAT64 readFromSim() override;
-  void writeToSim() override;
+  FLOAT64 rawReadFromSim() override;
+  void rawWriteToSim() override;
 };
 
 #endif // FLYBYWIRE_A32NX_NAMEDVARIABLE_H

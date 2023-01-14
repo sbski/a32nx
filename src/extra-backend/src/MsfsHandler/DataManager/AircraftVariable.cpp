@@ -25,38 +25,36 @@ AircraftVariable::AircraftVariable(
   }
 }
 
-FLOAT64 AircraftVariable::readFromSim() {
+FLOAT64 AircraftVariable::rawReadFromSim() {
   if (dataID == -1) {
     std::cerr << ("Aircraft variable " + varName + " not found") << std::endl;
-    dirty = false;
     return FLOAT64{};
   }
-  const FLOAT64 value = aircraft_varget(dataID, unit.id, index);
-  cachedValue = value;
-  dirty = false;
-  return value;
+  return aircraft_varget(dataID, unit.id, index);
 }
 
-void AircraftVariable::writeToSim() {
+void AircraftVariable::set(FLOAT64 value) {
+  if (setterEventName.empty() && setterEvent == nullptr) {
+    std::cerr << "AircraftVariable::set() called on [" << varName
+              << "] but no setter event name is set" << std::endl;
+    return;
+  }
+  CacheableVariable::set(value);
+}
+
+void AircraftVariable::rawWriteToSim() {
   if (setterEventName.empty() && setterEvent == nullptr) {
     std::cerr << "AircraftVariable::setAndWriteToSim() called on \"" << varName
               << "\" but no setter event name is set" << std::endl;
     return;
   }
-  if (cachedValue.has_value()) {
-    dirty = false;
-    // use the given event if one is set
-    if (setterEvent) {
-      useEventSetter();
-      return;
-    }
-    // Alternative use calculator code if no event is set
-    useCalculatorCodeSetter();
+  // use the given event if one is set
+  if (setterEvent) {
+    useEventSetter();
     return;
   }
-  std::cerr << "AircraftVariable::setAndWriteToSim() called on [" << varName
-            << "] but no value is cached"
-            << std::endl;
+  // Alternative use calculator code if no event is set
+  useCalculatorCodeSetter();
 }
 
 void AircraftVariable::setAutoWrite(bool autoWriting) {
@@ -66,16 +64,7 @@ void AircraftVariable::setAutoWrite(bool autoWriting) {
     return;
   }
   CacheableVariable::setAutoWrite(autoWriting);
-};
-
-void AircraftVariable::set(FLOAT64 value) {
-  if (setterEventName.empty() && setterEvent == nullptr) {
-    std::cerr << "AircraftVariable::set() called on [" << varName
-              << "] but no setter event name is set" << std::endl;
-    return;
-  }
-  CacheableVariable::set(value);
-};
+}
 
 // =================================================================================================
 // PRIVATE METHODS

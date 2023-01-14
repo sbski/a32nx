@@ -66,8 +66,8 @@ public:
     FLOAT64 maxAgeTime = 0.0,
     UINT64 maxAgeTicks = 0);
 
-  FLOAT64 readFromSim() override;
-  void writeToSim() override;
+  FLOAT64 rawReadFromSim() override;
+  void rawWriteToSim() override;
 
   void setAutoWrite(bool autoWriting) override;
   void set(FLOAT64 value) override;

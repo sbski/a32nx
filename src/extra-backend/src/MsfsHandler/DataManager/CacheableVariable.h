@@ -16,7 +16,7 @@
 /**
  * Virtual base class for sim variable like named variables, aircraft variables and
  * DataDefinitions (custom defined SimObjects).
- * Specialized classes must implement the readFromSim and writeToSim methods and can
+ * Specialized classes must implement the rawReadFromSim and rawWriteToSim methods and can
  * overwrite any other method if the default implementation is not sufficient.
  */
 class CacheableVariable {
@@ -86,7 +86,8 @@ protected:
   std::optional<FLOAT64> cachedValue{};
 
   /**
-   * Flag to indicate if the variable has been changed since the last read from the sim.
+   * Flag to indicate if the variable has been changed by set() since the last read from the sim and
+   * that it needs to be written back to the sim.
    */
   bool dirty = false;
 
@@ -136,17 +137,9 @@ public:
   [[nodiscard]] FLOAT64 get() const;
 
   /**
-   * Reads the value from the sim and updates the cache (clears dirty flag).
-   * This does not update the timeStampSimTime or tickStamp.
-   * Must be implemented by specialized classes. This method is called by the
-   * requestUpdateFromSim() method.
-   * @return the value read from the sim
-   */
-  virtual FLOAT64 readFromSim() = 0;
-
-  /**
    * Reads the value fom the sim if the cached value is older than the max age (time or ticks).
-   * It updates the cache (clears dirty flag) and the timeStampSimTime and tickStamp.
+   * It updates the cache (clears dirty flag), the hasChanged flag, the timeStampSimTime and
+   * tickStamp.
    * If the value has been set by the set() method since the last read from the sim (is dirty)
    * but has not been written to the sim yet an error message is printed to std::cerr.
    * (MSFS does not allow exceptions)
@@ -157,26 +150,28 @@ public:
   FLOAT64 updateFromSim(FLOAT64 timeStamp, UINT64 tickCounter);
 
   /**
+   * Reads the value from the sim and updates the cache (clears dirty flag).
+   * It manages the changed flag and sets it to true if the value has changed since last read
+   * or sets it to false if the value has not changed.<p/>
+   * This does not update the timeStampSimTime or tickStamp.
+   * @return the value read from the sim
+   */
+  FLOAT64 readFromSim();
+
+  /**
+   * Raw read call to the sim.
+   * Must be implemented by specialized classes.
+   * This method is called by the readFromSim2() method.
+   * @return the value read from the sim
+   */
+  virtual FLOAT64 rawReadFromSim() = 0;
+
+  virtual /**
    * Sets the cache value and marks the variable as dirty.
    * Does not write the value to the sim or update the time and tick stamps.
    * @param value the value to set
    */
-  virtual void set(FLOAT64 value);
-
-  /**
-   * Writes the current value to the sim.
-   * Clears the dirty flag.
-   * Must be implemented by specialized classes.
-   * This method is called by the updateToSim() and setAndWriteToSim(FLOAT64 v) methods.
-   */
-  virtual void writeToSim() = 0;
-
-  /**
-   * Writes the given value to the cache and the sim.
-   * Clears the dirty flag.
-   * @param value The value to set the variable to.
-   */
-  virtual void setAndWriteToSim(FLOAT64 value);
+  void set(FLOAT64 value);
 
   /**
    * Writes the cached value to the sim if the dirty flag is set.
@@ -184,6 +179,26 @@ public:
    * This does not update the timeStampSimTime or tickStamp.
    */
   void updateToSim();
+
+  /**
+   * Writes the current value to the sim.
+   * Clears the dirty flag.<p/>
+   */
+  void writeToSim();
+
+  /**
+   * Writes the given value to the cache and the sim.
+   * Clears the dirty flag.
+   * @param value The value to set the variable to.
+   */
+  void setAndWriteToSim(FLOAT64 value);
+
+  /**
+   * Raw write call to the sim.
+   * Must be implemented by specialized classes.
+   * This method is called by the writeToSim()methods.
+   */
+  virtual void rawWriteToSim() = 0;
 
   /**
    * Returns a string representing the object
@@ -194,7 +209,8 @@ public:
     os << "Variable{ name='" << getVarName() << "'";
     os << " index=" << getIndex();
     os << " value=" << get();
-    os << " dirty=" << (isStoredToSim() ? "false" : "true");
+    os << " changed=" << (hasChanged() ? "true" : "false");
+    os << " dirty=" << (isDirty() ? "true" : "false");
     os << " unit=\"" << getUnit().name << "\"";
     os << " autoRead=" << (isAutoRead() ? "autoR" : "manualR");
     os << " autoWrite=" << (isAutoWrite() ? "autoW" : "manualW");
@@ -233,7 +249,7 @@ public:
 
   void setMaxAgeTicks(int64_t newMaxAgeTicks) { maxAgeTicks = newMaxAgeTicks; }
 
-  [[nodiscard]] bool isStoredToSim() const { return !dirty; }
+  [[nodiscard]] bool isDirty() const { return dirty; }
 
   [[nodiscard]] bool getAsBool() const { return static_cast<bool>(get()); }
 

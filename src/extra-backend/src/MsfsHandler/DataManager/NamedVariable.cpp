@@ -20,22 +20,18 @@ NamedVariable::NamedVariable(
   dataID = register_named_variable(varName.c_str());
 }
 
-FLOAT64 NamedVariable::readFromSim() {
-  const FLOAT64 value = get_named_variable_value(dataID);
-  cachedValue = value;
-  dirty = false;
-  return value;
+FLOAT64 NamedVariable::rawReadFromSim() {
+  const FLOAT64 d = get_named_variable_value(dataID);
+  //  std::cout << "NamedVariable::rawReadFromSim() "
+  //            << varName
+  //            << " fromSim = "  << d
+  //            << " cached  = "  << cachedValue.value_or(-999999)
+  //            << std::endl;
+  return d;
 }
 
-void NamedVariable::writeToSim() {
-  if (cachedValue.has_value()) {
-    dirty = false;
-    set_named_variable_value(dataID, cachedValue.value());
-    return;
-  }
-  std::cerr << "NamedVariable::setAndWriteToSim() called on \"" << varName
-            << "\" but no value is cached"
-            << std::endl;
+void NamedVariable::rawWriteToSim() {
+  set_named_variable_value(dataID, cachedValue.value());
 }
 
 
