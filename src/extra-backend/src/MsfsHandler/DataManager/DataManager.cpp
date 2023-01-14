@@ -7,8 +7,6 @@
 #include "NamedVariable.h"
 #include "SimconnectExceptionStrings.h"
 
-inline constexpr bool DEBUG_DATA_MANAGER = false;
-
 DataManager::DataManager() = default;
 
 bool DataManager::initialize(HANDLE hdl) {
@@ -30,10 +28,12 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
   for (auto &var: variables) {
     if (var.second->isAutoRead()) {
       var.second->updateFromSim(timeStamp, tickCounter);
-      if (DEBUG_DATA_MANAGER && tickCounter % 100 == 0) {
+#ifdef DEBUG
+      if (tickCounter % 100 == 0) {
         std::cout << "DataManager::preUpdate() - auto read named and aircraft: "
         << var.second->getVarName()  << " = " << var.second->get()  << std::endl;
       }
+#endif
     }
   }
 
@@ -44,10 +44,12 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
         std::cerr << "DataManager::preUpdate(): requestUpdateFromSim() failed for "
                   << ddv->getName() << std::endl;
       }
-      if (DEBUG_DATA_MANAGER && tickCounter % 100 == 0) {
+#ifdef DEBUG
+      if (tickCounter % 100 == 0) {
         std::cout << "DataManager::preUpdate() - auto read simobjects: "
                   << ddv->getName() << std::endl;
       }
+#endif
     }
   }
 
@@ -78,10 +80,12 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
   for (auto &var: variables) {
     if (var.second->isAutoWrite()) {
       var.second->updateToSim();
-      if (DEBUG_DATA_MANAGER && tickCounter % 100 == 0) {
+#ifdef DEBUG
+      if (tickCounter % 100 == 0) {
         std::cout << "DataManager::postUpdate() - auto write named and aircraft: "
                   << var.second->getVarName()  << " = " << var.second->get()  << std::endl;
       }
+#endif
     }
   }
 
@@ -92,10 +96,12 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
         std::cerr << "DataManager::postUpdate(): updateToSim() failed for "
                   << ddv->getName() << std::endl;
       }
-      if (DEBUG_DATA_MANAGER && tickCounter % 100 == 0) {
+#ifdef DEBUG
+      if (tickCounter % 100 == 0) {
         std::cout << "DataManager::postUpdate() - auto write simobjects"
                   << ddv->getName()  << std::endl;
       }
+#endif
     }
   }
 

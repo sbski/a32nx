@@ -6,11 +6,16 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 OUTPUT="${DIR}/../../flybywire-aircraft-a320-neo/SimObjects/AirPlanes/FlyByWire_A320_NEO/panel/extra-backend.wasm"
 
 if [ "$1" == "--debug" ]; then
-  CLANG_ARGS="-g -DDEBUG"
+CLANG_ARGS="-g -DDEBUG"
+WASMLD_ARGS="-O0"
 else
-  CLANG_ARGS="-O2 -flto"
-  WASMLD_ARGS="--strip-debug  -O2 --lto-O2"
+CLANG_ARGS="-flto -O3"
+WASMLD_ARGS="-O3 --lto-O3 --strip-debug"
 fi
+
+# Define which flavor of aircraft should be compiled
+# Can be used in the code to differentiate between the different aircraft
+AIRCRAFT="A32NX"
 
 set -ex
 
@@ -21,6 +26,7 @@ pushd "${DIR}/obj"
 # compile c++ code
 clang++ \
   -c \
+  -D${AIRCRAFT} \
   ${CLANG_ARGS} \
   -std=c++17 \
   -Wall \

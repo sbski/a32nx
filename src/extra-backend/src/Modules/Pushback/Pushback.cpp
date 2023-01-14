@@ -36,16 +36,16 @@ bool Pushback::initialize() {
   dataManager = &msfsHandler->getDataManager();
 
   // LVARs
-  pushbackSystemEnabled = dataManager->make_named_var("A32NX_PUSHBACK_SYSTEM_ENABLED", UNITS.Bool, true);
-  parkingBrakeEngaged = dataManager->make_named_var("A32NX_PARK_BRAKE_LEVER_POS");
-  tugCommandedSpeedFactor = dataManager->make_named_var("A32NX_PUSHBACK_SPD_FACTOR");
-  tugCommandedHeadingFactor = dataManager->make_named_var("A32NX_PUSHBACK_HDG_FACTOR");
+  pushbackSystemEnabled = dataManager->make_named_var("PUSHBACK_SYSTEM_ENABLED", UNITS.Bool, true);
+  parkingBrakeEngaged = dataManager->make_named_var("PARK_BRAKE_LEVER_POS");
+  tugCommandedSpeedFactor = dataManager->make_named_var("PUSHBACK_SPD_FACTOR");
+  tugCommandedHeadingFactor = dataManager->make_named_var("PUSHBACK_HDG_FACTOR");
   // debug purposes
-  tugCommandedSpeed = dataManager->make_named_var("A32NX_PUSHBACK_SPD");
-  tugCommandedHeading = dataManager->make_named_var("A32NX_PUSHBACK_HDG");
-  tugInertiaSpeed = dataManager->make_named_var("A32NX_PUSHBACK_INERTIA_SPD");
-  updateDelta = dataManager->make_named_var("A32NX_PUSHBACK_UPDT_DELTA");
-  rotXOut = dataManager->make_named_var("A32NX_PUSHBACK_R_X_OUT");
+  tugCommandedSpeed = dataManager->make_named_var("PUSHBACK_SPD");
+  tugCommandedHeading = dataManager->make_named_var("PUSHBACK_HDG");
+  tugInertiaSpeed = dataManager->make_named_var("PUSHBACK_INERTIA_SPD");
+  updateDelta = dataManager->make_named_var("PUSHBACK_UPDT_DELTA");
+  rotXOut = dataManager->make_named_var("PUSHBACK_R_X_OUT");
 
   // Simvars
   pushbackAttached = dataManager->make_simple_aircraft_var("Pushback Attached", UNITS.Bool, true);

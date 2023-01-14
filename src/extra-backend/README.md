@@ -64,6 +64,10 @@ Details see below.
 
 ## Components
 
+### Aircraft Prefix
+
+<span style="color:yellow">TODO</span>
+
 ### Gauge
 A gauge is the central entry point for the simulator into the WASM module.
 It basically provides a callback function the sim calls with different messages 
@@ -74,7 +78,6 @@ In this framework the gauge code can be found in the Gauge_Extra_Backend.cpp fil
 
 Gauges need to be configured into the panel.cfg file:<br/>
 <span style="color:cyan">flybywire-aircraft-a320-neo/SimObjects/AirPlanes/FlyByWire_A320_NEO/panel/panel.cfg</span>
-
 
 The Gauge_Extra_Backend.cpp also instantiates the MsfsHandler and the custom 
 modules - this is the only place a new module has to be added.

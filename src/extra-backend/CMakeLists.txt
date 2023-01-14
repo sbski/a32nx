@@ -4,7 +4,11 @@ project(flybywire-a32nx-flypad-backend)
 set(CMAKE_CXX_STANDARD 17)
 set(MSFS_SDK "C:\\MSFS SDK")
 
-set(CMAKE_CXX_FLAGS "-c -Wall -Wextra -Wno-unused-command-line-argument -Wno-ignored-attributes -Wno-macro-redefined --sysroot \"${MSFS_SDK}/WASM/wasi-sysroot\" -target wasm32-unknown-wasi -flto -D_MSFS_WASM=1 -D__wasi__ -D_LIBCPP_HAS_NO_THREADS -D_WINDLL -D_MBCS -mthread-model single -fno-exceptions -fms-extensions")
+set(AIRCRAFT "A32NX")
+set(DEBUG "-DDEBUG")
+
+set(CMAKE_CXX_FLAGS "-c -D${AIRCRAFT} ${DEBUG} -Wall -Wextra -Wno-unused-command-line-argument -Wno-ignored-attributes -Wno-macro-redefined --sysroot \"${MSFS_SDK}/WASM/wasi-sysroot\" -target wasm32-unknown-wasi -flto -D_MSFS_WASM=1 -D__wasi__ -D_LIBCPP_HAS_NO_THREADS -D_WINDLL -D_MBCS -mthread-model single -fno-exceptions -fms-extensions")
+
 
 include_directories("${MSFS_SDK}/WASM/include")
 include_directories("${MSFS_SDK}/WASM/wasi-sysroot/include")
@@ -20,6 +24,7 @@ include_directories(src/Modules/Pushback)
 include_directories(src/Modules/AircraftPresets)
 
 add_executable(flybywire-a32nx-extra-backend
+        src/aircraft_prefix.h
         src/lib/Units.h
         src/lib/simple_assert.h
         src/lib/IDGenerator.h
@@ -38,4 +43,5 @@ add_executable(flybywire-a32nx-extra-backend
         src/Modules/Pushback/Pushback.cpp src/Modules/Pushback/Pushback.h
         src/Modules/Pushback/InertialDampener.cpp src/Modules/Pushback/InertialDampener.h
         src/Modules/AircraftPresets/AircraftPresets.cpp src/Modules/AircraftPresets/AircraftPresets.h
-        src/Modules/AircraftPresets/AircraftProcedures.h)
+        src/Modules/AircraftPresets/AircraftProcedures.h
+        src/lib/stringconcat.h)

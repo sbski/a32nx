@@ -38,6 +38,8 @@ typedef std::shared_ptr<Event> EventPtr;
  * controlled on-demand update mechanism in this class' preUpdate method.
  *
  * TODO
+ *  - Make VAR prefix configurable (compiler flag?)
+ *  - Check if values have changed after reading from sim to signal modules if something has changed or not
  *  - add support for receiving events
  *  - add ClientDataArea Variable
  *  - maybe rename classes DataDefinitionVariable to SimObject or similar

@@ -36,16 +36,16 @@ bool LightingPresets::initialize() {
   cabinLightSetEvent = dataManager->make_event("CABIN_LIGHTS_SET");
 
   // Control LVARs - auto updated with every tick - LOAD/SAVE also auto written to sim
-  elecAC1Powered = dataManager->make_named_var("A32NX_ELEC_AC_1_BUS_IS_POWERED", UNITS.Number, true, false);
-  loadLightingPresetRequest = dataManager->make_named_var("A32NX_LIGHTING_PRESET_LOAD", UNITS.Number, true, true);
-  saveLightingPresetRequest = dataManager->make_named_var("A32NX_LIGHTING_PRESET_SAVE", UNITS.Number, true, true);
+  elecAC1Powered = dataManager->make_named_var("ELEC_AC_1_BUS_IS_POWERED", UNITS.Number, true, false);
+  loadLightingPresetRequest = dataManager->make_named_var("LIGHTING_PRESET_LOAD", UNITS.Number, true, true);
+  saveLightingPresetRequest = dataManager->make_named_var("LIGHTING_PRESET_SAVE", UNITS.Number, true, true);
 
   // Lighting LVARs - manual update and write when load/saving is requested
-  efbBrightness = dataManager->make_named_var("A32NX_EFB_BRIGHTNESS", UNITS.Number, false, false);
-  dcduLeftLightLevel = dataManager->make_named_var("A32NX_PANEL_DCDU_L_BRIGHTNESS", UNITS.Number, false, false);
-  dcduRightLightLevel = dataManager->make_named_var("A32NX_PANEL_DCDU_R_BRIGHTNESS", UNITS.Number, false, false);
-  mcduLeftLightLevel = dataManager->make_named_var("A32NX_MCDU_L_BRIGHTNESS", UNITS.Number, false, false);
-  mcduRightLightLevel = dataManager->make_named_var("A32NX_MCDU_R_BRIGHTNESS", UNITS.Number, false, false);
+  efbBrightness = dataManager->make_named_var("EFB_BRIGHTNESS", UNITS.Number, false, false);
+  dcduLeftLightLevel = dataManager->make_named_var("PANEL_DCDU_L_BRIGHTNESS", UNITS.Number, false, false);
+  dcduRightLightLevel = dataManager->make_named_var("PANEL_DCDU_R_BRIGHTNESS", UNITS.Number, false, false);
+  mcduLeftLightLevel = dataManager->make_named_var("MCDU_L_BRIGHTNESS", UNITS.Number, false, false);
+  mcduRightLightLevel = dataManager->make_named_var("MCDU_R_BRIGHTNESS", UNITS.Number, false, false);
 
   // Light Potentiometers - manual update and write when load/saving is requested
   lightCabin = dataManager->make_aircraft_var("LIGHT CABIN", 0, "", cabinLightSetEvent, UNITS.Percent);

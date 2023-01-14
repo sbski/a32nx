@@ -23,9 +23,8 @@ class CacheableVariable {
 protected:
   /**
    * The name of the variable in the sim
-   * E.g. "A32NX_IS_READY" or "SIM ON GROUND"
    */
-  const std::string varName{};
+  const std::string varName;
 
   /**
    * The index of an indexed sim variable
@@ -97,11 +96,12 @@ protected:
   ID dataID = -1;
 
 public:
-  virtual ~CacheableVariable() = default;
-
   CacheableVariable() = delete; // no default constructor
   CacheableVariable(const CacheableVariable&) = delete; // no copy constructor
   CacheableVariable& operator=(const CacheableVariable&) = delete; // no copy assignment
+
+protected:
+  virtual ~CacheableVariable() = default;
 
   /**
    * Constructor
@@ -114,11 +114,12 @@ public:
    * @param maxAgeTime The maximum age of the variable in seconds when using requestUpdateFromSim()
    * @param maxAgeTicks The maximum age of the variable in ticks when using updateToSim()
    */
-  explicit CacheableVariable(std::string name, int index, Unit unit, bool autoReading, bool autoWriting,
+  explicit CacheableVariable(std::string  name, int index, Unit unit, bool autoReading, bool autoWriting,
                              FLOAT64 maxAgeTime, UINT64 maxAgeTicks)
       : varName(std::move(name)), index(index), unit(unit), autoRead(autoReading), autoWrite(autoWriting),
         maxAgeTime(maxAgeTime), maxAgeTicks(maxAgeTicks) {}
 
+public:
   /**
    * Returns the cached value or the default value (FLOAT64{}) if the cache is empty.
    * Prints an error to std::cerr if the cache is empty.

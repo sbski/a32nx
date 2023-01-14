@@ -5,6 +5,7 @@
 
 #include <MSFS/Legacy/gauges.h>
 
+#include "aircraft_prefix.h"
 #include "NamedVariable.h"
 
 NamedVariable::NamedVariable(
@@ -14,7 +15,7 @@ NamedVariable::NamedVariable(
   bool autoWriting,
   FLOAT64 maxAgeTime,
   UINT64 maxAgeTicks)
-  : CacheableVariable(varName, 0, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks) {
+  : CacheableVariable(std::string(AIRCRAFT_PREFIX) + varName, 0, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks) {
 
   dataID = register_named_variable(varName.c_str());
 }

@@ -36,10 +36,10 @@ bool AircraftPresets::initialize() {
   dataManager = &msfsHandler->getDataManager();
 
   // LVARs
-  loadAircraftPresetRequest = dataManager->make_named_var("A32NX_AIRCRAFT_PRESET_LOAD", UNITS.Bool, true, true);
+  loadAircraftPresetRequest = dataManager->make_named_var("AIRCRAFT_PRESET_LOAD", UNITS.Bool, true, true);
   loadAircraftPresetRequest->setAndWriteToSim(0);
-  progressAircraftPreset = dataManager->make_named_var("A32NX_AIRCRAFT_PRESET_LOAD_PROGRESS");
-  progressAircraftPresetId = dataManager->make_named_var("A32NX_AIRCRAFT_PRESET_LOAD_CURRENT_ID");
+  progressAircraftPreset = dataManager->make_named_var("AIRCRAFT_PRESET_LOAD_PROGRESS");
+  progressAircraftPresetId = dataManager->make_named_var("AIRCRAFT_PRESET_LOAD_CURRENT_ID");
 
   // Simvars
   simOnGround = dataManager->make_simple_aircraft_var("SIM ON GROUND", UNITS.Number, true);
