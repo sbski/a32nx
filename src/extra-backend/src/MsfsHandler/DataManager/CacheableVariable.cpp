@@ -50,3 +50,4 @@ void CacheableVariable::setAndWriteToSim(FLOAT64 value) {
   set(value);
   writeToSim();
 }
+

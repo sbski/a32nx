@@ -91,6 +91,11 @@ protected:
   bool dirty = false;
 
   /**
+   * Flag to indicate if the variable has been read from the sim but is the same as during the last read
+   */
+  bool isChanged = false;
+
+  /**
    * The sim's data ID for the variable or the data definition id for a data definition variable.
    */
   ID dataID = -1;
@@ -237,6 +242,8 @@ public:
   [[nodiscard]] void setAsBool(bool b) { set(b ? 1.0 : 0.0); }
 
   [[nodiscard]] void setAsInt64(UINT64 i) { set(static_cast<FLOAT64>(i)); }
+
+  [[nodiscard]] bool hasChanged() const { return isChanged; }
 };
 
 /**
