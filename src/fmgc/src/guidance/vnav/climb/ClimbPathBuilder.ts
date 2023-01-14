@@ -141,8 +141,10 @@ export class ClimbPathBuilder {
 
                 // This occurs if we somehow overshot the target altitude
                 if (profile.lastCheckpoint.altitude > finalAltitude) {
-                    profile.checkpoints.splice(profile.checkpoints.length - 1);
+                    // Remove all checkpoints that are above the final altitude
+                    profile.checkpoints = profile.checkpoints.filter((c) => c.altitude <= finalAltitude);
 
+                    // Use an altitude step instead
                     this.buildIteratedClimbSegment(profile, climbStrategy, speedProfile, windProfile, profile.lastCheckpoint.altitude, finalAltitude);
                 }
             }
