@@ -28,7 +28,7 @@ public:
   /**
    * Creates an instance of a named variable.
    * If the variable is not found in the sim it will be created.
-   * @param varName The name of the variable in the sim. An aircraft prefix (e.g. A32NX_) will be added automatically.
+   * @param name The name of the variable in the sim. An aircraft prefix (e.g. A32NX_) will be added automatically.
    * @param unit The unit  of the variable as per the sim. See Units.h
    * @param autoReading Used by external classes to determine if the variable should be updated
    * automatically from the sim.
@@ -38,7 +38,7 @@ public:
    * @param maxAgeTicks The maximum age of an auto updated variable in sim ticks.
    */
   explicit NamedVariable(
-    const std::string& varName,
+    const std::string& name,
     Unit unit = UNITS.Number,
     bool autoReading = false,
     bool autoWriting = false,

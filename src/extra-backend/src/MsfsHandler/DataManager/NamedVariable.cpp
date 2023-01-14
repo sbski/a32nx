@@ -9,13 +9,13 @@
 #include "NamedVariable.h"
 
 NamedVariable::NamedVariable(
-  const std::string &varName,
+  const std::string &name,
   Unit unit,
   bool autoReading,
   bool autoWriting,
   FLOAT64 maxAgeTime,
   UINT64 maxAgeTicks)
-  : CacheableVariable(std::string(AIRCRAFT_PREFIX) + varName, 0, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks) {
+  : CacheableVariable(std::string(AIRCRAFT_PREFIX) + name, 0, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks) {
 
   dataID = register_named_variable(varName.c_str());
 }
