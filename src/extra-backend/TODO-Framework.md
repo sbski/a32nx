@@ -3,6 +3,7 @@ MVP v0.1:
 
 - [x] Make VAR prefix configurable (compiler flag?)
 - [ ] Check if values have changed after reading from sim to signal modules if something has changed or not
+- [ ] Improve checking for existing vars - use the one if the faster update cycle
 - [ ] add support for receiving events
 - [ ] add ClientDataArea Variable
 
