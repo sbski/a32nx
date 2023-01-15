@@ -72,7 +72,7 @@ void AircraftVariable::setAutoWrite(bool autoWriting) {
 
 void AircraftVariable::useEventSetter() {
   const auto data = static_cast<DWORD>(cachedValue.value());
-  if (index) {
+  if (index != 0) {
     setterEvent->trigger_ex1(index, data);
   }
   else {

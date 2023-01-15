@@ -25,11 +25,11 @@ bool ExampleModule::initialize() {
 
   // LVARS
   debugLVARPtr = dataManager->make_named_var("DEBUG_LVAR", UNITS.Number, true, false, 0, 0);
-  //  debugLVARPtr->setEpsilon(0.1); // only read when difference is 0.1 or more
+  debugLVARPtr->setEpsilon(1.0); // only read when difference is 1.0 or more
 
   // Aircraft variables
   beaconLightSwitchPtr = dataManager->make_aircraft_var("LIGHT BEACON", 0, "",
-                                        beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
+                                                        beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
 
   // Data definition variables
   std::vector<DataDefinitionVariable::DataDefinition> exampleDataDef = {
@@ -56,13 +56,16 @@ bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
 
   if (!msfsHandler->getA32NxIsReady()) return true;
 
+  // Use this to throttle output frequency
+  // if (msfsHandler->getTickCounter() % 100 == 0) {
+
   // Read vars which auto update each tick
   //  std::cout << "debugLVARPtr =  " << debugLVARPtr->get() << " changed? "
   //            << (debugLVARPtr->hasChanged() ? "yes" : "no")
-  //            << "debugLVARPtr time = " << msfsHandler->getPreviousSimulationTime()
+  //            << " debugLVARPtr time = " << msfsHandler->getPreviousSimulationTime()
   //            << " tick = " << msfsHandler->getTickCounter()
   //            << std::endl;
-  //
+
   //  std::cout << "beaconLightSwitchPtr =  " << beaconLightSwitchPtr->get() << " changed? "
   //            << (beaconLightSwitchPtr->hasChanged() ? "yes" : "no")
   //            << "beaconLightSwitchPtr time = " << msfsHandler->getPreviousSimulationTime()
@@ -75,14 +78,14 @@ bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
   //            << std::endl;
 
   // Set a variable which does not auto write
-  //  if (msfsHandler->getTickCounter() % 100 == 0) {
   //    debugLVARPtr->setAndWriteToSim(debugLVARPtr->get() + 1);
   //
   //    beaconLightSwitchPtr->setAndWriteToSim(beaconLightSwitchPtr->get() == 0.0 ? 1.0 : 0.0);
   //
   //    exampleDataStruct.strobeLightSwitch = exampleDataStruct.strobeLightSwitch == 0.0 ? 1.0 : 0.0;
   //    exampleDataPtr->writeToSim();
-  //  }
+
+  // }
 
   return true;
 }
