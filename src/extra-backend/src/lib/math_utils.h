@@ -4,9 +4,8 @@
 #ifndef FLYBYWIRE_A32NX_MATH_UTILS_H
 #define FLYBYWIRE_A32NX_MATH_UTILS_H
 
-#include <cmath>
 #include <limits>
-#include <cstdlib>
+#include <cmath>
 
 namespace helper {
 

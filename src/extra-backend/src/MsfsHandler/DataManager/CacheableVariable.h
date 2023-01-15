@@ -92,9 +92,16 @@ protected:
   bool dirty = false;
 
   /**
-   * Flag to indicate if the variable has been read from the sim but is the same as during the last read
+   * Flag to indicate if the variable has changed compared to the last read/write from the sim.
    */
-  bool isChanged = false;
+  bool changed = false;
+
+  /**
+   * The epsilon required to change a variable after a read from the sim. This is used to
+   * set the changed flag and cache the new value if it is different by >epsilon from the last
+   * cached value.
+   */
+  FLOAT64 epsilon = std::numeric_limits<FLOAT64>::epsilon();
 
   /**
    * The sim's data ID for the variable or the data definition id for a data definition variable.
@@ -259,7 +266,10 @@ public:
 
   [[nodiscard]] void setAsInt64(UINT64 i) { set(static_cast<FLOAT64>(i)); }
 
-  [[nodiscard]] bool hasChanged() const { return isChanged; }
+  [[nodiscard]] bool hasChanged() const { return changed; }
+
+  [[nodiscard]] FLOAT64 getEpsilon() const { return epsilon; }
+  void setEpsilon(FLOAT64 eps) { epsilon = eps; }
 };
 
 /**

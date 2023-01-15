@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "CacheableVariable.h"
+#include "math_utils.h"
 
 FLOAT64 CacheableVariable::get() const {
   if (cachedValue.has_value()) {
@@ -47,27 +48,42 @@ FLOAT64 CacheableVariable::updateFromSim(FLOAT64 timeStamp, UINT64 tickCounter) 
 
 FLOAT64 CacheableVariable::readFromSim() {
   const FLOAT64 fromSim = rawReadFromSim();
-  changed = !cachedValue.has_value() || (fromSim != cachedValue.value());
+  changed = !cachedValue.has_value()
+            || !helper::Math::almostEqual(fromSim, cachedValue.value(), epsilon);
+
+  // Handling of "changed" - two options
+  // 1. new field to remember the last value marked as changed and compare it to the new value
+  // 2. do not update the cache value and discard the sim read (which is a bit of waste)
+  // Option 2 has been chosen for now as it is simpler and doesn't need the extra field.
+  if (changed) {
+    cachedValue = fromSim;
+    /* DEBUG
+    //  if (changed) {
+    //    std::cout << "CacheableVariable::readFromSim() - "
+    //              << varName
+    //              << " changed from " << cachedValue.value_or(-999999)
+    //              << " to " << fromSim
+    //              << std::endl;
+    //  }
+     */
+  }
+  /*  else {
   // DEBUG
-  //  if (changed) {
-  //    std::cout << "CacheableVariable::readFromSim() - "
-  //              << varName
-  //              << " changed from " << cachedValue.value_or(-999999)
-  //              << " to " << fromSim
-  //              << std::endl;
+  //    std::cout << "CacheableVariable::readFromSim() - " << varName << " is unchanged" << std::endl;
   //  }
-  cachedValue = fromSim;
+  */
+
   dirty = false;
   return cachedValue.value();
 }
 
 void CacheableVariable::set(FLOAT64 value) {
-  // DEBUG
+/*  // DEBUG
   //  std::cout << "CacheableVariable::set() - "
   //            << varName
   //            << " from " << cachedValue.value_or(-999999)
   //            << " to " << value
-  //            << std::endl;
+  //            << std::endl;*/
   if (cachedValue.has_value() && cachedValue.value() == value) {
     return;
   }
