@@ -141,17 +141,53 @@ NamedVariablePtr DataManager::make_named_var(
   FLOAT64 maxAgeTime,
   UINT64 maxAgeTicks) {
 
+  // The name needs to contain all the information to identify the variable
+  // and the expected value uniquely. This is because the same variable can be
+  // used in different places with different expected values via Units.
+  const std::string uniqueName = varName + ":" + unit.name;
+
+#ifdef DEBUG
+  std::cout << "DataManager::make_named_var(): " << uniqueName << std::endl;
+#endif
+
   // Check if variable already exists
-  // TODO: change the variable so that the shortest required update and write
-  //  times are used
-  if (variables.find(varName) != variables.end()) {
-    return std::dynamic_pointer_cast<NamedVariable>(variables[varName]);
+  // Check which update method and frequency to use - if two variables are the same
+  // use the update method and frequency of the automated one with faster update frequency
+  if (variables.find(uniqueName) != variables.end()) {
+    if (!variables[uniqueName]->isAutoRead() && autoReading) {
+      variables[uniqueName]->setAutoRead(true);
+    }
+    if (variables[uniqueName]->getMaxAgeTime() > maxAgeTime) {
+      variables[uniqueName]->setMaxAgeTime(maxAgeTime);
+    }
+    if (variables[uniqueName]->getMaxAgeTicks() > maxAgeTicks) {
+      variables[uniqueName]->setMaxAgeTicks(maxAgeTicks);
+    }
+    if (!variables[uniqueName]->isAutoWrite() && autoWriting) {
+      variables[uniqueName]->setAutoWrite(true);
+    }
+#ifdef DEBUG
+    std::cout << "DataManager::make_named_var(): variable "
+              << uniqueName << " already exists: "
+              << variables[uniqueName]
+              << std::endl;
+#endif
+    return std::dynamic_pointer_cast<NamedVariable>(variables[uniqueName]);
   }
 
   // Create new var and store it in the map
   std::shared_ptr<NamedVariable> var =
     std::make_shared<NamedVariable>(varName, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
-  variables[var->getVarName()] = var;
+
+#ifdef DEBUG
+  std::cout << "DataManager::make_named_var(): creating variable "
+            << varName << " (" << var << ")"
+            << std::endl;
+#endif
+
+  //  the actual var name of the created variable will have a prefix added to it
+  //  so we canÄt use var->getVarName() here
+  variables[uniqueName] = var;
 
   return var;
 }
@@ -167,20 +203,53 @@ AircraftVariablePtr DataManager::make_aircraft_var(
   FLOAT64 maxAgeTime,
   UINT64 maxAgeTicks) {
 
-  // Check if variable already exists
-  // TODO: change the variable so that the shortest required update and write
-  //  times are used
-  const std::string fullName = varName + ":" + std::to_string(0);
-  if (variables.find(fullName) != variables.end()) {
-    return std::dynamic_pointer_cast<AircraftVariable>(variables[fullName]);
-  }
+  // The name needs to contain all the information to identify the variable
+  // and the expected value uniquely. This is because the same variable can be
+  // used in different places with different expected values via Index and Units.
+  const std::string uniqueName = varName + ":" + std::to_string(index) + ":" + unit.name;
 
+#ifdef DEBUG
+  std::cout << "DataManager::make_aircraft_var(): " << uniqueName << std::endl;
+#endif
+
+  // Check if variable already exists
+  // Check which update method and frequency to use - if two variables are the same
+  // use the update method and frequency of the automated one with faster update frequency
+  if (variables.find(uniqueName) != variables.end()) {
+    if (!variables[uniqueName]->isAutoRead() && autoReading) {
+      variables[uniqueName]->setAutoRead(true);
+    }
+    if (variables[uniqueName]->getMaxAgeTime() > maxAgeTime) {
+      variables[uniqueName]->setMaxAgeTime(maxAgeTime);
+    }
+    if (variables[uniqueName]->getMaxAgeTicks() > maxAgeTicks) {
+      variables[uniqueName]->setMaxAgeTicks(maxAgeTicks);
+    }
+    if (!variables[uniqueName]->isAutoWrite() && autoWriting) {
+      variables[uniqueName]->setAutoWrite(true);
+    }
+
+#ifdef DEBUG
+    std::cout << "DataManager::make_aircraft_var(): variable "
+              << uniqueName << " already exists: "
+              << variables[uniqueName]
+              << std::endl;
+#endif
+    return std::dynamic_pointer_cast<AircraftVariable>(variables[uniqueName]);
+  }
   // Create new var and store it in the map
   std::shared_ptr<AircraftVariable> var =
     std::make_shared<AircraftVariable>(
       varName, index, std::move(setterEventName), std::move(setterEvent),
       unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
-  variables[fullName] = var;
+
+#ifdef DEBUG
+  std::cout << "DataManager::make_named_var(): creating variable "
+            << varName << " (" << var << ")"
+            << std::endl;
+#endif
+
+  variables[uniqueName] = var;
 
   return var;
 }
@@ -192,19 +261,50 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
   FLOAT64 maxAgeTime,
   UINT64 maxAgeTicks) {
 
+#ifdef DEBUG
+  std::cout << "DataManager::make_simple_aircraft_var(): " << varName << std::endl;
+#endif
+
+  // The name needs to contain all the information to identify the variable
+  // and the expected value uniquely. This is because the same variable can be
+  // used in different places with different expected values via Index and Units.
+  const std::string uniqueName = varName + ":" + std::to_string(0) + ":" + unit.name;
+
   // Check if variable already exists
-  // TODO: change the variable so that the shortest required update and write
-  //  times are used
-  const std::string fullName = varName + ":" + std::to_string(0);
-  if (variables.find(fullName) != variables.end()) {
-    return std::dynamic_pointer_cast<AircraftVariable>(variables[fullName]);
+  // Check which update method and frequency to use - if two variables are the same
+  // use the update method and frequency of the automated one with faster update frequency
+  if (variables.find(uniqueName) != variables.end()) {
+    if (!variables[uniqueName]->isAutoRead() && autoReading) {
+      variables[uniqueName]->setAutoRead(true);
+    }
+    if (variables[uniqueName]->getMaxAgeTime() > maxAgeTime) {
+      variables[uniqueName]->setMaxAgeTime(maxAgeTime);
+    }
+    if (variables[uniqueName]->getMaxAgeTicks() > maxAgeTicks) {
+      variables[uniqueName]->setMaxAgeTicks(maxAgeTicks);
+    }
+
+#ifdef DEBUG
+    std::cout << "DataManager::make_simple_aircraft_var(): variable "
+              << uniqueName << " already exists: "
+              << variables[uniqueName]
+              << std::endl;
+#endif
+    return std::dynamic_pointer_cast<AircraftVariable>(variables[uniqueName]);
   }
 
   // Create new var and store it in the map
   AircraftVariablePtr var =
     std::make_shared<AircraftVariable>(
       varName, 0, "", nullptr, unit, autoReading, false, maxAgeTime, maxAgeTicks);
-  variables[fullName] = var;
+
+#ifdef DEBUG
+  std::cout << "DataManager::make_simple_aircraft_var(): creating variable "
+            << varName << " (" << var << ")"
+            << std::endl;
+#endif
+
+  variables[uniqueName] = var;
 
   return var;
 }

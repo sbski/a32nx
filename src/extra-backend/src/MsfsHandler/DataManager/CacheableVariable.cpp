@@ -26,19 +26,8 @@ FLOAT64 CacheableVariable::updateFromSim(FLOAT64 timeStamp, UINT64 tickCounter) 
   // only update if the value is equal or older than the max age for sim time or ticks
   if (timeStampSimTime + maxAgeTime >= timeStamp || tickStamp + maxAgeTicks >= tickCounter) {
     changed = false;
-    // DEBUG
-    //    std::cout << "CacheableVariable::updateFromSim() - " << varName << " is up to date"
-    //              << " timeStampSimTime = " << timeStampSimTime
-    //              << " maxAgeTime = " << maxAgeTime
-    //              << " timeStamp = " << timeStamp
-    //              << " tickStamp = " << tickStamp
-    //              << " maxAgeTicks = " << maxAgeTicks
-    //              << " tickCounter = " << tickCounter
-    //              << std::endl;
     return cachedValue.value();
   }
-  // DEBUG
-  //  std::cout << "CacheableVariable::updateFromSim() - " << varName << " is out of date" << std::endl;
   // update the value from the sim
   const FLOAT64 simValue = readFromSim();
   timeStampSimTime = timeStamp;
@@ -47,6 +36,7 @@ FLOAT64 CacheableVariable::updateFromSim(FLOAT64 timeStamp, UINT64 tickCounter) 
 }
 
 FLOAT64 CacheableVariable::readFromSim() {
+  // TODO: check last read tickStamp and time and only read if not already read this tick
   const FLOAT64 fromSim = rawReadFromSim();
   changed = !cachedValue.has_value()
             || !helper::Math::almostEqual(fromSim, cachedValue.value(), epsilon);
@@ -57,33 +47,13 @@ FLOAT64 CacheableVariable::readFromSim() {
   // Option 2 has been chosen for now as it is simpler and doesn't need the extra field.
   if (changed) {
     cachedValue = fromSim;
-    /* DEBUG
-    //  if (changed) {
-    //    std::cout << "CacheableVariable::readFromSim() - "
-    //              << varName
-    //              << " changed from " << cachedValue.value_or(-999999)
-    //              << " to " << fromSim
-    //              << std::endl;
-    //  }
-     */
   }
-  /*  else {
-  // DEBUG
-  //    std::cout << "CacheableVariable::readFromSim() - " << varName << " is unchanged" << std::endl;
-  //  }
-  */
 
   dirty = false;
   return cachedValue.value();
 }
 
 void CacheableVariable::set(FLOAT64 value) {
-/*  // DEBUG
-  //  std::cout << "CacheableVariable::set() - "
-  //            << varName
-  //            << " from " << cachedValue.value_or(-999999)
-  //            << " to " << value
-  //            << std::endl;*/
   if (cachedValue.has_value() && cachedValue.value() == value) {
     return;
   }
