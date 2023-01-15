@@ -58,9 +58,10 @@ and faster implementation.
 
 ## Logging
 
+TODO - logging framework will be added
 TODO - complete this section                                                          
 - MSFS does not easily allow to attach a debugger for C++
-- MSFS has no permanent logging
+- MSFS has no permanent logging to analyse CTDs
 - Logging should not be excessive but allow to see where the code is at
 - Logging should print any warning and errors to the console to make it easier 
   to find issues later.  
