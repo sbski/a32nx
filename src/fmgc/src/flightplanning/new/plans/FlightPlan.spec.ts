@@ -12,6 +12,7 @@ import { FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { assertDiscontinuity, assertNotDiscontinuity } from '@fmgc/flightplanning/new/test/LegUtils';
 import { LegType, WaypointDescriptor } from 'msfs-navdata';
 import { loadAirwayLegs } from '@fmgc/flightplanning/new/segments/enroute/AirwayLoading';
+import { emptyFlightPlan } from '@fmgc/flightplanning/new/test/FlightPlan';
 
 if (!globalThis.fetch) {
     globalThis.fetch = fetch;
@@ -23,7 +24,7 @@ describe('a base flight plan', () => {
     });
 
     it('can insert a leg', async () => {
-        const fp = FlightPlan.empty();
+        const fp = emptyFlightPlan();
 
         await fp.setOriginAirport('CYUL');
         await fp.setOriginRunway('RW06R');
@@ -50,7 +51,7 @@ describe('a base flight plan', () => {
 
     describe('deleting legs', () => {
         it('without inserting a discontinuity', async () => {
-            const fp = FlightPlan.empty();
+            const fp = emptyFlightPlan();
 
             await fp.setOriginAirport('CYYZ');
             await fp.setOriginRunway('RW06R');
@@ -62,7 +63,7 @@ describe('a base flight plan', () => {
         });
 
         it('inserting a discontinuity', async () => {
-            const fp = FlightPlan.empty();
+            const fp = emptyFlightPlan();
 
             await fp.setOriginAirport('CYYZ');
             await fp.setOriginRunway('RW06R');
@@ -75,7 +76,7 @@ describe('a base flight plan', () => {
         });
 
         it('not duplicating a discontinuity', async () => {
-            const fp = FlightPlan.empty();
+            const fp = emptyFlightPlan();
 
             await fp.setOriginAirport('CYYZ');
             await fp.setOriginRunway('RW06R');
@@ -89,7 +90,7 @@ describe('a base flight plan', () => {
 
     describe('editing the departure or arrival', () => {
         it('should truncate departure segment after it is edited', async () => {
-            const flightPlan = FlightPlan.empty();
+            const flightPlan = emptyFlightPlan();
 
             await flightPlan.setOriginAirport('CYYZ');
             await flightPlan.setOriginRunway('RW06R');
@@ -113,7 +114,7 @@ describe('a base flight plan', () => {
         });
 
         it('should insert a discontinuity when deleting a leg', async () => {
-            const flightPlan = FlightPlan.empty();
+            const flightPlan = emptyFlightPlan();
 
             await flightPlan.setOriginAirport('CYYZ');
             await flightPlan.setOriginRunway('RW06R');
@@ -129,7 +130,7 @@ describe('a base flight plan', () => {
 
     describe('collapsing waypoints', () => {
         it('should collapse waypoints within one segment', async () => {
-            const flightPlan = FlightPlan.empty();
+            const flightPlan = emptyFlightPlan();
             const segment = flightPlan.enrouteSegment;
 
             const w1 = await loadSingleWaypoint('NOSUS', 'WCYCYULNOSUS');
@@ -159,7 +160,7 @@ describe('a base flight plan', () => {
         });
 
         it('should collapse waypoints across segments', async () => {
-            const flightPlan = FlightPlan.empty();
+            const flightPlan = emptyFlightPlan();
             const departure = flightPlan.departureSegment;
 
             await flightPlan.setOriginAirport('NZQN');
@@ -187,7 +188,7 @@ describe('a base flight plan', () => {
     });
 
     it('connects segments by merging TF -> FX legs with the same waypoint', async () => {
-        const fp = FlightPlan.empty();
+        const fp = emptyFlightPlan();
 
         await fp.setDestinationAirport('EGLL');
         await fp.setDestinationRunway('RW27R');
@@ -205,7 +206,7 @@ describe('a base flight plan', () => {
     });
 
     it('does not connect segments by merging TF -> FX legs with a different waypoint', async () => {
-        const fp = FlightPlan.empty();
+        const fp = emptyFlightPlan();
 
         await fp.setOriginAirport('EGLL');
         await fp.setOriginRunway('RW09L');
@@ -233,7 +234,7 @@ describe('a base flight plan', () => {
     describe('plan info', () => {
         describe('destination leg', () => {
             it('returns the right leg for an approach ending at the runway', async () => {
-                const fp = FlightPlan.empty();
+                const fp = emptyFlightPlan();
 
                 await fp.setDestinationAirport('CYYZ');
                 await fp.setDestinationRunway('RW05');
@@ -246,7 +247,7 @@ describe('a base flight plan', () => {
             });
 
             it('returns the right leg for an approach not ending at the runway', async () => {
-                const fp = FlightPlan.empty();
+                const fp = emptyFlightPlan();
 
                 await fp.setDestinationAirport('NZQN');
                 await fp.setDestinationRunway('RW05');

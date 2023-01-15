@@ -14,7 +14,7 @@ import { VerticalMode } from '@shared/autopilot';
 import { CoarsePredictions } from '@fmgc/guidance/vnav/CoarsePredictions';
 import { UpdateThrottler } from '@shared/UpdateThrottler';
 import { FinalAppGuidance } from '@fmgc/guidance/vnav/FinalApp';
-import { FlightPlans } from '@fmgc/flightplanning/FlightPlanManager';
+import { FlightPlanService } from '@fmgc/flightplanning/new/FlightPlanService';
 import { Geometry } from '../Geometry';
 import { GuidanceComponent } from '../GuidanceComponent';
 import { ClimbPathBuilder } from './climb/ClimbPathBuilder';
@@ -82,7 +82,7 @@ export class VnavDriver implements GuidanceComponent {
             if (VnavConfig.VNAV_CALCULATE_CLIMB_PROFILE) {
                 this.currentClimbProfile = ClimbPathBuilder.computeClimbPath(geometry);
             }
-            if (this.guidanceController.flightPlanManager.getApproach(FlightPlans.Active)) {
+            if (FlightPlanService.active.approach) {
                 this.currentApproachProfile = DecelPathBuilder.computeDecelPath(geometry);
             } else {
                 this.currentApproachProfile = null;

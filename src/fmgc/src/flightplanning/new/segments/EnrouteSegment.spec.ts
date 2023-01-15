@@ -9,6 +9,7 @@ import { loadAirwayLegs } from '@fmgc/flightplanning/new/segments/enroute/Airway
 import { FlightPlan } from '@fmgc/flightplanning/new/plans/FlightPlan';
 import { FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { setupNavigraphDatabase } from '@fmgc/flightplanning/new/test/Database';
+import { emptyFlightPlan } from '@fmgc/flightplanning/new/test/FlightPlan';
 
 if (!globalThis.fetch) {
     globalThis.fetch = fetch;
@@ -20,7 +21,7 @@ describe('an enroute segment', () => {
     });
 
     it('should insert waypoint sequentially', async () => {
-        const segment = FlightPlan.empty().enrouteSegment;
+        const segment = emptyFlightPlan().enrouteSegment;
 
         const w1 = await loadSingleWaypoint('NOSUS', 'WCYCYULNOSUS');
         const w2 = await loadSingleWaypoint('NAPEE', 'WCY    NAPEE');
@@ -45,7 +46,7 @@ describe('an enroute segment', () => {
     });
 
     it('should insert airway', async () => {
-        const segment = FlightPlan.empty().enrouteSegment;
+        const segment = emptyFlightPlan().enrouteSegment;
 
         const airwayLegs = await loadAirwayLegs(
             segment,

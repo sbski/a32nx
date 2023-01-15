@@ -11,11 +11,13 @@ import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 import { LnavConfig } from '@fmgc/guidance/LnavConfig';
 import { Transition } from '@fmgc/guidance/lnav/Transition';
 import { DmeArcTransition } from '@fmgc/guidance/lnav/transitions/DmeArcTransition';
-import { placeBearingDistance } from 'msfs-geo';
+import { placeBearingDistance, placeBearingIntersection } from 'msfs-geo';
 import { Waypoint } from 'msfs-navdata';
 import { LegMetadata } from '@fmgc/guidance/lnav/legs/index';
 import { IFLeg } from '@fmgc/guidance/lnav/legs/IF';
+import { MathUtils } from '@shared/MathUtils';
 import { PathVector, PathVectorType } from '../PathVector';
+import { FixedRadiusTransition } from '../transitions/FixedRadiusTransition';
 
 export class CFLeg extends XFLeg {
     private computedPath: PathVector[] = [];
@@ -54,11 +56,26 @@ export class CFLeg extends XFLeg {
      * @private
      */
     private estimateStartWithoutInboundTransition(): Coordinates {
-        return placeBearingDistance(
-            this.fix.location,
-            reciprocal(this.course),
-            this.metadata.flightPlanLegDefinition.length,
-        );
+        const inverseCourse = Avionics.Utils.clampAngle(this.course + 180);
+
+        if (this.inboundGuidable && this.inboundGuidable.isComputed) {
+            const prevLegTerm = this.inboundGuidable.getPathEndPoint();
+
+            return placeBearingIntersection(
+                this.getPathEndPoint(),
+                inverseCourse,
+                prevLegTerm,
+                MathUtils.clampAngle(inverseCourse + 90),
+            )[0];
+        }
+
+        // We start the leg at (tad + 0.1) from the fix if we have a fixed radius transition outbound. This allows showing a better looking path after sequencing.
+        let distance = 1;
+        if (this.outboundGuidable instanceof FixedRadiusTransition && this.outboundGuidable.isComputed) {
+            distance = this.outboundGuidable.tad + 0.1;
+        }
+
+        return placeBearingDistance(this.fix.location, inverseCourse, distance);
     }
 
     get predictedPath(): PathVector[] {

@@ -215,10 +215,10 @@ export class FlightPlanLeg {
         }, waypoint.ident, '', undefined, undefined, false);
     }
 
-    static fromEnrouteWaypoint(segment: FlightPlanSegment, waypoint: Waypoint, airwayIdent?: string): FlightPlanLeg {
+    static fromEnrouteWaypoint(segment: FlightPlanSegment, waypoint: Waypoint, airwayIdent?: string, type = LegType.TF): FlightPlanLeg {
         return new FlightPlanLeg(segment, {
             procedureIdent: '',
-            type: LegType.TF,
+            type,
             overfly: false,
             waypoint,
         }, waypoint.ident, airwayIdent ?? '', airwayIdent, undefined, false);

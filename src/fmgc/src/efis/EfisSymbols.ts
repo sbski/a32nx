@@ -107,12 +107,13 @@ export class EfisSymbols {
         // FIXME map reference point should be per side
         const planCentreFpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_FP_INDEX', 'number');
         const planCentreIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_INDEX', 'number');
+        const planCentreInAlternate = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_IN_ALTERNATE', 'Bool');
 
         if (!FlightPlanService.has(planCentreFpIndex)) {
             return;
         }
 
-        const plan = FlightPlanService.get(planCentreFpIndex);
+        const plan = planCentreInAlternate ? FlightPlanService.get(planCentreFpIndex).alternateFlightPlan : FlightPlanService.get(planCentreFpIndex);
 
         if (!plan.hasElement(planCentreIndex)) {
             return;

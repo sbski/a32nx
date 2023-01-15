@@ -16,6 +16,7 @@ import {
 } from 'msfs-geo';
 import { AFLeg } from '@fmgc/guidance/lnav/legs/AF';
 import { TFLeg } from '@fmgc/guidance/lnav/legs/TF';
+import { XFLeg } from '@fmgc/guidance/lnav/legs/XF';
 
 const sin = (input: Degrees) => Math.sin(input * (Math.PI / 180));
 
@@ -92,7 +93,7 @@ export class Geo {
         const intersections1 = placeBearingIntersection(
             from,
             MathUtils.clampAngle(bearing),
-            'fix' in leg ? leg.fix.location : leg.getPathEndPoint(),
+            'fix' in leg ? (leg as XFLeg).fix.location : leg.getPathEndPoint(),
             MathUtils.clampAngle(leg.outboundCourse - 180),
         );
 

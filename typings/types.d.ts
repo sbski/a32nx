@@ -1,4 +1,4 @@
-import { FlightPlanService as Service, WaypointEntryUtils } from "../src/fmgc/src";
+import { FlightPlanService as Service, NavigationDatabaseService as NavigationDatabaseService_ } from "../src/fmgc/src";
 import { NavigationDatabase as Database, NavigationDatabaseBackend as DatabaseBackend } from '../src/fmgc/src/NavigationDatabase'
 import { FlightPlanIndex as Index } from '../src/fmgc/src';
 import { FlightPhaseManager as FlightPhaseManager_ } from "../src/fmgc/src";
@@ -58,6 +58,8 @@ declare global {
         const NavigationDatabase: typeof Database
 
         const NavigationDatabaseBackend: typeof DatabaseBackend
+
+        const NavigationDatabaseService: typeof NavigationDatabaseService_
 
         const FlightPlanIndex: typeof Index
 

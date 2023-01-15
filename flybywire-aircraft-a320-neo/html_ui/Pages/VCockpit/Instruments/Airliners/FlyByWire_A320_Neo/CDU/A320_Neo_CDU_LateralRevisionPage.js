@@ -58,7 +58,7 @@ class CDULateralRevisionPage {
                 return mcdu.getDelaySwitchPage();
             };
             mcdu.onRightInput[0] = () => {
-                CDUAvailableArrivalsPage.ShowPage(mcdu, waypoint, 0, false, forPlan);
+                CDUAvailableArrivalsPage.ShowPage(mcdu, waypoint, 0, false, forPlan, inAlternate);
             };
         } else if (isDeparture || isPpos || isFrom) {
             arrivalFixInfoCell = "FIX INFO>";

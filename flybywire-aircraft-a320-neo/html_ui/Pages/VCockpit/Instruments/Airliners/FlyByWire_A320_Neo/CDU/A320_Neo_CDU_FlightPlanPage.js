@@ -126,7 +126,7 @@ class CDUFlightPlanPage {
                 waypointsAndMarkers.push({ holdResumeExit: wp, fpIndex: i });
             }
 
-            waypointsAndMarkers.push({ wp, fpIndex: i});
+            waypointsAndMarkers.push({ wp, fpIndex: i, inAlternate: false });
 
             if (i === targetPlan.lastLegIndex) {
                 waypointsAndMarkers.push({ marker: Markers.END_OF_FPLN, fpIndex: i});
@@ -137,7 +137,7 @@ class CDUFlightPlanPage {
 
         // Primary ALTN F-PLAN
         if (targetPlan.alternateDestinationAirport) {
-            for (let i = first; i < targetPlan.alternateFlightPlan.legCount; i++) {
+            for (let i = 0; i < targetPlan.alternateFlightPlan.legCount; i++) {
                 /** @type {FlightPlanElement} */
                 const wp = targetPlan.alternateFlightPlan.allLegs[i];
 
@@ -364,6 +364,7 @@ class CDUFlightPlanPage {
 
                 scrollWindow[rowI] = {
                     fpIndex: fpIndex,
+                    inAlternate: inAlternate,
                     active: wpActive,
                     ident: ident,
                     color: color,
@@ -532,12 +533,15 @@ class CDUFlightPlanPage {
 
         if (scrollWindow[1]) {
             mcdu.currentFlightPlanWaypointIndex = scrollWindow[1].fpIndex;
+            SimVar.SetSimVarValue("L:A32NX_SELECTED_WAYPOINT_IN_ALTERNATE", "Bool", scrollWindow[1].inAlternate);
             SimVar.SetSimVarValue("L:A32NX_SELECTED_WAYPOINT_INDEX", "number", scrollWindow[1].fpIndex);
         } else if (scrollWindow[0]) {
             mcdu.currentFlightPlanWaypointIndex = scrollWindow[0].fpIndex;
+            SimVar.SetSimVarValue("L:A32NX_SELECTED_WAYPOINT_IN_ALTERNATE", "Bool", scrollWindow[0].inAlternate);
             SimVar.SetSimVarValue("L:A32NX_SELECTED_WAYPOINT_INDEX", "number", scrollWindow[0].fpIndex);
         } else {
             mcdu.currentFlightPlanWaypointIndex = first + offset;
+            SimVar.SetSimVarValue("L:A32NX_SELECTED_WAYPOINT_IN_ALTERNATE", "Bool", false);
             SimVar.SetSimVarValue("L:A32NX_SELECTED_WAYPOINT_INDEX", "number", first + offset);
         }
 

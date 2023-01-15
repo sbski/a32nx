@@ -85,7 +85,7 @@ export abstract class FlightPlanSegment {
         if (this.class === SegmentClass.Arrival) {
             // Move legs before cut to enroute
             const removed = [];
-            for (let i = 0; i < atPoint; i++) {
+            for (let i = 0; i < atPoint + 1; i++) {
                 removed.push(this.allLegs.shift());
             }
 

@@ -15,12 +15,12 @@ export interface FlightPlanManagerEvent extends FlightPlanSyncEvent {
     targetPlanIndex?: number,
 }
 
-export interface FlightPlanSetActiveLegIndexEvent extends FlightPlanSyncEvent {
-    activeLegIndex: number,
-}
-
 export interface FlightPlanEditSyncEvent extends FlightPlanSyncEvent {
     forAlternate: boolean,
+}
+
+export interface FlightPlanSetActiveLegIndexEvent extends FlightPlanEditSyncEvent {
+    activeLegIndex: number,
 }
 
 export interface FlightPlanSetSegmentLegsEvent extends FlightPlanEditSyncEvent {

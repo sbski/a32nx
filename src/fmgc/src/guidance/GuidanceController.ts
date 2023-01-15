@@ -21,6 +21,7 @@ import { FmgcFlightPhase } from '@shared/flightphase';
 import { ApproachType } from 'msfs-navdata';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
 import { FlightPlan } from '@fmgc/flightplanning/new/plans/FlightPlan';
+import { BaseFlightPlan } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
 import { LnavDriver } from './lnav/LnavDriver';
 import { VnavDriver } from './vnav/VnavDriver';
 
@@ -127,12 +128,13 @@ export class GuidanceController {
 
         const focusedWpFpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_FP_INDEX', 'number');
         const focusedWpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_INDEX', 'number');
+        const focusedWpInAlternate = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_IN_ALTERNATE', 'Bool');
 
         if (!FlightPlanService.has(focusedWpFpIndex)) {
             return;
         }
 
-        const plan = FlightPlanService.get(focusedWpFpIndex);
+        const plan = focusedWpInAlternate ? FlightPlanService.get(focusedWpFpIndex).alternateFlightPlan : FlightPlanService.get(focusedWpFpIndex);
 
         if (!plan.hasElement(focusedWpIndex)) {
             return;
@@ -149,7 +151,7 @@ export class GuidanceController {
         }
 
         // FIXME HAX
-        const matchingGeometryLeg = this.getGeometryForFlightPlan(focusedWpFpIndex).legs.get(focusedWpIndex);
+        const matchingGeometryLeg = this.getGeometryForFlightPlan(focusedWpFpIndex, focusedWpInAlternate).legs.get(focusedWpIndex);
 
         if (!matchingGeometryLeg) {
             // throw new Error('[FMS/MRP] Could not find matching geometry leg');
@@ -378,17 +380,17 @@ export class GuidanceController {
         if (geometry) {
             GeometryFactory.updateFromFlightPlan(geometry, plan, !alternate && flightPlanIndex < FlightPlanIndex.FirstSecondary);
 
-            this.recomputeGeometry(geometry, FlightPlanService.active);
+            this.recomputeGeometry(geometry, plan);
         } else {
             const newGeometry = GeometryFactory.createFromFlightPlan(plan, !alternate && flightPlanIndex < FlightPlanIndex.FirstSecondary);
 
-            this.recomputeGeometry(newGeometry, FlightPlanService.active);
+            this.recomputeGeometry(newGeometry, plan);
 
             this.flightPlanGeometries.set(geometryPIndex, newGeometry);
         }
     }
 
-    recomputeGeometry(geometry: Geometry, plan: FlightPlan) {
+    recomputeGeometry(geometry: Geometry, plan: BaseFlightPlan) {
         const tas = SimVar.GetSimVarValue('AIRSPEED TRUE', 'Knots');
         const gs = SimVar.GetSimVarValue('GPS GROUND SPEED', 'Knots');
         const trueTrack = SimVar.GetSimVarValue('GPS GROUND TRUE TRACK', 'degree');

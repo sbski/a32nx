@@ -37,9 +37,15 @@ export class OriginSegment extends FlightPlanSegment {
         return this.runway;
     }
 
-    public async setOriginRunway(runwayIdent: string) {
+    public async setOriginRunway(runwayIdent: string | undefined) {
         if (!this.originAirport) {
             throw new Error('[FMS/FPM] Cannot set origin runway with no origin airport');
+        }
+
+        if (runwayIdent === undefined) {
+            this.runway = undefined;
+            await this.refreshOriginLegs();
+            return;
         }
 
         this.runway = await loadRunway(this.originAirport, runwayIdent);

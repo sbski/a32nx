@@ -39,12 +39,12 @@ import {
 } from 'msfs-geo';
 import { PILeg } from '@fmgc/guidance/lnav/legs/PI';
 import { isCourseReversalLeg } from '@fmgc/guidance/lnav/legs';
-import { fixCoordinates } from '@fmgc/flightplanning/new/utils';
+import { CDLeg } from '@fmgc/guidance/lnav/legs/CD';
+import { FDLeg } from '@fmgc/guidance/lnav/legs/FD';
 import { Leg } from '../legs/Leg';
 import { CFLeg } from '../legs/CF';
 import { CRLeg } from '../legs/CR';
-import { CDLeg } from '@fmgc/guidance/lnav/legs/CD';
-import { FDLeg } from '@fmgc/guidance/lnav/legs/FD';
+import { RFLeg } from '../legs/RF';
 
 export type PrevLeg = AFLeg | CALeg | CDLeg | CRLeg | /* FALeg | */ FDLeg | HALeg | HFLeg | HMLeg | RFLeg;
 export type ReversionLeg = CFLeg | CILeg | DFLeg | TFLeg;
@@ -134,7 +134,7 @@ export class PathCaptureTransition extends Transition {
 
             // If we are inbound of a TF leg, we use getIntermediatePoint in order to get more accurate results
             if ('from' in this.previousLeg) {
-                const start = this.previousLeg.from.location;
+                const start = (this.previousLeg as TFLeg).from.location;
                 const end = this.previousLeg.to.location;
                 const length = distanceTo(start, end);
 

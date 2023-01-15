@@ -10,6 +10,7 @@ import { ArmedLateralMode, isArmed, LateralMode } from '@shared/autopilot';
 import { FlowEventSync } from '@shared/FlowEventSync';
 import { FlightPlanIndex } from '@fmgc/flightplanning/new/FlightPlanManager';
 import { FlightPlanService } from '@fmgc/flightplanning/new/FlightPlanService';
+import { FlightPlan } from '@fmgc/flightplanning/new/plans/FlightPlan';
 
 const UPDATE_TIMER = 2_500;
 
@@ -82,6 +83,7 @@ export class EfisVectors {
                 this.transmitGroup([], EfisVectorsGroup.ACTIVE);
                 this.transmitGroup([], EfisVectorsGroup.DASHED);
                 this.transmitGroup([], EfisVectorsGroup.MISSED);
+                this.transmitGroup([], EfisVectorsGroup.ALTERNATE);
                 break;
             case FlightPlanIndex.Temporary:
                 this.transmitGroup([], EfisVectorsGroup.TEMPORARY);
@@ -101,15 +103,6 @@ export class EfisVectors {
 
         this.lastFpVersions.set(planIndex, plan.version);
 
-        const geometryExists = this.guidanceController.hasGeometryForFlightPlan(planIndex);
-
-        if (!geometryExists) {
-            return;
-        }
-
-        const geometry = this.guidanceController.getGeometryForFlightPlan(planIndex);
-        const vectors = geometry.getAllPathVectors(plan.activeLegIndex).filter((it) => EfisVectors.isVectorReasonable(it));
-
         switch (planIndex) {
         case FlightPlanIndex.Active:
             const engagedLateralMode = SimVar.GetSimVarValue('L:A32NX_FMA_LATERAL_MODE', 'Number') as LateralMode;
@@ -119,60 +112,93 @@ export class EfisVectors {
             const transmitActive = engagedLateralMode === LateralMode.NAV || engagedLateralMode === LateralMode.LOC_CPT || engagedLateralMode === LateralMode.LOC_TRACK || navArmed;
 
             if (transmitActive) {
-                this.transmitGroup(vectors, EfisVectorsGroup.ACTIVE);
-                this.transmitGroup([], EfisVectorsGroup.DASHED);
-
-                const planCentreFpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_FP_INDEX', 'number');
-                const planCentreIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_INDEX', 'number');
-
-                const transmitMissed = planCentreFpIndex === FlightPlanIndex.Active && plan.firstMissedApproachLeg - planCentreIndex < 4;
-
-                if (transmitMissed) {
-                    const missedVectors = geometry.getAllPathVectors(plan.activeLegIndex, true).filter((it) => EfisVectors.isVectorReasonable(it));
-
-                    this.transmitGroup(missedVectors, EfisVectorsGroup.MISSED);
-                } else {
-                    this.transmitGroup([], EfisVectorsGroup.MISSED);
-                }
-
-                if (plan.alternateFlightPlan.allLegs.length > 0) {
-                    const geometry = this.guidanceController.getGeometryForFlightPlan(planIndex, true);
-                    const vectors = geometry.getAllPathVectors(0).filter((it) => EfisVectors.isVectorReasonable(it));
-
-                    this.transmitGroup(vectors, EfisVectorsGroup.ALTERNATE);
-                } else {
-                    this.transmitGroup([], EfisVectorsGroup.ALTERNATE);
-                }
+                this.transmitFlightPlan(plan, EfisVectorsGroup.ACTIVE, EfisVectorsGroup.MISSED, EfisVectorsGroup.ALTERNATE);
             } else {
-                this.transmitGroup([], EfisVectorsGroup.ACTIVE);
-                this.transmitGroup([], EfisVectorsGroup.MISSED);
-                this.transmitGroup(vectors, EfisVectorsGroup.DASHED);
+                this.transmitFlightPlan(plan, EfisVectorsGroup.DASHED, EfisVectorsGroup.MISSED, EfisVectorsGroup.ALTERNATE);
             }
             break;
         case FlightPlanIndex.Temporary:
-            this.transmitGroup(vectors, EfisVectorsGroup.TEMPORARY);
+            this.transmitFlightPlan(plan, EfisVectorsGroup.TEMPORARY);
             break;
         default:
-            const planCentreFpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_FP_INDEX', 'number');
-            const planCentreIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_INDEX', 'number');
-
-            const transmitMissed = planCentreFpIndex === FlightPlanIndex.FirstSecondary && plan.firstMissedApproachLeg - planCentreIndex < 4;
-
-            if (transmitMissed) {
-                const missedVectors = geometry.getAllPathVectors(plan.activeLegIndex, true).filter((it) => EfisVectors.isVectorReasonable(it));
-
-                vectors.push(...missedVectors);
-            }
-
-            if (plan.alternateFlightPlan.allLegs.length > 0) {
-                const geometry = this.guidanceController.getGeometryForFlightPlan(planIndex, true);
-                const altnVectors = geometry.getAllPathVectors(0).filter((it) => EfisVectors.isVectorReasonable(it));
-
-                vectors.push(...altnVectors);
-            }
-
-            this.transmitGroup(vectors, EfisVectorsGroup.SECONDARY);
+            this.transmitFlightPlan(plan, EfisVectorsGroup.SECONDARY);
             break;
+        }
+    }
+
+    private transmitFlightPlan(plan: FlightPlan, mainGroup: EfisVectorsGroup, missedApproachGroup = mainGroup, alternateGroup = mainGroup) {
+        const planCentreIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_INDEX', 'number');
+        const planCentreFpIndex = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_FP_INDEX', 'number');
+        const planCentreInAlternate = SimVar.GetSimVarValue('L:A32NX_SELECTED_WAYPOINT_IN_ALTERNATE', 'Bool');
+
+        if (!this.guidanceController.hasGeometryForFlightPlan(plan.index)) {
+            this.transmitGroup([], mainGroup);
+
+            if (missedApproachGroup !== mainGroup) {
+                this.transmitGroup([], missedApproachGroup);
+            }
+
+            if (alternateGroup !== mainGroup) {
+                this.transmitGroup([], alternateGroup);
+            }
+
+            return;
+        }
+
+        // ACTIVE
+
+        const geometry = this.guidanceController.getGeometryForFlightPlan(plan.index);
+
+        const vectors = geometry.getAllPathVectors(0).filter((it) => EfisVectors.isVectorReasonable(it));
+
+        const planIsBeingScrolledInto = planCentreFpIndex === plan.index;
+
+        // ACTIVE missed
+
+        const missedApproachInView = plan.firstMissedApproachLeg - planCentreIndex < 4;
+        const transmitMissed = planIsBeingScrolledInto && !planCentreInAlternate && missedApproachInView;
+
+        if (transmitMissed) {
+            const missedVectors = geometry.getAllPathVectors(0, true).filter((it) => EfisVectors.isVectorReasonable(it));
+
+            if (missedApproachGroup === mainGroup) {
+                vectors.push(...missedVectors);
+            } else {
+                this.transmitGroup(missedVectors, missedApproachGroup);
+            }
+        } else if (missedApproachGroup !== mainGroup) {
+            this.transmitGroup([], missedApproachGroup);
+        }
+
+        this.transmitGroup(vectors, mainGroup);
+
+        // ALTN
+
+        const transmitAlternate = plan.alternateDestinationAirport && plan.alternateFlightPlan.legCount > 0;
+
+        if (transmitAlternate) {
+            const alternateGeometry = this.guidanceController.getGeometryForFlightPlan(plan.index, true);
+
+            if (alternateGeometry) {
+                const alternateVectors = alternateGeometry.getAllPathVectors(0).filter((it) => EfisVectors.isVectorReasonable(it));
+
+                // ALTN missed
+
+                const altnMissedApproachInView = plan.alternateFlightPlan.firstMissedApproachLeg - planCentreIndex < 4;
+                const transmitAlternateMissed = planIsBeingScrolledInto && planCentreInAlternate && altnMissedApproachInView;
+
+                if (transmitAlternateMissed) {
+                    const missedVectors = alternateGeometry.getAllPathVectors(0, true).filter((it) => EfisVectors.isVectorReasonable(it));
+
+                    alternateVectors.push(...missedVectors);
+                }
+
+                this.transmitGroup(alternateVectors, alternateGroup);
+            } else {
+                this.transmitGroup([], alternateGroup);
+            }
+        } else {
+            this.transmitGroup([], alternateGroup);
         }
     }
 

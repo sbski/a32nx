@@ -77,7 +77,10 @@ export function procedureLegIdentAndAnnotation(procedureLeg: FlightPlanLegDefini
             `C${Math.round(procedureLeg.magneticCourse).toString().padStart(3, '0')}°`,
         ];
     case LegType.PI:
-        break;
+        return [
+            'INTCPT',
+            `PROC ${procedureLeg.turnDirection === TurnDirection.Left ? 'L' : 'R'}`,
+        ];
     case LegType.VD:
         break;
     case LegType.FM:

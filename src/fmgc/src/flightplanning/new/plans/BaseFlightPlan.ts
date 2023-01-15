@@ -349,7 +349,7 @@ export abstract class BaseFlightPlan {
         return stats;
     }
 
-    protected get orderedSegments(): FlightPlanSegment[] {
+    public get orderedSegments(): FlightPlanSegment[] {
         return [
             this.originSegment,
             this.departureRunwayTransitionSegment,
@@ -428,6 +428,34 @@ export abstract class BaseFlightPlan {
         }
 
         return undefined;
+    }
+
+    public replaceSegment(segment: FlightPlanSegment) {
+        if (segment instanceof OriginSegment) {
+            this.originSegment = segment;
+        } else if (segment instanceof DepartureRunwayTransitionSegment) {
+            this.departureRunwayTransitionSegment = segment;
+        } else if (segment instanceof DepartureSegment) {
+            this.departureSegment = segment;
+        } else if (segment instanceof DepartureEnrouteTransitionSegment) {
+            this.departureEnrouteTransitionSegment = segment;
+        } else if (segment instanceof EnrouteSegment) {
+            this.enrouteSegment = segment;
+        } else if (segment instanceof ArrivalEnrouteTransitionSegment) {
+            this.arrivalEnrouteTransitionSegment = segment;
+        } else if (segment instanceof ArrivalSegment) {
+            this.arrivalSegment = segment;
+        } else if (segment instanceof ArrivalRunwayTransitionSegment) {
+            this.arrivalRunwayTransitionSegment = segment;
+        } else if (segment instanceof ApproachViaSegment) {
+            this.approachViaSegment = segment;
+        } else if (segment instanceof ApproachSegment) {
+            this.approachSegment = segment;
+        } else if (segment instanceof DestinationSegment) {
+            this.destinationSegment = segment;
+        } else if (segment instanceof MissedApproachSegment) {
+            this.missedApproachSegment = segment;
+        }
     }
 
     get originAirport(): Airport {

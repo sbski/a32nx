@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { FlightLevel } from '@fmgc/guidance/vnav/verticalFlightPlan/VerticalFlightPlan';
 import { FlightPlanManager } from '@fmgc/wtsdk';
+import { FlightLevel } from 'msfs-navdata';
 import { FmgcComponent } from './FmgcComponent';
 
 export class EfisLabels implements FmgcComponent {

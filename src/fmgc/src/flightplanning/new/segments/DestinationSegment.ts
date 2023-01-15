@@ -22,7 +22,15 @@ export class DestinationSegment extends FlightPlanSegment {
         return this.airport;
     }
 
-    public async setDestinationIcao(icao: string) {
+    public async setDestinationIcao(icao: string | undefined) {
+        if (icao === undefined) {
+            this.airport = undefined;
+            this.runway = undefined;
+
+            await this.refresh();
+            return;
+        }
+
         const db = NavigationDatabaseService.activeDatabase.backendDatabase;
 
         const airports = await db.getAirports([icao]);
@@ -101,17 +109,5 @@ export class DestinationSegment extends FlightPlanSegment {
         newSegment.runway = this.runway;
 
         return newSegment;
-    }
-
-    removeRange(_from: number, _to: number) {
-        throw new Error('Not implemented');
-    }
-
-    removeAfter(_from: number) {
-        throw new Error('Not implemented');
-    }
-
-    removeBefore(_before: number) {
-        throw new Error('Not implemented');
     }
 }

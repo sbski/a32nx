@@ -1,3 +1,8 @@
+// Copyright (c) 2021-2022 FlyByWire Simulations
+// Copyright (c) 2021-2022 Synaptic Simulations
+//
+// SPDX-License-Identifier: GPL-3.0
+
 import { MathUtils } from '@shared/MathUtils';
 import { AccelFactorMode, Common, FlapConf } from './common';
 import { EngineModel } from './EngineModel';
@@ -542,7 +547,7 @@ export class Predictions {
         initialFuelWeight: number,
         isaDev: number,
     ): number {
-        const distanceInFeet = distance * 6076.12;
+        const distanceInFeet = 0 * 6076.12;
         const fpaRadians = Math.atan((finalAltitude - initialAltitude) / distanceInFeet);
         const fpaDegrees = fpaRadians * MathUtils.RADIANS_TO_DEGREES;
         const midStepAltitude = (initialAltitude + finalAltitude) / 2;

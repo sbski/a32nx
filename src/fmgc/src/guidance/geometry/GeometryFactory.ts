@@ -26,6 +26,7 @@ import { RFLeg } from '@fmgc/guidance/lnav/legs/RF';
 import { CRLeg } from '@fmgc/guidance/lnav/legs/CR';
 import { FDLeg } from '@fmgc/guidance/lnav/legs/FD';
 import { CDLeg } from '@fmgc/guidance/lnav/legs/CD';
+import { PILeg } from '@fmgc/guidance/lnav/legs/PI';
 import { HALeg, HFLeg, HMLeg } from '../lnav/legs/HX';
 
 function getFacilities(): typeof Facilities {
@@ -116,7 +117,7 @@ export namespace GeometryFactory {
             }
 
             let nextLeg: Leg;
-            if (nextPlanLeg?.isDiscontinuity === false && nextPlanLeg.type !== LegType.CI && nextPlanLeg.type !== LegType.VI) {
+            if (nextPlanLeg?.isDiscontinuity === false && nextPlanLeg.type !== LegType.CI && nextPlanLeg.type !== LegType.VI && nextPlanLeg.type !== LegType.PI) {
                 nextLeg = geometryLegFromFlightPlanLeg(runningMagvar, planLeg, nextPlanLeg);
             }
 
@@ -267,7 +268,11 @@ function geometryLegFromFlightPlanLeg(runningMagvar: Degrees, previousFlightPlan
     case LegType.IF:
         return new IFLeg(waypoint, metadata, SegmentType.Departure);
     case LegType.PI:
-        break;
+        if (!(nextGeometryLeg instanceof CFLeg)) {
+            throw new Error('[FMS/Geometry] Cannot create a PI leg before a non-CF leg');
+        }
+
+        return new PILeg(recommendedNavaid, nextGeometryLeg, metadata, SegmentType.Approach);
     case LegType.RF:
     case LegType.TF: {
         const prev = previousFlightPlanLeg as FlightPlanLeg;

@@ -12,6 +12,7 @@ import { loadAllDepartures, loadAllRunways } from '@fmgc/flightplanning/new/Data
 import { Coordinates, Degrees } from 'msfs-geo';
 import { MagVar } from '@shared/MagVar';
 import { FlightPlanLeg, FlightPlanLegFlags } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
+import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
 import { FlightPlanPerformanceData } from './performance/FlightPlanPerformanceData';
 import { BaseFlightPlan, FlightPlanQueuedOperation } from './BaseFlightPlan';
 
@@ -150,21 +151,46 @@ export class FlightPlan extends BaseFlightPlan {
         this.redistributeLegsAt(this.activeLegIndex);
 
         this.removeRange(this.activeLegIndex + 1, this.legCount);
-        this.incrementVersion();
 
         this.enrouteSegment.allLegs.push({ isDiscontinuity: true });
 
-        const altnLegs = this.alternateFlightPlan.allLegs.slice(atIndexInAlternate, this.alternateFlightPlan.legCount);
+        let indexOfFirstSegmentToReplace = -1;
 
-        // TODO correctly place shit in segments
+        let accumulator = 0;
+        for (let i = 0; i < this.alternateFlightPlan.orderedSegments.length; i++) {
+            const segment = this.alternateFlightPlan.orderedSegments[i];
+            accumulator += segment.legCount;
 
-        for (const leg of altnLegs) {
-            if (leg.isDiscontinuity === false) {
-                const newLeg = FlightPlanLeg.deserialize(leg.serialize(), this.enrouteSegment);
+            if (segment.legCount !== 0 && accumulator - segment.legCount === atIndexInAlternate) {
+                if (segment.class === SegmentClass.Departure) {
+                    throw new Error('[FMS/FPM] Tried to enable alternate ');
+                }
 
-                this.enrouteSegment.allLegs.push(newLeg);
-            } else {
-                this.enrouteSegment.allLegs.push({ isDiscontinuity: true });
+                // If atIndexInAlternate ends up ati segment local index 0, we can move the entire segment into the flight plan
+
+                indexOfFirstSegmentToReplace = i;
+                break;
+            } else if (accumulator > atIndexInAlternate) {
+                if (segment.class === SegmentClass.Departure) {
+                    throw new Error('[FMS/FPM] Tried to enable alternate ');
+                }
+
+                // Otherwise, we only move the next segment onwards, and insert the legs from atIndexInAlternate to the last segment leg into the enroute
+
+                indexOfFirstSegmentToReplace = i + 1;
+
+                const [, indexInSegment] = this.segmentPositionForIndex(atIndexInAlternate);
+
+                const legsToInsertIntoEnroute = segment.allLegs.slice(indexInSegment);
+
+                this.enrouteSegment.allLegs.push(...legsToInsertIntoEnroute);
+                break;
+            }
+        }
+
+        if (indexOfFirstSegmentToReplace !== -1) {
+            for (let i = indexOfFirstSegmentToReplace; i < this.alternateFlightPlan.orderedSegments.length; i++) {
+                this.replaceSegment(this.alternateFlightPlan.orderedSegments[i].clone(this));
             }
         }
 
