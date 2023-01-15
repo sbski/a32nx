@@ -21,9 +21,12 @@ private:
 
   // LVARs
   NamedVariablePtr debugLVARPtr{};
+  NamedVariablePtr debugLVAR2Ptr{};
 
   // Sim-vars
   AircraftVariablePtr beaconLightSwitchPtr;
+  AircraftVariablePtr beaconLightSwitch2Ptr;
+  AircraftVariablePtr beaconLightSwitch3Ptr;
 
   // DataDefinition variables
   DataDefinitionVariablePtr exampleDataPtr;

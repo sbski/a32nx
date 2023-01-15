@@ -27,9 +27,14 @@ bool ExampleModule::initialize() {
   debugLVARPtr = dataManager->make_named_var("DEBUG_LVAR", UNITS.Number, true, false, 0, 0);
   debugLVARPtr->setEpsilon(1.0); // only read when difference is 1.0 or more
 
+  debugLVAR2Ptr = dataManager->make_named_var("DEBUG_LVAR", UNITS.Percent, true, false, 0, 0);
+
   // Aircraft variables
   beaconLightSwitchPtr = dataManager->make_aircraft_var("LIGHT BEACON", 0, "",
-                                                        beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
+                                                        beaconLightSetEventPtr, UNITS.Bool, false, false, 0, 0);
+  beaconLightSwitch2Ptr = dataManager->make_aircraft_var("LIGHT BEACON", 0, "",
+                                                         beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
+  beaconLightSwitch3Ptr = dataManager->make_simple_aircraft_var("LIGHT BEACON", UNITS.Bool);
 
   // Data definition variables
   std::vector<DataDefinitionVariable::DataDefinition> exampleDataDef = {
@@ -57,35 +62,53 @@ bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
   if (!msfsHandler->getA32NxIsReady()) return true;
 
   // Use this to throttle output frequency
-  // if (msfsHandler->getTickCounter() % 100 == 0) {
+  if (msfsHandler->getTickCounter() % 100 == 0) {
 
-  // Read vars which auto update each tick
-  //  std::cout << "debugLVARPtr =  " << debugLVARPtr->get() << " changed? "
-  //            << (debugLVARPtr->hasChanged() ? "yes" : "no")
-  //            << " debugLVARPtr time = " << msfsHandler->getPreviousSimulationTime()
-  //            << " tick = " << msfsHandler->getTickCounter()
-  //            << std::endl;
+    //    // Read vars which auto update each tick
+    //    std::cout << "debugLVARPtr =  " << debugLVARPtr->get() << " changed? "
+    //              << (debugLVARPtr->hasChanged() ? "yes" : "no")
+    //              << " debugLVARPtr  time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+    //
+    //    std::cout << "debugLVAR2Ptr = " << debugLVAR2Ptr->get() << " changed? "
+    //              << (debugLVAR2Ptr->hasChanged() ? "yes" : "no")
+    //              << " debugLVAR2Ptr time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+    //
+    //    std::cout << "beaconLightSwitchPtr =  " << beaconLightSwitchPtr->get() << " changed? "
+    //              << (beaconLightSwitchPtr->hasChanged() ? "yes" : "no")
+    //              << " beaconLightSwitchPtr  time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+    //
+    //    std::cout << "beaconLightSwitch2Ptr = " << beaconLightSwitch2Ptr->get() << " changed? "
+    //              << (beaconLightSwitch2Ptr->hasChanged() ? "yes" : "no")
+    //              << " beaconLightSwitch2Ptr time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+    //
+    //    std::cout << "beaconLightSwitch3Ptr = " << beaconLightSwitch3Ptr->get() << " changed? "
+    //              << (beaconLightSwitch3Ptr->hasChanged() ? "yes" : "no")
+    //              << " beaconLightSwitch3Ptr time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+    //
+    //    std::cout << "strobeLightSwitch =  " << exampleDataStruct.strobeLightSwitch
+    //              << " (time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter() << ")"
+    //              << std::endl;
+    //
+    //    // Set a variable which does not auto write
+    //    debugLVARPtr->setAndWriteToSim(debugLVARPtr->get() + 1);
+    //
+    //    beaconLightSwitchPtr->setAndWriteToSim(beaconLightSwitchPtr->get() == 0.0 ? 1.0 : 0.0);
+    //
+    //    exampleDataStruct.strobeLightSwitch = exampleDataStruct.strobeLightSwitch == 0.0 ? 1.0 : 0.0;
+    //    exampleDataPtr->writeToSim();
 
-  //  std::cout << "beaconLightSwitchPtr =  " << beaconLightSwitchPtr->get() << " changed? "
-  //            << (beaconLightSwitchPtr->hasChanged() ? "yes" : "no")
-  //            << "beaconLightSwitchPtr time = " << msfsHandler->getPreviousSimulationTime()
-  //            << " tick = " << msfsHandler->getTickCounter()
-  //            << std::endl;
-  //
-  //  std::cout << "strobeLightSwitch =  " << exampleDataStruct.strobeLightSwitch
-  //            << " (time = " << msfsHandler->getPreviousSimulationTime()
-  //            << " tick = " << msfsHandler->getTickCounter() << ")"
-  //            << std::endl;
-
-  // Set a variable which does not auto write
-  //    debugLVARPtr->setAndWriteToSim(debugLVARPtr->get() + 1);
-  //
-  //    beaconLightSwitchPtr->setAndWriteToSim(beaconLightSwitchPtr->get() == 0.0 ? 1.0 : 0.0);
-  //
-  //    exampleDataStruct.strobeLightSwitch = exampleDataStruct.strobeLightSwitch == 0.0 ? 1.0 : 0.0;
-  //    exampleDataPtr->writeToSim();
-
-  // }
+  }
 
   return true;
 }
