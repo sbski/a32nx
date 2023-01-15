@@ -227,49 +227,118 @@ public:
     return os.str();
   };
 
-private:
   // Getters and Setters
-public:
+
   [[nodiscard]] const std::string &getVarName() const { return varName; }
 
+  /**
+   * @return the Unit of the variable
+   * @see Unit.h
+   */
   [[nodiscard]] Unit getUnit() const { return unit; }
 
+  /**
+   * @return the index of the variable
+   */
   [[nodiscard]] int getIndex() const { return index; }
 
+  /**
+   * @return true if the variable should be automatically updated from the sim n the DataManagers
+   *         postUpdate() method.
+   */
   [[nodiscard]] bool isAutoRead() const { return autoRead; }
 
-  void setAutoRead(bool autoReading) { autoRead = autoReading; }
+  /**
+   * Sets the autoRead flag.
+   * If true the variable will be automatically updated from the sim in the DataManager's
+   * preUpdate() method.
+   * @param autoReading the new value for the autoRead flag
+   */
+  [[nodiscard]] void setAutoRead(bool autoReading) { autoRead = autoReading; }
 
+  /**
+   * @return true if the variable will be written to the sim in the DataManagers postUpdate() method.
+   */
   [[nodiscard]] bool isAutoWrite() const { return autoWrite; }
 
-  virtual void setAutoWrite(bool autoWriting) { autoRead = autoWriting; }
+  /**
+   * Sets the autoWrite flag.
+   * If set to true the variable will be written to the sim in the DataManagers postUpdate() method.
+   * If set to false the variable will not be written to the sim automatically and writeToSim() must
+   * be called manually.
+   * @param autoWriting the new value for the autoWrite flag
+   */
+  [[nodiscard]] virtual void setAutoWrite(bool autoWriting) { autoRead = autoWriting; }
 
+  /**
+   * @return the time stamp of the last read from the sim
+   */
   [[nodiscard]] FLOAT64 getTimeStamp() const { return timeStampSimTime; }
 
+  /**
+   * @return the maximum age of the variable in second
+   */
   [[nodiscard]] FLOAT64 getMaxAgeTime() const { return maxAgeTime; }
 
-  void setMaxAgeTime(FLOAT64 maxAgeTimeInMilliseconds) { maxAgeTime = maxAgeTimeInMilliseconds; }
+  /**
+   * Sets the maximum age of the variable in seconds
+   * @param maxAgeTimeInMilliseconds
+   */
+  [[nodiscard]] void setMaxAgeTime(FLOAT64 maxAgeTimeInMilliseconds) { maxAgeTime = maxAgeTimeInMilliseconds; }
 
+  /**
+   * @return the tick count when variable was last read from the sim
+   */
   [[nodiscard]] UINT64 getTickStamp() const { return tickStamp; }
 
+  /**
+   * @return the maximum age of the variable in ticks
+   */
   [[nodiscard]] UINT64 getMaxAgeTicks() const { return maxAgeTicks; }
 
-  void setMaxAgeTicks(int64_t newMaxAgeTicks) { maxAgeTicks = newMaxAgeTicks; }
+  /**
+   * Sets the maximum age of the variable in ticks
+   * @param maxAgeTicksInTicks the maximum age of the variable in ticks
+   */
+  [[nodiscard]] void setMaxAgeTicks(UINT64 maxAgeTicksInTicks) { maxAgeTicks = maxAgeTicksInTicks; }
 
+  /**
+   * @return true if the value has been changed via set() since the last read from the sim.
+   */
   [[nodiscard]] bool isDirty() const { return dirty; }
 
+  /**
+   * @return the value casted to a boolean
+   */
   [[nodiscard]] bool getAsBool() const { return static_cast<bool>(get()); }
-
-  [[nodiscard]] INT64 getAsInt64() const { return static_cast<INT64>(get()); }
 
   [[nodiscard]] void setAsBool(bool b) { set(b ? 1.0 : 0.0); }
 
+  /**
+   * casted to an INT64
+   */
+  [[nodiscard]] INT64 getAsInt64() const { return static_cast<INT64>(get()); }
+
   [[nodiscard]] void setAsInt64(UINT64 i) { set(static_cast<FLOAT64>(i)); }
 
+  /**
+   * @return true if the value has changed since the last read from the sim.
+   */
   [[nodiscard]] bool hasChanged() const { return changed; }
 
+  /**
+   * @return Epsilon used for comparing floating point values. Variables are considered equal if the
+   * difference is smaller than this value.
+   */
   [[nodiscard]] FLOAT64 getEpsilon() const { return epsilon; }
-  void setEpsilon(FLOAT64 eps) { epsilon = eps; }
+
+  /**
+   * Epsilon used for comparing floating point values. Variables are considered equal if the
+   * difference is smaller or equal than this value.
+   * @param eps epsilon value to be used
+   */
+  [[nodiscard]] void setEpsilon(FLOAT64 eps) { epsilon = eps; }
+
 };
 
 /**
