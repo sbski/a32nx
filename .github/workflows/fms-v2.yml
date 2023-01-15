@@ -1,4 +1,4 @@
-name: experimental
+name: fms-v2
 on:
   push:
     branches:
