@@ -54,6 +54,7 @@ clang++ \
   -I "${DIR}/src/MsfsHandler" \
   -I "${DIR}/src/MsfsHandler/DataManager" \
   -I "${DIR}/src/Modules/" \
+  -I "${DIR}/src/Modules/Example" \
   -I "${DIR}/src/Modules/LightingPresets" \
   -I "${DIR}/src/Modules/Pushback" \
   -I "${DIR}/src/Modules/AircraftPresets" \
@@ -67,6 +68,7 @@ clang++ \
   "${DIR}/src/MsfsHandler/DataManager/ClientDataAreaVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/Event.cpp" \
   "${DIR}/src/MsfsHandler/Module.cpp" \
+  "${DIR}/src/Modules/Example/ExampleModule.cpp" \
   "${DIR}/src/Modules/LightingPresets/LightingPresets.cpp" \
   "${DIR}/src/Modules/Pushback/Pushback.cpp" \
   "${DIR}/src/Modules/Pushback/InertialDampener.cpp" \

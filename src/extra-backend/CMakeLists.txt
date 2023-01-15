@@ -41,6 +41,7 @@ add_executable(flybywire-a32nx-extra-backend
         src/MsfsHandler/DataManager/ClientDataAreaVariable.cpp src/MsfsHandler/DataManager/ClientDataAreaVariable.h
         src/MsfsHandler/DataManager/Event.cpp src/MsfsHandler/DataManager/Event.h
         src/MsfsHandler/Module.cpp src/MsfsHandler/Module.h
+        src/Modules/Example/ExampleModule.cpp src/Modules/Example/ExampleModule.h
         src/Modules/LightingPresets/LightingPresets.cpp src/Modules/LightingPresets/LightingPresets.h
         src/Modules/Pushback/Pushback.cpp src/Modules/Pushback/Pushback.h
         src/Modules/Pushback/InertialDampener.cpp src/Modules/Pushback/InertialDampener.h

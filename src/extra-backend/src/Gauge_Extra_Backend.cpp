@@ -17,6 +17,7 @@
 #include <SimConnect.h>
 
 #include "MsfsHandler/MsfsHandler.h"
+#include "Example/ExampleModule.h"
 #include "LightingPresets/LightingPresets.h"
 #include "Pushback.h"
 #include "AircraftPresets.h"
@@ -25,6 +26,8 @@
 // ADD ADDITIONAL MODULES HERE
 // This is the only place these have to be added - everything else is handled automatically
 MsfsHandler msfsHandler("Gauge_Extra_Backend");
+[[maybe_unused]]
+ExampleModule exampleModule(&msfsHandler);
 [[maybe_unused]]
 LightingPresets lightingPresets(&msfsHandler);
 [[maybe_unused]]

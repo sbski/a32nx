@@ -28,8 +28,6 @@
 // This is a good demonstration that the framework does not limit applications to a specific pattern.
 ///
 
-AircraftPresets::AircraftPresets(MsfsHandler* msfsHandler) : Module(msfsHandler) {}
-
 bool AircraftPresets::initialize() {
   std::cout << "AircraftPresets::initialize()" << std::endl;
 
@@ -41,14 +39,11 @@ bool AircraftPresets::initialize() {
   progressAircraftPresetId = dataManager->make_named_var("AIRCRAFT_PRESET_LOAD_CURRENT_ID");
   loadAircraftPresetRequest->setAndWriteToSim(0);
 
-  // DEBUG PURPOSES
-  efbBrightness = dataManager->make_named_var("EFB_BRIGHTNESS", UNITS.Number, false, false, 0, 0);
-
   // Simvars
   simOnGround = dataManager->make_simple_aircraft_var("SIM ON GROUND", UNITS.Number, true);
 
-  std::cout << "AircraftPresets::initialized()" << std::endl;
   isInitialized = true;
+  std::cout << "AircraftPresets::initialized()" << std::endl;
   return true;
 }
 
@@ -62,13 +57,6 @@ bool AircraftPresets::update(sGaugeDrawData* pData) {
     std::cerr << "AircraftPresets::update() - not initialized" << std::endl;
     return false;
   }
-
-  // DEBUG PURPOSES
-  //  std::cout << "efbBrightness =  " << efbBrightness->get() << " changed? "
-  //            << (efbBrightness->hasChanged() ? "yes" : "no") << std::endl;
-  //  std::cout << "efbBrightness time = " << msfsHandler->getPreviousSimulationTime()
-  //            << " tick = " << msfsHandler->getTickCounter()
-  //            << std::endl;
 
   if (!msfsHandler->getA32NxIsReady()) return true;
 
