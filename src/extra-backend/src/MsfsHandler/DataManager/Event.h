@@ -1,8 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_A32NX_EVENT_H
-#define FLYBYWIRE_A32NX_EVENT_H
+#ifndef FLYBYWIRE_EVENT_H
+#define FLYBYWIRE_EVENT_H
 
 #include <iostream>
 #include <string>
@@ -78,4 +78,4 @@ public:
 
 };
 
-#endif //FLYBYWIRE_A32NX_EVENT_H
+#endif //FLYBYWIRE_EVENT_H

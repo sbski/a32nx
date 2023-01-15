@@ -1,8 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_A32NX_CACHEABLEVARIABLE_H
-#define FLYBYWIRE_A32NX_CACHEABLEVARIABLE_H
+#ifndef FLYBYWIRE_CACHEABLEVARIABLE_H
+#define FLYBYWIRE_CACHEABLEVARIABLE_H
 
 #include <optional>
 #include <sstream>
@@ -352,4 +352,4 @@ inline std::ostream &operator<<(std::ostream &os, const CacheableVariable &varia
   return os;
 }
 
-#endif // FLYBYWIRE_A32NX_CACHEABLEVARIABLE_H
+#endif // FLYBYWIRE_CACHEABLEVARIABLE_H

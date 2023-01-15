@@ -6,6 +6,7 @@
 #include "MsfsHandler.h"
 #include "AircraftPresets.h"
 #include "Units.h"
+#include "logging.h"
 
 ///
 // DataManager Howto Note:
@@ -29,7 +30,6 @@
 ///
 
 bool AircraftPresets::initialize() {
-  std::cout << "AircraftPresets::initialize()" << std::endl;
 
   dataManager = &msfsHandler->getDataManager();
 
@@ -43,7 +43,7 @@ bool AircraftPresets::initialize() {
   simOnGround = dataManager->make_simple_aircraft_var("SIM ON GROUND", UNITS.Number, true);
 
   isInitialized = true;
-  std::cout << "AircraftPresets::initialized()" << std::endl;
+  LOG_INFO("AircraftPresets initialized");
   return true;
 }
 

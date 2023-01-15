@@ -1,8 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_A32NX_DATAMANAGER_H
-#define FLYBYWIRE_A32NX_DATAMANAGER_H
+#ifndef FLYBYWIRE_DATAMANAGER_H
+#define FLYBYWIRE_DATAMANAGER_H
 
 #include <vector>
 #include <memory>
@@ -244,4 +244,4 @@ private:
   void processDispatchMessage(SIMCONNECT_RECV* pRecv, [[maybe_unused]] DWORD* cbData);
 };
 
-#endif // FLYBYWIRE_A32NX_DATAMANAGER_H
+#endif // FLYBYWIRE_DATAMANAGER_H

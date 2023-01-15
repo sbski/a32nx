@@ -6,6 +6,7 @@
 #include "MsfsHandler.h"
 #include "Pushback.h"
 #include "Units.h"
+#include "logging.h"
 
 static constexpr double SPEED_RATIO = 18.0;
 static constexpr double TURN_SPEED_RATIO = 0.16;
@@ -29,8 +30,6 @@ static constexpr double TURN_SPEED_RATIO = 0.16;
 ///
 
 bool Pushback::initialize() {
-  std::cout << "Pushback::initialize()" << std::endl;
-
   dataManager = &msfsHandler->getDataManager();
 
   // LVARs
@@ -66,7 +65,7 @@ bool Pushback::initialize() {
   tugSpeedEvent = dataManager->make_event("KEY_TUG_SPEED");
 
   isInitialized = true;
-  std::cout << "Pushback::initialized()" << std::endl;
+  LOG_INFO("Pushback initialized");
   return true;
 }
 

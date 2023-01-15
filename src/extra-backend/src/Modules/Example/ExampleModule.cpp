@@ -1,11 +1,11 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
+#include "logging.h"
 #include "MsfsHandler.h"
 #include "ExampleModule.h"
 
 bool ExampleModule::initialize() {
-  std::cout << "ExampleModule::initialize()" << std::endl;
 
   dataManager = &msfsHandler->getDataManager();
 
@@ -45,7 +45,7 @@ bool ExampleModule::initialize() {
     "EXAMPLE DATA", exampleDataDef, &exampleDataStruct, sizeof(exampleDataStruct), true, false, 0, 0);
 
   isInitialized = true;
-  std::cout << "ExampleModule::initialized()" << std::endl;
+  LOG_INFO("ExampleModule initialized");
   return true;
 }
 

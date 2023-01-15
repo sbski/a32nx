@@ -9,9 +9,19 @@ if [ "$1" == "--debug" ]; then
 CLANG_ARGS="-g -DDEBUG"
 WASMLD_ARGS="-O0"
 else
-CLANG_ARGS="-flto -O2"
+CLANG_ARGS="-DNDEBUG -flto -O2"
 WASMLD_ARGS="-O2 --lto-O2 --strip-debug"
 fi
+
+# ZERO_LVL 0
+# CRITICAL_LVL 1
+# ERROR_LVL 2
+# WARN_LVL 3
+# INFO_LVL 4
+# DEBUG_LVL 5
+# TRACE_LVL 6
+LOG_LEVEL=4
+LOGGING="LOG_LEVEL=${LOG_LEVEL}"
 
 # Define which flavor of aircraft should be compiled
 # Can be used in the code to differentiate between the different aircraft
@@ -27,6 +37,7 @@ pushd "${DIR}/obj"
 clang++ \
   -c \
   -D${AIRCRAFT} \
+  -D${LOGGING} \
   ${CLANG_ARGS} \
   -std=c++17 \
   -Wall \

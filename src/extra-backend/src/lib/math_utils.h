@@ -1,8 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_A32NX_MATH_UTILS_H
-#define FLYBYWIRE_A32NX_MATH_UTILS_H
+#ifndef FLYBYWIRE_MATH_UTILS_H
+#define FLYBYWIRE_MATH_UTILS_H
 
 #include <limits>
 #include <cmath>
@@ -40,4 +40,4 @@ namespace helper {
 
 }  // namespace helper
 
-#endif //FLYBYWIRE_A32NX_MATH_UTILS_H
+#endif //FLYBYWIRE_MATH_UTILS_H

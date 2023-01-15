@@ -1,8 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_A32NX_MSFSHANDLER_H
-#define FLYBYWIRE_A32NX_MSFSHANDLER_H
+#ifndef FLYBYWIRE_MSFSHANDLER_H
+#define FLYBYWIRE_MSFSHANDLER_H
 
 #include <MSFS/Legacy/gauges.h>
 #include <MSFS/MSFS.h>
@@ -137,4 +137,4 @@ public:
   UINT64 getTickCounter() const { return tickCounter; }
 };
 
-#endif // FLYBYWIRE_A32NX_MSFSHANDLER_H
+#endif // FLYBYWIRE_MSFSHANDLER_H

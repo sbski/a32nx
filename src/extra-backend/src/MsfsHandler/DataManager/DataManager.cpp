@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include "logging.h"
 #include "DataManager.h"
 #include "NamedVariable.h"
 #include "SimconnectExceptionStrings.h"
@@ -16,6 +17,7 @@ bool DataManager::initialize(HANDLE hdl) {
 }
 
 bool DataManager::preUpdate(sGaugeDrawData* pData) {
+  LOG_DEBUG("DataManager::preUpdate()");
   if (!isInitialized) {
     std::cerr << "DataManager::preUpdate() called but DataManager is not initialized" << std::endl;
     return false;
@@ -28,7 +30,7 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
   for (auto &var: variables) {
     if (var.second->isAutoRead()) {
       var.second->updateFromSim(timeStamp, tickCounter);
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
       if (tickCounter % 100 == 0) {
         std::cout << "DataManager::preUpdate() - auto read named and aircraft: "
         << var.second->getVarName()  << " = " << var.second->get()  << std::endl;
@@ -44,7 +46,7 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
         std::cerr << "DataManager::preUpdate(): requestUpdateFromSim() failed for "
                   << ddv->getName() << std::endl;
       }
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
       if (tickCounter % 100 == 0) {
         std::cout << "DataManager::preUpdate() - auto read simobjects: "
                   << ddv->getName() << std::endl;
@@ -56,6 +58,7 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
   // get requested sim object data
   requestData();
 
+  LOG_DEBUG("DataManager::preUpdate() - done");
   return true;
 }
 
@@ -69,6 +72,7 @@ bool DataManager::update([[maybe_unused]] sGaugeDrawData* pData) const {
 }
 
 bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
+  LOG_DEBUG("DataManager::postUpdate()");
   if (!isInitialized) {
     std::cerr << "DataManager::postUpdate() called but DataManager is not initialized" << std::endl;
     return false;
@@ -80,7 +84,7 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
   for (auto &var: variables) {
     if (var.second->isAutoWrite()) {
       var.second->updateToSim();
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
       if (tickCounter % 100 == 0) {
         std::cout << "DataManager::postUpdate() - auto write named and aircraft: "
                   << var.second->getVarName()  << " = " << var.second->get()  << std::endl;
@@ -96,7 +100,7 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
         std::cerr << "DataManager::postUpdate(): updateToSim() failed for "
                   << ddv->getName() << std::endl;
       }
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
       if (tickCounter % 100 == 0) {
         std::cout << "DataManager::postUpdate() - auto write simobjects"
                   << ddv->getName()  << std::endl;
@@ -105,6 +109,7 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
     }
   }
 
+  LOG_DEBUG("DataManager::postUpdate() - done");
   return true;
 }
 

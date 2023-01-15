@@ -4,6 +4,7 @@
 #include <MSFS/Legacy/gauges.h>
 #include <iostream>
 
+#include "logging.h"
 #include "MsfsHandler.h"
 #include "LightingPresets.h"
 
@@ -26,7 +27,6 @@
 ///
 
 bool LightingPresets::initialize() {
-  std::cout << "LightingPresets::initialize()" << std::endl;
 
   dataManager = &msfsHandler->getDataManager();
 
@@ -68,7 +68,7 @@ bool LightingPresets::initialize() {
   floodPedLightLevel = getLightPotentiometerVar(76);
 
   isInitialized = true;
-  std::cout << "LightingPresets::initialized()" << std::endl;
+  LOG_INFO("LightingPresets initialized");
   return true;
 }
 

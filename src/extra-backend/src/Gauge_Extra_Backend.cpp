@@ -16,12 +16,12 @@
 #include <MSFS/MSFS_Render.h>
 #include <SimConnect.h>
 
+#include "logging.h"
 #include "MsfsHandler/MsfsHandler.h"
 #include "Example/ExampleModule.h"
 #include "LightingPresets/LightingPresets.h"
 #include "Pushback.h"
 #include "AircraftPresets.h"
-
 
 // ADD ADDITIONAL MODULES HERE
 // This is the only place these have to be added - everything else is handled automatically

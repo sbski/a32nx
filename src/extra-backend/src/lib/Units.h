@@ -1,8 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_A32NX_UNITS_H
-#define FLYBYWIRE_A32NX_UNITS_H
+#ifndef FLYBYWIRE_UNITS_H
+#define FLYBYWIRE_UNITS_H
 
 #include <map>
 #include <string>
@@ -49,4 +49,4 @@ public:
 
 inline Units UNITS{};
 
-#endif //FLYBYWIRE_A32NX_UNITS_H
+#endif //FLYBYWIRE_UNITS_H

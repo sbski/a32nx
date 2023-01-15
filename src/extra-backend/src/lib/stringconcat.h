@@ -1,8 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_A32NX_STRINGCONCAT_H
-#define FLYBYWIRE_A32NX_STRINGCONCAT_H
+#ifndef FLYBYWIRE_STRINGCONCAT_H
+#define FLYBYWIRE_STRINGCONCAT_H
 
 #include <array>
 #include <string_view>
@@ -38,4 +38,4 @@ namespace helper {
 
 }  // namespace helper
 
-#endif //FLYBYWIRE_A32NX_STRINGCONCAT_H
+#endif //FLYBYWIRE_STRINGCONCAT_H

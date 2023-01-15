@@ -1,8 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_A32NX_LIGHTINGPRESETS_H
-#define FLYBYWIRE_A32NX_LIGHTINGPRESETS_H
+#ifndef FLYBYWIRE_LIGHTINGPRESETS_H
+#define FLYBYWIRE_LIGHTINGPRESETS_H
 
 #include "Module.h"
 #include "DataManager.h"
@@ -207,4 +207,4 @@ private:
                                       100.0, 100.0, 100.0, 100.0, 100.0};
 };
 
-#endif // FLYBYWIRE_A32NX_LIGHTINGPRESETS_H
+#endif // FLYBYWIRE_LIGHTINGPRESETS_H

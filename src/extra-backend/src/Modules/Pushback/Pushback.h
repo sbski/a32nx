@@ -1,8 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_A32NX_PUSHBACK_H
-#define FLYBYWIRE_A32NX_PUSHBACK_H
+#ifndef FLYBYWIRE_PUSHBACK_H
+#define FLYBYWIRE_PUSHBACK_H
 
 #include "Module.h"
 #include "DataManager.h"
@@ -113,4 +113,4 @@ private:
   }
 };
 
-#endif //FLYBYWIRE_A32NX_PUSHBACK_H
+#endif //FLYBYWIRE_PUSHBACK_H

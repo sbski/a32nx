@@ -1,8 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_A32NX_DATADEFINITIONVARIABLE_H
-#define FLYBYWIRE_A32NX_DATADEFINITIONVARIABLE_H
+#ifndef FLYBYWIRE_DATADEFINITIONVARIABLE_H
+#define FLYBYWIRE_DATADEFINITIONVARIABLE_H
 
 #include <vector>
 #include <sstream>
@@ -269,4 +269,4 @@ inline std::ostream &operator<<(std::ostream &os, const DataDefinitionVariable &
   return os;
 }
 
-#endif //FLYBYWIRE_A32NX_DATADEFINITIONVARIABLE_H
+#endif //FLYBYWIRE_DATADEFINITIONVARIABLE_H
