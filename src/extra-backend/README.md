@@ -54,7 +54,7 @@ WASM file. See details below.
 This part does not take care of any data or logic from or to the simulator. If 
 a developer chooses to only use this part of the framework, MSFS SDK and 
 SimConnect have to be used directly.
-                               
+
 ### DataManager
 The DataManager is a central data store which allows to store and retrieve data
 from the simulator. It provides different kind of variables which abstract the 
@@ -197,6 +197,22 @@ sim.
 
 It is based on the CacheableVariable - see above. 
 
+OBS: A prefix is added to the variable name to distinguish different aircraft 
+(e.g. A32NX_ or A380X_).
+
+It is defined in the build script as a compile-time variable and **must not be added
+manually to the variable name.**<br/>
+
+```sh
+...
+AIRCRAFT="A32NX"
+...
+clang++ \
+  -c \
+  -D${AIRCRAFT} \
+...  
+```
+
 ##### AircraftVariable
 The AircraftVariable is a variable which is mapped to a simvar. As simvars are
 read-only it is required to use an event to write the variable back to the sim.
@@ -291,13 +307,4 @@ If you want debug information in the build use:<br/>
 ```pwsh
 `.\scripts\dev-env\run.cmd npm run build:extra-backend-debug`
 ```
-   
-## ToDo
-- [ ] Documentation :)
-- [ ] Implement receiving events including registering callbacks into Modules
-- [ ] Implement additional SimConnect data types (Client Data Area)
--
-- Ideas:
-Use better build tools (CMake, Ninja, etc.) if build times become too long.
-Add Unit Test framework
-Add Logging Framework]
+
