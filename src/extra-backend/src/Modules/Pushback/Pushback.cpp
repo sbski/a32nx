@@ -28,8 +28,6 @@ static constexpr double TURN_SPEED_RATIO = 0.16;
 // No variable is written automatically.
 ///
 
-Pushback::Pushback(MsfsHandler* msfsHandler) : Module(msfsHandler) {}
-
 bool Pushback::initialize() {
   std::cout << "Pushback::initialize()" << std::endl;
 
@@ -67,8 +65,8 @@ bool Pushback::initialize() {
   tugHeadingEvent = dataManager->make_event("KEY_TUG_HEADING");
   tugSpeedEvent = dataManager->make_event("KEY_TUG_SPEED");
 
-  std::cout << "Pushback::initialized()" << std::endl;
   isInitialized = true;
+  std::cout << "Pushback::initialized()" << std::endl;
   return true;
 }
 

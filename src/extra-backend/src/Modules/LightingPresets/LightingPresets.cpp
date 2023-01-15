@@ -25,8 +25,6 @@
 // The rest are read on demand after the state of the above variables have been checked.
 ///
 
-LightingPresets::LightingPresets(MsfsHandler* msfsHandler) : Module(msfsHandler) {}
-
 bool LightingPresets::initialize() {
   std::cout << "LightingPresets::initialize()" << std::endl;
 
@@ -69,8 +67,8 @@ bool LightingPresets::initialize() {
   pedestalIntegralLightLevel = getLightPotentiometerVar(85);
   floodPedLightLevel = getLightPotentiometerVar(76);
 
-  std::cout << "LightingPresets::initialized()" << std::endl;
   isInitialized = true;
+  std::cout << "LightingPresets::initialized()" << std::endl;
   return true;
 }
 
