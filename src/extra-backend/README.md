@@ -217,18 +217,21 @@ clang++ \
 The AircraftVariable is a variable which is mapped to a simvar. As simvars are
 read-only it is required to use an event to write the variable back to the sim.
 
-It allows to specific either an event-name or an instance of an Event object to
+It allows to specify either an event-name or an instance of an Event object to
 write data back to the sim.
 
 It is based on the CacheableVariable - see above.
 
-#### DataDefinitionVariable (Custom SimObjects)
-The DataDefinitionVariable is a variable which is mapped to a custom SimObject
-which can be defined by adding separate data definition for single variables 
-(objects) to a container of data definitions (custom imObject).
+No prefix is added to the variable name.
 
-As data definition sim objects use memory mapped data between clients it is very 
-efficient but a bit harder to set up and use.
+#### DataDefinitionVariable (Custom SimObjects)
+The DataDefinitionVariable is a variable (in fact a set of variables) which 
+is mapped to a custom SimObject which can be defined by adding separate data 
+definition for single variables (objects) to a container of data definitions 
+(custom imObject).
+
+As data definition sim objects use memory mapped data between clients they are 
+very efficient but a bit harder to set up and use.
 
 A data definition variable consisting of only writable simvars can be used to
 write data back to the sim without the need to define an event.
@@ -238,13 +241,14 @@ Writing back a read only simvar will produce an error (visible in the Console).
 See the DataDefinitionVariable class documentation for more details.
 
 A DataDefinitionVariable requires unique IDs for the data definition and the
-request. These IDs are used to identify the data definition and the send data 
-from the sim. To make sure these IDs are unique with the gauge.
+request. These IDs are used to identify the data definition and the data reveived 
+from the sim. Make sure these IDs are unique with the gauge.
+
 Use the DataManager to create these variables, and it will automatically assign
 unique IDs.
 
 Also see:
-- Pushback module for an example of a custom SimObject which is writeable
+- Example and Pushback modules for examples of custom writable sim objects
 - [MFSF SDK Documentation: SimConnect Data Definition](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Events_And_Data/SimConnect_AddToClientDataDefinition.htm)
 
 #### ClientDataAreaVariable (Custom SimObject)

@@ -254,7 +254,7 @@ public:
    * preUpdate() method.
    * @param autoReading the new value for the autoRead flag
    */
-  [[nodiscard]] void setAutoRead(bool autoReading) { autoRead = autoReading; }
+  void setAutoRead(bool autoReading) { autoRead = autoReading; }
 
   /**
    * @return true if the variable will be written to the sim in the DataManagers postUpdate() method.
@@ -268,7 +268,7 @@ public:
    * be called manually.
    * @param autoWriting the new value for the autoWrite flag
    */
-  [[nodiscard]] virtual void setAutoWrite(bool autoWriting) { autoRead = autoWriting; }
+  virtual void setAutoWrite(bool autoWriting) { autoRead = autoWriting; }
 
   /**
    * @return the time stamp of the last read from the sim
@@ -284,7 +284,7 @@ public:
    * Sets the maximum age of the variable in seconds
    * @param maxAgeTimeInMilliseconds
    */
-  [[nodiscard]] void setMaxAgeTime(FLOAT64 maxAgeTimeInMilliseconds) { maxAgeTime = maxAgeTimeInMilliseconds; }
+  void setMaxAgeTime(FLOAT64 maxAgeTimeInMilliseconds) { maxAgeTime = maxAgeTimeInMilliseconds; }
 
   /**
    * @return the tick count when variable was last read from the sim
@@ -300,7 +300,7 @@ public:
    * Sets the maximum age of the variable in ticks
    * @param maxAgeTicksInTicks the maximum age of the variable in ticks
    */
-  [[nodiscard]] void setMaxAgeTicks(UINT64 maxAgeTicksInTicks) { maxAgeTicks = maxAgeTicksInTicks; }
+  void setMaxAgeTicks(UINT64 maxAgeTicksInTicks) { maxAgeTicks = maxAgeTicksInTicks; }
 
   /**
    * @return true if the value has been changed via set() since the last read from the sim.
@@ -312,14 +312,14 @@ public:
    */
   [[nodiscard]] bool getAsBool() const { return static_cast<bool>(get()); }
 
-  [[nodiscard]] void setAsBool(bool b) { set(b ? 1.0 : 0.0); }
+  void setAsBool(bool b) { set(b ? 1.0 : 0.0); }
 
   /**
    * casted to an INT64
    */
   [[nodiscard]] INT64 getAsInt64() const { return static_cast<INT64>(get()); }
 
-  [[nodiscard]] void setAsInt64(UINT64 i) { set(static_cast<FLOAT64>(i)); }
+  void setAsInt64(UINT64 i) { set(static_cast<FLOAT64>(i)); }
 
   /**
    * @return true if the value has changed since the last read from the sim.
@@ -337,7 +337,7 @@ public:
    * difference is smaller or equal than this value.
    * @param eps epsilon value to be used
    */
-  [[nodiscard]] void setEpsilon(FLOAT64 eps) { epsilon = eps; }
+  void setEpsilon(FLOAT64 eps) { epsilon = eps; }
 
 };
 
