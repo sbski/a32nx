@@ -17,6 +17,7 @@ export function getInstrumentsIgniterTasks() {
     return baseInstruments.map(({ name }) => new ExecTask(
         name,
         `node fbw-a32nx/src/systems/instruments/buildSrc/igniter/worker.mjs ${name}`,
-        [join('fbw-a32nx/src/systems/instruments/src', name), join('flybywire-aircraft-a320-neo/html_ui/Pages/VCockpit/Instruments/A32NX', name)],
+        [join('fbw-a32nx/src/systems/instruments/src', name),
+            join('fbw-a32nx/out/flybywire-aircraft-a320-neo/html_ui/Pages/VCockpit/Instruments/A32NX', name)],
     ));
 }

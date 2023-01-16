@@ -8,6 +8,6 @@ export function getTemplatePlugin({ name, config, imports = [] }) {
         elementName: `a32nx-${name.toLowerCase()}`,
         config,
         imports,
-        outputDir: join(Directories.root, 'flybywire-aircraft-a320-neo/html_ui/Pages/VCockpit/Instruments/A32NX'),
+        outputDir: join(Directories.root, 'fbw-a32nx/out/flybywire-aircraft-a320-neo/html_ui/Pages/VCockpit/Instruments/A32NX'),
     });
 }
