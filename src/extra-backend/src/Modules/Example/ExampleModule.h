@@ -27,12 +27,18 @@ private:
   AircraftVariablePtr beaconLightSwitchPtr;
   AircraftVariablePtr beaconLightSwitch2Ptr;
   AircraftVariablePtr beaconLightSwitch3Ptr;
+  AircraftVariablePtr fuelPumpSwitch1Ptr;
+  AircraftVariablePtr fuelPumpSwitch2Ptr;
+  AircraftVariablePtr zuluTimePtr;  // E:ZULU TIME (can't this be requested as aircraft variable?)
 
   // DataDefinition variables
   DataDefinitionVariablePtr exampleDataPtr;
   struct ExampleData {
     [[maybe_unused]] FLOAT64 strobeLightSwitch;
     [[maybe_unused]] FLOAT64 wingLightSwitch;
+    [[maybe_unused]] FLOAT64 zuluTime; // E:ZULU TIME
+    [[maybe_unused]] FLOAT64 localTime; // E:LOCAL TIME
+    [[maybe_unused]] FLOAT64 absoluteTime; // E:ABSOLUTE TIME
   } exampleDataStruct{};
 
   // Events

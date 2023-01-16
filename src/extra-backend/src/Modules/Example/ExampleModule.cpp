@@ -26,20 +26,32 @@ bool ExampleModule::initialize() {
   // LVARS
   debugLVARPtr = dataManager->make_named_var("DEBUG_LVAR", UNITS.Number, true, false, 0, 0);
   debugLVARPtr->setEpsilon(1.0); // only read when difference is 1.0 or more
-
+  // requested twice to demonstrate de-duplication
   debugLVAR2Ptr = dataManager->make_named_var("DEBUG_LVAR", UNITS.Percent, true, false, 0, 0);
 
-  // Aircraft variables
+  // Aircraft variables - requested twice to demonstrate de-duplication
   beaconLightSwitchPtr = dataManager->make_aircraft_var("LIGHT BEACON", 0, "",
-                                                        beaconLightSetEventPtr, UNITS.Bool, false, false, 0, 0);
+                                            beaconLightSetEventPtr, UNITS.Bool, false, false, 0, 0);
   beaconLightSwitch2Ptr = dataManager->make_aircraft_var("LIGHT BEACON", 0, "",
-                                                         beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
+                                            beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
   beaconLightSwitch3Ptr = dataManager->make_simple_aircraft_var("LIGHT BEACON", UNITS.Bool);
+
+  // E: variables - don't seem to work as aircraft variables
+  zuluTimePtr = dataManager->make_simple_aircraft_var("ZULU TIME", UNITS.Number, true);
+
+  // A:FUELSYSTEM PUMP SWITCH:#ID#
+  fuelPumpSwitch1Ptr = dataManager->make_aircraft_var("FUELSYSTEM PUMP SWITCH", 1, "",
+                                             beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
+  fuelPumpSwitch2Ptr = dataManager->make_aircraft_var("FUELSYSTEM PUMP SWITCH", 2, "",
+                                             beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
 
   // Data definition variables
   std::vector<DataDefinitionVariable::DataDefinition> exampleDataDef = {
-    {"LIGHT STROBE", 0, UNITS.Bool},
-    {"LIGHT WING",   0, UNITS.Bool},
+    {"LIGHT STROBE",  0, UNITS.Bool},
+    {"LIGHT WING",    0, UNITS.Bool},
+    {"ZULU TIME",     0, UNITS.Number},
+    {"LOCAL TIME",    0, UNITS.Number},
+    {"ABSOLUTE TIME", 0, UNITS.Number},
   };
   exampleDataPtr = dataManager->make_datadefinition_var(
     "EXAMPLE DATA", exampleDataDef, &exampleDataStruct, sizeof(exampleDataStruct), true, false, 0, 0);
@@ -95,6 +107,39 @@ bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
     //              << " tick = " << msfsHandler->getTickCounter()
     //              << std::endl;
     //
+    //    std::cout << "fuelPumpSwitch1Ptr = " << fuelPumpSwitch1Ptr->get() << " changed? "
+    //              << (fuelPumpSwitch2Ptr->hasChanged() ? "yes" : "no")
+    //              << " time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+    //
+    //    std::cout << "fuelPumpSwitch2Ptr = " << fuelPumpSwitch2Ptr->get() << " changed? "
+    //              << (fuelPumpSwitch2Ptr->hasChanged() ? "yes" : "no")
+    //              << " time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+    //
+    //    std::cout << "zuluTimePtr = " << zuluTimePtr->get() << " changed? "
+    //              << (zuluTimePtr->hasChanged() ? "yes" : "no")
+    //              << " time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+    //
+    //    std::cout << "zuluTime =  " << exampleDataStruct.zuluTime
+    //              << " time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+    //
+    //    std::cout << "localTime =  " << exampleDataStruct.localTime
+    //              << " time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+    //
+    //    std::cout << "absoluteTime =  " << static_cast<UINT64>(exampleDataStruct.absoluteTime)
+    //              << " time = " << msfsHandler->getPreviousSimulationTime()
+    //              << " tick = " << msfsHandler->getTickCounter()
+    //              << std::endl;
+
     //    std::cout << "strobeLightSwitch =  " << exampleDataStruct.strobeLightSwitch
     //              << " (time = " << msfsHandler->getPreviousSimulationTime()
     //              << " tick = " << msfsHandler->getTickCounter() << ")"

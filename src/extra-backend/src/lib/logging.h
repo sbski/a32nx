@@ -12,9 +12,10 @@
  *
  * Use in the following way:
  *
- * LOG_INFO("{s}", "PANEL_SERVICE_PRE_INSTALL");
+ * LOG_INFO("PANEL_SERVICE_PRE_INSTALL");
+ * LOG_INFO("PANEL_SERVICE_PRE_INSTALL: " + panelService->getPanelServiceName());
  *
- * LOG_INFO("Value={d]", value);
+ * This will be improved and extended in the future.
  */
 
 #define ZERO_LVL 0
@@ -61,7 +62,9 @@
 #define LOG_TRACE(msg) void(0)
 #endif
 
-/** Singleton class for Logger */
+/**
+ * Singleton class for Logger
+ */
 class Logger {
 public:
   Logger() = default;

@@ -151,7 +151,7 @@ NamedVariablePtr DataManager::make_named_var(
   // used in different places with different expected values via Units.
   const std::string uniqueName = varName + ":" + unit.name;
 
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
   std::cout << "DataManager::make_named_var(): " << uniqueName << std::endl;
 #endif
 
@@ -171,7 +171,7 @@ NamedVariablePtr DataManager::make_named_var(
     if (!variables[uniqueName]->isAutoWrite() && autoWriting) {
       variables[uniqueName]->setAutoWrite(true);
     }
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
     std::cout << "DataManager::make_named_var(): variable "
               << uniqueName << " already exists: "
               << variables[uniqueName]
@@ -184,7 +184,7 @@ NamedVariablePtr DataManager::make_named_var(
   std::shared_ptr<NamedVariable> var =
     std::make_shared<NamedVariable>(varName, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
 
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
   std::cout << "DataManager::make_named_var(): creating variable "
             << varName << " (" << var << ")"
             << std::endl;
@@ -213,7 +213,7 @@ AircraftVariablePtr DataManager::make_aircraft_var(
   // used in different places with different expected values via Index and Units.
   const std::string uniqueName = varName + ":" + std::to_string(index) + ":" + unit.name;
 
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
   std::cout << "DataManager::make_aircraft_var(): " << uniqueName << std::endl;
 #endif
 
@@ -234,7 +234,7 @@ AircraftVariablePtr DataManager::make_aircraft_var(
       variables[uniqueName]->setAutoWrite(true);
     }
 
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
     std::cout << "DataManager::make_aircraft_var(): variable "
               << uniqueName << " already exists: "
               << variables[uniqueName]
@@ -248,7 +248,7 @@ AircraftVariablePtr DataManager::make_aircraft_var(
       varName, index, std::move(setterEventName), std::move(setterEvent),
       unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
 
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
   std::cout << "DataManager::make_named_var(): creating variable "
             << varName << " (" << var << ")"
             << std::endl;
@@ -266,7 +266,7 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
   FLOAT64 maxAgeTime,
   UINT64 maxAgeTicks) {
 
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
   std::cout << "DataManager::make_simple_aircraft_var(): " << varName << std::endl;
 #endif
 
@@ -289,7 +289,7 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
       variables[uniqueName]->setMaxAgeTicks(maxAgeTicks);
     }
 
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
     std::cout << "DataManager::make_simple_aircraft_var(): variable "
               << uniqueName << " already exists: "
               << variables[uniqueName]
@@ -303,7 +303,7 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
     std::make_shared<AircraftVariable>(
       varName, 0, "", nullptr, unit, autoReading, false, maxAgeTime, maxAgeTicks);
 
-#ifdef DEBUG
+#if LOG_LEVEL >= DEBUG_LVL
   std::cout << "DataManager::make_simple_aircraft_var(): creating variable "
             << varName << " (" << var << ")"
             << std::endl;
@@ -336,6 +336,10 @@ DataDefinitionVariablePtr DataManager::make_datadefinition_var(
       autoWriting,
       maxAgeTime,
       maxAgeTicks);
+
+#if LOG_LEVEL >= DEBUG_LVL
+  std::cout << "DataManager::make_datadefinition_var(): " << name << std::endl;
+#endif
 
   dataDefinitionVariables.push_back(var);
   return var;

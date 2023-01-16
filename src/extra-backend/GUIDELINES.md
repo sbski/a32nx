@@ -58,8 +58,10 @@ and faster implementation.
 
 ## Logging
 
-TODO - logging framework will be added
 TODO - complete this section                                                          
+TODO - logging framework will be added
+- challenge is to find once that does not use exceptions or threading (which is
+  not supported in MSFS WASM)
 - MSFS does not easily allow to attach a debugger for C++
 - MSFS has no permanent logging to analyse CTDs
 - Logging should not be excessive but allow to see where the code is at
