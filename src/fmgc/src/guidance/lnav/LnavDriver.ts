@@ -410,12 +410,11 @@ export class LnavDriver implements GuidanceComponent {
     private updateEfisData(activeLeg: Leg, gs: Knots) {
         const termination = activeLeg instanceof XFLeg ? activeLeg.fix.location : activeLeg.getPathEndPoint();
 
-        const efisTrueBearing = termination ? Avionics.Utils.computeGreatCircleHeading(this.ppos, termination) : -1;
-        const efisBearing = termination ? A32NX_Util.trueToMagnetic(
+        const efisTrueBearing = termination ? bearingTo(this.ppos, termination) : -1;
+        const efisBearing = termination ? MagVar.trueToMagnetic(
             efisTrueBearing,
             Facilities.getMagVar(this.ppos.lat, this.ppos.long),
         ) : -1;
-
 
         // Don't compute distance and ETA for XM legs
         const efisDistance = activeLeg instanceof VMLeg ? -1 : distanceTo(this.ppos, termination);
