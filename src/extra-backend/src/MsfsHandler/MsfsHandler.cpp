@@ -87,14 +87,6 @@ bool MsfsHandler::update(sGaugeDrawData* pData) {
     std::cout << simConnectName << ": MsfsHandler::update() - failed" << std::endl;
   }
 
-  // TODO: Remove these test variables
-  if (tickCounter % 100 == 0) {
-    //    std::cout << *a32nxIsDevelopmentState << std::endl;
-    //    std::cout << *a32nxIsReady << std::endl;
-    //    std::cout << *baseSimData << std::endl;
-    //    std::cout << "time=" << simData.simulationTime << std::endl;
-  }
-
   return result;
 }
 
