@@ -54,33 +54,20 @@ class NavSystem extends BaseInstrument {
         // FIXME all this stuff should not go in NavSystem... or stuff like the FCU should stop using NavSystem
         // this.currFlightPlanManager = new Fmgc.FlightPlanManager(this); // TODO: DEPRECATE
         // this.currFlightPlan = new Fmgc.ManagedFlightPlan(); // TODO: DEPRECATE
-        this.currFlightPhaseManager = Fmgc.getFlightPhaseManager();
 
-        this.currFlightPlanService = Fmgc.FlightPlanService;
-        this.currFlightPlanService.createFlightPlans();
+        if (this.nodeName.includes('CDU')) {
+            this.currFlightPhaseManager = Fmgc.getFlightPhaseManager();
 
-        this.currNavigationDatabaseService = Fmgc.NavigationDatabaseService;
+            this.currFlightPlanService = Fmgc.FlightPlanService;
+            this.currFlightPlanService.createFlightPlans();
 
-        NXDataStore.getAndSubscribe('FBW_NAVDB_BACKEND', (key, value) => {
-            this.navigationDatabase = new Fmgc.NavigationDatabase(parseInt(value));
-            this.currNavigationDatabaseService.activeDatabase = this.navigationDatabase;
-        }, Fmgc.NavigationDatabaseBackend.Msfs.toString());
+            this.currNavigationDatabaseService = Fmgc.NavigationDatabaseService;
 
-        /*new Promise(async (resolve) => {
-            await this.currFlightPlanService.newCityPair('NZQN', 'NZWN', 'NZAA');
-
-            await this.currFlightPlanService.setOriginRunway('RW05');
-            await this.currFlightPlanService.setDepartureProcedure('ANPO3A');
-
-            await this.currFlightPlanService.setDestinationRunway('RW16');
-            await this.currFlightPlanService.setApproach('D16');
-            await this.currFlightPlanService.setApproachVia('WITBY');
-            await this.currFlightPlanService.setArrival('DOGA4B');
-
-            console.log('Dev flight plan inserted.');
-
-            resolve();
-        });*/
+            NXDataStore.getAndSubscribe('FBW_NAVDB_BACKEND', (key, value) => {
+                this.navigationDatabase = new Fmgc.NavigationDatabase(parseInt(value));
+                this.currNavigationDatabaseService.activeDatabase = this.navigationDatabase;
+            }, Fmgc.NavigationDatabaseBackend.Msfs.toString());
+        }
     }
     get flightPhaseManager() {
         return this.currFlightPhaseManager;
