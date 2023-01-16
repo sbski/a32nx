@@ -1345,8 +1345,8 @@ class FMCMainDisplay extends BaseAirliners {
             if (this.isAltitudeManaged()) {
                 const plan = this.flightPlanService.active;
 
-                const prevWaypoint = plan.elementAt(plan.activeLegIndex - 1);
-                const nextWaypoint = plan.elementAt(plan.activeLegIndex - 1);
+                const prevWaypoint = plan.hasElement(plan.activeLegIndex - 1);
+                const nextWaypoint = plan.hasElement(plan.activeLegIndex + 1);
 
                 if (prevWaypoint && nextWaypoint) {
                     const activeWpIdx = plan.activeLegIndex;
@@ -1701,9 +1701,11 @@ class FMCMainDisplay extends BaseAirliners {
         if (_event === "MODE_SELECTED_HEADING") {
             SimVar.SetSimVarValue("L:A32NX_GOAROUND_HDG_MODE", "bool", 1);
             SimVar.SetSimVarValue("L:A32NX_GOAROUND_NAV_MODE", "bool", 0);
+
             if (Simplane.getAutoPilotHeadingManaged()) {
                 if (SimVar.GetSimVarValue("L:A320_FCU_SHOW_SELECTED_HEADING", "number") === 0) {
                     const currentHeading = Simplane.getHeadingMagnetic();
+
                     Coherent.call("HEADING_BUG_SET", 1, currentHeading).catch(console.error);
                 }
             }
@@ -1712,25 +1714,30 @@ class FMCMainDisplay extends BaseAirliners {
         if (_event === "MODE_MANAGED_HEADING") {
             SimVar.SetSimVarValue("L:A32NX_GOAROUND_HDG_MODE", "bool", 0);
             SimVar.SetSimVarValue("L:A32NX_GOAROUND_NAV_MODE", "bool", 1);
-            if (this.flightPlanManager.getWaypointsCount() === 0) {
+
+            if (this.flightPlanService.active.legCount === 0) {
                 return;
             }
+
             this._onModeManagedHeading();
         }
         if (_event === "MODE_SELECTED_ALTITUDE") {
-            const dist = this.flightPlanManager.getDistanceToDestination();
+            const dist = 201; // TODO port over fms-v2
+            // const dist = this.flightPlanManager.getDistanceToDestination();
             this.flightPhaseManager.handleFcuAltKnobPushPull(dist);
             this._onModeSelectedAltitude();
             this._onStepClimbDescent();
         }
         if (_event === "MODE_MANAGED_ALTITUDE") {
-            const dist = this.flightPlanManager.getDistanceToDestination();
+            const dist = 201; // TODO port over fms-v2
+            // const dist = this.flightPlanManager.getDistanceToDestination();
             this.flightPhaseManager.handleFcuAltKnobPushPull(dist);
             this._onModeManagedAltitude();
             this._onStepClimbDescent();
         }
         if (_event === "AP_DEC_ALT" || _event === "AP_INC_ALT") {
-            const dist = this.flightPlanManager.getDistanceToDestination();
+            const dist = 201; // TODO port over fms-v2
+            // const dist = this.flightPlanManager.getDistanceToDestination();
             this.flightPhaseManager.handleFcuAltKnobTurn(dist);
             this._onTrySetCruiseFlightLevel();
         }
