@@ -104,7 +104,7 @@ protected:
   FLOAT64 epsilon = std::numeric_limits<FLOAT64>::epsilon();
 
   /**
-   * The sim's data ID for the variable or the data definition id for a data definition variable.
+   * The sim's data ID for the variable
    */
   ID dataID = -1;
 
