@@ -137,7 +137,7 @@ export default new TaskOfTasks("all", [
             new ExecTask("systems-fadec",
                 "npm run build-a380x:fadec",
                 [
-                    "fbw-a380x/src/wasm/fadec_a320",
+                    "fbw-a380x/src/wasm/fadec_a380",
                     "fbw-common/src/wasm/fbw_common",
                     "fbw-common/src/wasm/fadec_common",
                     "fbw-a380x/out/flybywire-aircraft-a380-841/SimObjects/AirPlanes/FlyByWire_A380_841/panel/fadec.wasm"
@@ -145,7 +145,7 @@ export default new TaskOfTasks("all", [
             new ExecTask("systems-fbw",
                 "npm run build-a380x:fbw",
                 [
-                    "fbw-a380x/src/wasm/fbw_a320",
+                    "fbw-a380x/src/wasm/fbw_a380",
                     "fbw-common/src/wasm/fbw_common",
                     "fbw-a380x/out/flybywire-aircraft-a380-841/SimObjects/AirPlanes/FlyByWire_A380_841/panel/fbw.wasm"
                 ]),
