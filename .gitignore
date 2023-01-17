@@ -3,6 +3,7 @@
 
 # exclude changes to root directory
 *
+/.*/
 
 # Explicit inclusions
 !*/
@@ -78,7 +79,6 @@
 /flybywire-aircraft-a320-neo-lock-highlight/
 
 # explicit exclusions
-/.*/
 /.env
 node_modules/
 obj/
