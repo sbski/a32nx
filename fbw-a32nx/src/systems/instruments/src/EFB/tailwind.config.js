@@ -83,5 +83,6 @@ module.exports = {
             rmp: ['AirbusRMP'],
         },
     },
+    // eslint-disable-next-line global-require
     plugins: [require('@flybywiresim/tailwind-config')],
 };

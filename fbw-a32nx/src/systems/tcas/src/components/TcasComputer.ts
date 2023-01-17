@@ -6,11 +6,11 @@
 import { UpdateThrottler } from '@shared/UpdateThrottler';
 import { MathUtils } from '@shared/MathUtils';
 import { Arinc429Word } from '@shared/arinc429';
-import { TcasComponent } from '../lib/TcasComponent';
 import { LatLongData } from '@typings/fs-base-ui/html_ui/JS/Types';
 import { LocalSimVar } from '@shared/simvar';
 import { NXDataStore } from '@shared/persistence';
 import { FlowEventSync } from '@shared/FlowEventSync';
+import { TcasComponent } from '../lib/TcasComponent';
 import {
     TCAS_CONST as TCAS, JS_NPCPlane,
     TcasState, TcasMode, XpdrMode, TcasThreat,

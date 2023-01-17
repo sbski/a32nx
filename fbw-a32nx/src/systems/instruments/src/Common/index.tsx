@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import * as Defaults from './defaults';
 import { FbwAircraftSentryClient } from '@sentry/FbwAircraftSentryClient';
+import * as Defaults from './defaults';
 
 declare const process: any;
 

@@ -43,7 +43,6 @@ const GIT_COMMIT_SHA = process.env.GITHUB_SHA
     ? process.env.GITHUB_SHA.substring(0, 9)
     : executeGitCommand('git rev-parse --short HEAD');
 
-
 const edition = require('../package.json').edition;
 
 let titlePostfix;

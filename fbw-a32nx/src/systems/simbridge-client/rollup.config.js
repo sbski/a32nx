@@ -16,9 +16,9 @@ const replace = require('@rollup/plugin-replace');
 const extensions = ['.js', '.ts'];
 
 const src = join(__dirname, '..');
-console.log("Src: ", src);
+console.log('Src: ', src);
 const root = join(process.cwd());
-console.log("Root: ", root);
+console.log('Root: ', root);
 
 process.chdir(src);
 

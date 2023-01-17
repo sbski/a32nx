@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import fs from 'fs';
-import {join} from 'path';
+import { join } from 'path';
 import image from '@rollup/plugin-image';
-import {nodeResolve} from '@rollup/plugin-node-resolve';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import {babel as babelPlugin} from '@rollup/plugin-babel';
-import {typescriptPaths} from 'rollup-plugin-typescript-paths';
+import { babel as babelPlugin } from '@rollup/plugin-babel';
+import { typescriptPaths } from 'rollup-plugin-typescript-paths';
 import replace from '@rollup/plugin-replace';
 import postcss from 'rollup-plugin-postcss';
 import tailwindcss from 'tailwindcss';
 import dotenv from 'dotenv';
 import json from '@rollup/plugin-json';
 import postcssColorFunctionalNotation from 'postcss-color-functional-notation';
-import {Directories} from './directories.mjs';
+import { Directories } from './directories.mjs';
 
 const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs'];
 

@@ -9,8 +9,8 @@ import scss from 'rollup-plugin-scss';
 
 const { join } = require('path');
 
-const root = join(__dirname, '..', '..', '..', '..', '..','..');
-console.log("Root: ", root);
+const root = join(__dirname, '..', '..', '..', '..', '..', '..');
+console.log('Root: ', root);
 
 export default {
     input: join(__dirname, 'instrument.tsx'),
