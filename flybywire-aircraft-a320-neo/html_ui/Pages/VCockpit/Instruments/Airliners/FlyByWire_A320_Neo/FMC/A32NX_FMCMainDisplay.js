@@ -2698,7 +2698,7 @@ class FMCMainDisplay extends BaseAirliners {
         this._getOrSelectWaypoints(this.navigationDatabase.searchFix.bind(this.navigationDatabase), ident, callback);
     }
 
-    insertWaypoint(newWaypointTo, fpIndex, index, callback = EmptyCallback.Boolean, immediately) {
+    insertWaypoint(newWaypointTo, fpIndex, index, before = false, callback = EmptyCallback.Boolean, immediately) {
         if (newWaypointTo === "" || newWaypointTo === FMCMainDisplay.clrValue) {
             return callback(false);
         }
@@ -2717,13 +2717,18 @@ class FMCMainDisplay extends BaseAirliners {
                             return callback(false);
                         }
 
-                        this.flightPlanService.nextWaypoint(index, waypoint, fpIndex);
-
-                        return callback(true);
+                        if (before) {
+                            this.flightPlanService.insertWaypointBefore(index, waypoint, fpIndex).then(() => callback(true));
+                        } else {
+                            this.flightPlanService.nextWaypoint(index, waypoint, fpIndex).then(() => callback(true));
+                        }
                     } else {
-                        this.flightPlanService.nextWaypoint(index, waypoint, fpIndex);
+                        if (before) {
+                            this.flightPlanService.insertWaypointBefore(index, waypoint, fpIndex).then(() => callback(true));
+                        } else {
+                            this.flightPlanService.nextWaypoint(index, waypoint, fpIndex).then(() => callback(true));
+                        }
 
-                        return callback(true);
                         // this.ensureCurrentFlightPlanIsTemporary(async () => {
                         //     if (waypoint.additionalData && waypoint.additionalData.storedType !== undefined) {
                         //         this.flightPlanManager.addUserWaypoint(waypoint, index, () => {

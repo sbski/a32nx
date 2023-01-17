@@ -404,7 +404,7 @@ class CDUFlightPlanPage {
                                     break;
                                 default:
                                     if (value.length > 0) {
-                                        mcdu.insertWaypoint(value, forPlan, fpIndex, (success) => {
+                                        mcdu.insertWaypoint(value, forPlan, fpIndex, true, (success) => {
                                             if (!success) {
                                                 scratchpadCallback();
                                             }
@@ -420,7 +420,7 @@ class CDUFlightPlanPage {
                             if (value === "") {
                                 CDULateralRevisionPage.ShowPage(mcdu, wp, fpIndex, forPlan, inAlternate);
                             } else if (value.length > 0) {
-                                mcdu.insertWaypoint(value, forPlan, fpIndex, (success) => {
+                                mcdu.insertWaypoint(value, forPlan, fpIndex, true, (success) => {
                                     if (!success) {
                                         scratchpadCallback();
                                     }
@@ -467,8 +467,7 @@ class CDUFlightPlanPage {
                         return;
                     }
 
-                    // FIXME we should insert before - what happens on leg 0 ?
-                    mcdu.insertWaypoint(value, forPlan, fpIndex, (success) => {
+                    mcdu.insertWaypoint(value, forPlan, fpIndex, true, (success) => {
                         if (!success) {
                             scratchpadCallback();
                         }

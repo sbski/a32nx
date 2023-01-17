@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { Coordinates } from 'msfs-geo';
-import { Airport, LegType, ProcedureLeg, Runway, Waypoint, WaypointArea, WaypointDescriptor } from 'msfs-navdata';
+import { Airport, Fix, LegType, ProcedureLeg, Runway, Waypoint, WaypointArea, WaypointDescriptor } from 'msfs-navdata';
 import { FlightPlanLegDefinition } from '@fmgc/flightplanning/new/legs/FlightPlanLegDefinition';
 import { procedureLegIdentAndAnnotation } from '@fmgc/flightplanning/new/legs/FlightPlanLegNaming';
 import { WaypointFactory } from '@fmgc/flightplanning/new/waypoints/WaypointFactory';
@@ -112,7 +112,7 @@ export class FlightPlanLeg {
      *
      * @param waypoint the specified waypoint
      */
-    terminatesWithWaypoint(waypoint: Waypoint) {
+    terminatesWithWaypoint(waypoint: Fix) {
         if (!this.isXF()) {
             return false;
         }
@@ -215,7 +215,7 @@ export class FlightPlanLeg {
         }, waypoint.ident, '', undefined, undefined, false);
     }
 
-    static fromEnrouteWaypoint(segment: FlightPlanSegment, waypoint: Waypoint, airwayIdent?: string, type = LegType.TF): FlightPlanLeg {
+    static fromEnrouteFix(segment: FlightPlanSegment, waypoint: Fix, airwayIdent?: string, type = LegType.TF): FlightPlanLeg {
         return new FlightPlanLeg(segment, {
             procedureIdent: '',
             type,

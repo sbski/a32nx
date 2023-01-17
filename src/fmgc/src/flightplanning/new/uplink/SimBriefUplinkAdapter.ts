@@ -206,7 +206,7 @@ export class SimBriefUplinkAdapter {
                     const fixes = await NavigationDatabaseService.activeDatabase.searchAllFix(chunk.ident);
 
                     if (fixes.length > 0) {
-                        FlightPlanService.nextWaypoint(insertHead, fixes.length > 1 ? pickFix(fixes, chunk.locationHint) : fixes[0], FlightPlanIndex.Uplink);
+                        await FlightPlanService.nextWaypoint(insertHead, fixes.length > 1 ? pickFix(fixes, chunk.locationHint) : fixes[0], FlightPlanIndex.Uplink);
                         insertHead++;
                     }
 
@@ -229,7 +229,7 @@ export class SimBriefUplinkAdapter {
                 const fixes = await NavigationDatabaseService.activeDatabase.searchAllFix(chunk.ident);
 
                 if (fixes.length > 0) {
-                    FlightPlanService.nextWaypoint(insertHead, fixes.length > 1 ? pickFix(fixes, chunk.locationHint) : fixes[0], FlightPlanIndex.Uplink);
+                    await FlightPlanService.nextWaypoint(insertHead, fixes.length > 1 ? pickFix(fixes, chunk.locationHint) : fixes[0], FlightPlanIndex.Uplink);
                     insertHead++;
                 }
 

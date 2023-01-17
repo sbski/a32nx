@@ -95,7 +95,7 @@ export class PendingAirways {
                     }
 
                     const splitLegs = fixesArray.slice(start, end);
-                    const mappedSplitLegs = splitLegs.map((it) => FlightPlanLeg.fromEnrouteWaypoint(this.flightPlan.enrouteSegment, it, taiLElement.airway.ident));
+                    const mappedSplitLegs = splitLegs.map((it) => FlightPlanLeg.fromEnrouteFix(this.flightPlan.enrouteSegment, it, taiLElement.airway.ident));
 
                     this.legs.push(...mappedSplitLegs);
 
@@ -130,7 +130,7 @@ export class PendingAirways {
 
             this.elements.push({ to: waypoint, isDct: true });
 
-            const mappedLeg = FlightPlanLeg.fromEnrouteWaypoint(this.flightPlan.enrouteSegment, waypoint);
+            const mappedLeg = FlightPlanLeg.fromEnrouteFix(this.flightPlan.enrouteSegment, waypoint);
 
             this.legs.push(mappedLeg);
 
@@ -167,7 +167,7 @@ export class PendingAirways {
         }
 
         const splitLegs = fixesArray.slice(start, end);
-        const mappedSplitLegs = splitLegs.map((it) => FlightPlanLeg.fromEnrouteWaypoint(this.flightPlan.enrouteSegment, it, taiLElement.airway.ident));
+        const mappedSplitLegs = splitLegs.map((it) => FlightPlanLeg.fromEnrouteFix(this.flightPlan.enrouteSegment, it, taiLElement.airway.ident));
 
         this.legs.push(...mappedSplitLegs);
 

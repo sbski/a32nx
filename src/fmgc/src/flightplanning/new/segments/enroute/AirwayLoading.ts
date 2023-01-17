@@ -46,5 +46,5 @@ export async function loadAirwayLegs(inSegment: EnrouteSegment, airwayIdent: str
         }
     }
 
-    return finalLegs.map((waypoint) => FlightPlanLeg.fromEnrouteWaypoint(inSegment, waypoint, airwayIdent));
+    return finalLegs.map((waypoint) => FlightPlanLeg.fromEnrouteFix(inSegment, waypoint, airwayIdent));
 }

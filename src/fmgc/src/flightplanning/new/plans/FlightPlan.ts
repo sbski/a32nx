@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { Airport, Waypoint } from 'msfs-navdata';
+import { Airport, Fix } from 'msfs-navdata';
 import { AlternateFlightPlan } from '@fmgc/flightplanning/new/plans/AlternateFlightPlan';
 import { PendingAirways } from '@fmgc/flightplanning/new/plans/PendingAirways';
 import { EventBus } from 'msfssdk';
@@ -103,7 +103,7 @@ export class FlightPlan extends BaseFlightPlan {
         this.alternateFlightPlan.incrementVersion();
     }
 
-    directTo(ppos: Coordinates, trueTrack: Degrees, waypoint: Waypoint, withAbeam = false) {
+    directTo(ppos: Coordinates, trueTrack: Degrees, waypoint: Fix, withAbeam = false) {
         // TODO withAbeam
         // TODO handle direct-to into the alternate (make alternate active...?
 

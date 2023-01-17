@@ -5,8 +5,8 @@
 
 import { FlightPlanIndex, FlightPlanManager } from '@fmgc/flightplanning/new/FlightPlanManager';
 import { FpmConfig, FpmConfigs } from '@fmgc/flightplanning/new/FpmConfig';
-import { FlightPlanLeg, FlightPlanLegFlags } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
-import { Waypoint } from 'msfs-navdata';
+import { FlightPlanLegFlags } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
+import { Fix } from 'msfs-navdata';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
 import { Coordinates, Degrees } from 'msfs-geo';
 import { EventBus } from 'msfssdk';
@@ -321,14 +321,36 @@ export class FlightPlanService {
         return this.flightPlanManager.get(finalIndex).removeElementAt(index);
     }
 
-    static nextWaypoint(atIndex: number, waypoint: Waypoint, planIndex = FlightPlanIndex.Active) {
+    /**
+     * Inserts a waypoint before a leg at an index.
+     *
+     * @param atIndex the index of the leg to insert the waypoint before
+     * @param waypoint the waypoint to insert
+     * @param planIndex which flight plan to make the change on
+     * @param alternate whether to edit the plan's alternate flight plan
+     */
+    static async insertWaypointBefore(atIndex: number, waypoint: Fix, planIndex = FlightPlanIndex.Active, alternate = false) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
-        const plan = this.flightPlanManager.get(finalIndex);
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
 
-        const leg = FlightPlanLeg.fromEnrouteWaypoint(plan.enrouteSegment, waypoint);
+        await plan.insertWaypointBefore(atIndex, waypoint);
+    }
 
-        this.flightPlanManager.get(finalIndex).insertElementAfter(atIndex, leg);
+    /**
+     * NEXT WPT revision. Inserts a waypoint after a leg at an index, adding a discontinuity if the waypoint isn't downstream in the plan.
+     *
+     * @param atIndex the index of the leg to insert the waypoint after
+     * @param waypoint the waypoint to insert
+     * @param planIndex which flight plan to make the change on
+     * @param alternate whether to edit the plan's alternate flight plan
+     */
+    static async nextWaypoint(atIndex: number, waypoint: Fix, planIndex = FlightPlanIndex.Active, alternate = false) {
+        const finalIndex = this.prepareDestructiveModification(planIndex);
+
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
+
+        await plan.nextWaypoint(atIndex, waypoint);
     }
 
     static startAirwayEntry(at: number, planIndex = FlightPlanIndex.Active) {
@@ -339,7 +361,7 @@ export class FlightPlanService {
         plan.startAirwayEntry(at);
     }
 
-    static directTo(ppos: Coordinates, trueTrack: Degrees, waypoint: Waypoint, withAbeam = false, planIndex = FlightPlanIndex.Active) {
+    static directTo(ppos: Coordinates, trueTrack: Degrees, waypoint: Fix, withAbeam = false, planIndex = FlightPlanIndex.Active) {
         const finalIndex = this.prepareDestructiveModification(planIndex);
 
         const plan = this.flightPlanManager.get(finalIndex);

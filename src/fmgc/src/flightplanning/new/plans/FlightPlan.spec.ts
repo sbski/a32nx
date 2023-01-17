@@ -37,7 +37,7 @@ describe('a base flight plan', () => {
 
         const waypoint = await loadSingleWaypoint('NOSUS', 'WCYCYULNOSUS');
 
-        const leg = FlightPlanLeg.fromEnrouteWaypoint(fp.enrouteSegment, waypoint);
+        const leg = FlightPlanLeg.fromEnrouteFix(fp.enrouteSegment, waypoint);
 
         fp.insertElementAfter(3, leg, true);
 
@@ -138,10 +138,10 @@ describe('a base flight plan', () => {
             const w3 = await loadSingleWaypoint('PBERG', 'WK6    PBERG');
             const w4 = await loadSingleWaypoint('HOVOB', 'WK6    HOVOB');
 
-            flightPlan.insertElementAfter(flightPlan.lastIndex, FlightPlanLeg.fromEnrouteWaypoint(segment, w1));
-            flightPlan.insertElementAfter(flightPlan.lastIndex, FlightPlanLeg.fromEnrouteWaypoint(segment, w2));
-            flightPlan.insertElementAfter(flightPlan.lastIndex, FlightPlanLeg.fromEnrouteWaypoint(segment, w3));
-            flightPlan.insertElementAfter(flightPlan.lastIndex, FlightPlanLeg.fromEnrouteWaypoint(segment, w4));
+            flightPlan.insertElementAfter(flightPlan.lastIndex, FlightPlanLeg.fromEnrouteFix(segment, w1));
+            flightPlan.insertElementAfter(flightPlan.lastIndex, FlightPlanLeg.fromEnrouteFix(segment, w2));
+            flightPlan.insertElementAfter(flightPlan.lastIndex, FlightPlanLeg.fromEnrouteFix(segment, w3));
+            flightPlan.insertElementAfter(flightPlan.lastIndex, FlightPlanLeg.fromEnrouteFix(segment, w4));
 
             const l1 = assertNotDiscontinuity(flightPlan.allLegs[0]);
             const l2 = assertNotDiscontinuity(flightPlan.allLegs[1]);
@@ -153,7 +153,7 @@ describe('a base flight plan', () => {
             expect(l3.ident).toEqual('PBERG');
             expect(l4.ident).toEqual('HOVOB');
 
-            flightPlan.insertElementAfter(0, FlightPlanLeg.fromEnrouteWaypoint(segment, w4));
+            flightPlan.insertElementAfter(0, FlightPlanLeg.fromEnrouteFix(segment, w4));
 
             expect(flightPlan.allLegs).toHaveLength(2);
             expect(assertNotDiscontinuity(flightPlan.allLegs[1]).ident).toEqual('HOVOB');
@@ -179,7 +179,7 @@ describe('a base flight plan', () => {
 
             const w1 = await loadSingleWaypoint('PEDPO', 'WNZ    PEDPO');
 
-            flightPlan.insertElementAfter(4, FlightPlanLeg.fromEnrouteWaypoint(enroute, w1));
+            flightPlan.insertElementAfter(4, FlightPlanLeg.fromEnrouteFix(enroute, w1));
 
             expect(flightPlan.allLegs).toHaveLength(6);
             expect(assertNotDiscontinuity(flightPlan.allLegs[4]).ident).toEqual('QN852');

@@ -52,7 +52,7 @@ export class ApproachViaSegment extends FlightPlanSegment {
 
         // Add an IF at the start if first leg of the VIA is a PI
         if (firstApproachViaLeg.type === LegType.PI) {
-            const newLeg = FlightPlanLeg.fromEnrouteWaypoint(this, firstApproachViaLeg.definition.waypoint, undefined, LegType.IF);
+            const newLeg = FlightPlanLeg.fromEnrouteFix(this, firstApproachViaLeg.definition.waypoint, undefined, LegType.IF);
 
             this.allLegs.push(newLeg);
         }

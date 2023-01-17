@@ -29,7 +29,7 @@ describe('pending airways entry', () => {
 
         const wp = await loadSingleWaypoint('DUNUP', 'WCY    DUNUP');
 
-        FlightPlanService.nextWaypoint(3, wp);
+        await FlightPlanService.nextWaypoint(3, wp);
 
         FlightPlanService.temporaryInsert();
 
@@ -68,7 +68,7 @@ describe('pending airways entry', () => {
 
         const wp1 = (await db.searchFix('TURON'))[0];
 
-        FlightPlanService.nextWaypoint(3, wp1);
+        await FlightPlanService.nextWaypoint(3, wp1);
 
         const a1 = (await db.searchAirway('UP600'))[0];
 
@@ -82,11 +82,11 @@ describe('pending airways entry', () => {
 
         const wp3 = (await db.searchFix('KORUL'))[0];
 
-        FlightPlanService.nextWaypoint(4, wp3);
+        await FlightPlanService.nextWaypoint(4, wp3);
 
         const wp4 = (await db.searchFix('TALIG'))[0];
 
-        FlightPlanService.nextWaypoint(5, wp4);
+        await FlightPlanService.nextWaypoint(5, wp4);
 
         const a2 = (await db.searchAirway('UP620'))[0];
 

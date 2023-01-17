@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import { LegType, Waypoint } from 'msfs-navdata';
+import { Fix, LegType } from 'msfs-navdata';
 import { FlightPlanElement, FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { SegmentClass } from '@fmgc/flightplanning/new/segments/SegmentClass';
 import { BaseFlightPlan, FlightPlanQueuedOperation } from '@fmgc/flightplanning/new/plans/BaseFlightPlan';
@@ -159,7 +159,7 @@ export abstract class FlightPlanSegment {
      *
      * @param waypoint the waypoint to look for
      */
-    findIndexOfWaypoint(waypoint: Waypoint, afterIndex? :number): number {
+    findIndexOfWaypoint(waypoint: Fix, afterIndex? :number): number {
         for (let i = 0; i < this.allLegs.length; i++) {
             if (i <= afterIndex) {
                 continue;

@@ -3,17 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0
 
-import {
-    Airport,
-    Approach,
-    Arrival,
-    Departure,
-    LegType,
-    ProcedureTransition,
-    Runway,
-    Waypoint,
-    WaypointDescriptor,
-} from 'msfs-navdata';
+import { Airport, Approach, Arrival, Departure, Fix, LegType, ProcedureTransition, Runway, WaypointDescriptor } from 'msfs-navdata';
 import { OriginSegment } from '@fmgc/flightplanning/new/segments/OriginSegment';
 import { FlightPlanElement, FlightPlanLeg } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
 import { DepartureSegment } from '@fmgc/flightplanning/new/segments/DepartureSegment';
@@ -607,6 +597,7 @@ export abstract class BaseFlightPlan {
         const [segment, indexInSegment] = this.segmentPositionForIndex(index);
 
         // TODO if clear leg before a hold, delete hold too? some other legs like this too..
+        // TODO normally, need to insert a disco
 
         if (insertDiscontinuity && index > 0) {
             const previousElement = this.elementAt(index - 1);
@@ -654,6 +645,41 @@ export abstract class BaseFlightPlan {
         throw new Error('[FMS/FPM] Tried to get segment for out-of-bounds index');
     }
 
+    /**
+     * Inserts a waypoint before a leg at an index.
+     *
+     * @param index the index of the leg to insert the waypoint before
+     * @param waypoint the waypoint to insert
+     */
+    async insertWaypointBefore(index: number, waypoint: Fix) {
+        this.redistributeLegsAt(index);
+
+        const leg = FlightPlanLeg.fromEnrouteFix(this.enrouteSegment, waypoint);
+
+        await this.insertElementAfter(index - 1, leg, false);
+    }
+
+    /**
+     * NEXT WPT revision. Inserts a waypoint after a leg at an index, adding a discontinuity if the waypoint isn't downstream in the plan
+     *
+     * @param index the index of the leg to insert the waypoint after
+     * @param waypoint the waypoint to insert
+     */
+    async nextWaypoint(index: number, waypoint: Fix) {
+        this.redistributeLegsAt(index);
+
+        const leg = FlightPlanLeg.fromEnrouteFix(this.enrouteSegment, waypoint);
+
+        const waypointExists = this.findDuplicate(waypoint, index);
+
+        if (waypointExists) {
+            await this.insertElementAfter(index, leg, false);
+        } else {
+            await this.insertElementAfter(index, leg, true);
+        }
+    }
+
+    // TODO make this private, adjust tests to test nextWaypoint instead
     async insertElementAfter(index: number, element: FlightPlanElement, insertDiscontinuity = false) {
         if (index < 0 || index > this.allLegs.length) {
             throw new Error(`[FMS/FPM] Tried to insert waypoint out of bounds (index=${index})`);
@@ -672,24 +698,17 @@ export abstract class BaseFlightPlan {
         startSegment.insertAfter(indexInStartSegment, element);
 
         if (insertDiscontinuity) {
-            startSegment.insertAfter(indexInStartSegment + 1, { isDiscontinuity: true });
-
             this.incrementVersion();
-            return;
-        }
 
-        if (element.isDiscontinuity === false && element.isXF()) {
-            const duplicate = this.findDuplicate(element.terminationWaypoint(), index + 1);
+            const nextElement = this.elementAt(index + 2);
 
-            if (duplicate) {
-                const [,, duplicatePlanIndex] = duplicate;
-
-                this.removeRange(index + 2, duplicatePlanIndex + 1);
+            if (nextElement.isDiscontinuity === false) {
+                startSegment.insertAfter(indexInStartSegment + 1, { isDiscontinuity: true });
+                this.incrementVersion();
             }
         }
 
-        this.redistributeLegsAt(index + 1);
-
+        this.enqueueOperation(FlightPlanQueuedOperation.Restring);
         await this.flushOperationQueue();
         this.incrementVersion();
     }
@@ -710,7 +729,7 @@ export abstract class BaseFlightPlan {
         this.incrementVersion();
     }
 
-    private findDuplicate(waypoint: Waypoint, afterIndex?: number): [FlightPlanSegment, number, number] | null {
+    private findDuplicate(waypoint: Fix, afterIndex?: number): [FlightPlanSegment, number, number] | null {
         // There is never gonna be a duplicate in the origin
 
         let indexAccumulator = 0;
