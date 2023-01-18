@@ -8,4 +8,5 @@ The project directory is structured as follows:
 - out             <contains MSFS package folder after the build>
 ```
 
-The `out` folder can be deleted as it is completely recreated during the build. This is essentially a clean build.
+The `out` folder can be deleted as it is completely recreated during the build. 
+This is essentially a clean build.

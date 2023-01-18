@@ -32,9 +32,9 @@ a32nx (repo)                                     <flybywire monorepo - will be r
 │               ├── a320_systems
 │               └── a320_systems_wasm
 ├── fbw-a380x
-│   ├── docs                                     <documentation for the A380NX project>
+│   ├── docs                                     <documentation for the A380X project>
 │   ├── out                                      <folder the final aircraft package will be build into>
-│   └── src                                      <A32NX project source code>
+│   └── src                                      <A380X project source code>
 │       ├── base                                 <msfs package base files>
 │       ├── systems                              <non-wasm system source files>
 │       └── wasm                                 <wasm system source files>
