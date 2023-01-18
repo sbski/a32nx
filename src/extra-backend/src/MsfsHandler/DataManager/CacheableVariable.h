@@ -12,6 +12,7 @@
 #include <MSFS/Legacy/gauges.h>
 
 #include "lib/Units.h"
+#include "DataObjectBase.h"
 
 /**
  * Virtual base class for sim variable like named variables, aircraft variables and
@@ -19,12 +20,8 @@
  * Specialized classes must implement the rawReadFromSim and rawWriteToSim methods and can
  * overwrite any other method if the default implementation is not sufficient.
  */
-class CacheableVariable {
+class CacheableVariable : public DataObjectBase {
 protected:
-  /**
-   * The name of the variable in the sim
-   */
-  const std::string varName;
 
   /**
    * The index of an indexed sim variable
@@ -127,10 +124,11 @@ protected:
    * @param maxAgeTime The maximum age of the variable in seconds when using requestUpdateFromSim()
    * @param maxAgeTicks The maximum age of the variable in ticks when using updateToSim()
    */
-  explicit CacheableVariable(std::string  name, int index, Unit unit, bool autoReading, bool autoWriting,
-                             FLOAT64 maxAgeTime, UINT64 maxAgeTicks)
-      : varName(std::move(name)), index(index), unit(unit), autoRead(autoReading), autoWrite(autoWriting),
-        maxAgeTime(maxAgeTime), maxAgeTicks(maxAgeTicks) {}
+public:
+  CacheableVariable(std::string  name, int index, const Unit &unit, bool autoRead, bool autoWrite,
+                    FLOAT64 timeStampSimTime, FLOAT64 maxAgeTime)
+    : DataObjectBase(std::move(name)), index(index), unit(unit), autoRead(autoRead), autoWrite(autoWrite),
+      timeStampSimTime(timeStampSimTime), maxAgeTime(maxAgeTime) {}
 
 public:
   /**
@@ -173,12 +171,12 @@ public:
    */
   virtual FLOAT64 rawReadFromSim() = 0;
 
-  virtual /**
+   /**
    * Sets the cache value and marks the variable as dirty.
    * Does not write the value to the sim or update the time and tick stamps.
    * @param value the value to set
    */
-  void set(FLOAT64 value);
+   virtual void set(FLOAT64 value);
 
   /**
    * Writes the cached value to the sim if the dirty flag is set.
@@ -228,8 +226,6 @@ public:
   };
 
   // Getters and Setters
-
-  [[nodiscard]] const std::string &getVarName() const { return varName; }
 
   /**
    * @return the Unit of the variable

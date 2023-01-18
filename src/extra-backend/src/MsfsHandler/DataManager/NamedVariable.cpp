@@ -7,6 +7,7 @@
 
 #include "aircraft_prefix.h"
 #include "NamedVariable.h"
+#include "DataObjectBase.h"
 
 NamedVariable::NamedVariable(
   const std::string &name,

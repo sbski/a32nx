@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0
 
 #include "AircraftVariable.h"
+#include "DataObjectBase.h"
 
 #include <utility>
 
