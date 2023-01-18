@@ -183,8 +183,8 @@ See the documentation of CacheableVariable for more details.
 | method             | description                                                                                                          |
 |--------------------|----------------------------------------------------------------------------------------------------------------------|
 | set()              | Sets cached value - never writes directly to sim - sets dirty flag if set with a different value as the cached value |
-| updateToSim()      | Updates a value to the sim if it is dirty.                                                                           |
-| writeToSim()       | Writes the current cached value to the sim. Clears the dirty flag.                                                   |
+| updateDataToSim()      | Updates a value to the sim if it is dirty.                                                                           |
+| writeDataToSim()       | Writes the current cached value to the sim. Clears the dirty flag.                                                   |
 | setAndWriteToSim() | Sets the current value and writes it to the sim. Clears the dirty flag.                                              |
 | rawWriteToSim()    | The raw MSFS SDK call to write the sim. **Must be implemented by specialized classes**                               |
                 

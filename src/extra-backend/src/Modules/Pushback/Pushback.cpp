@@ -143,7 +143,7 @@ bool Pushback::update(sGaugeDrawData* pData) {
   pushbackDataStruct.velBodyZ = inertiaSpeed;
   pushbackDataStruct.rotVelBodyY = computedRotationVelocity;
   pushbackDataStruct.rotAccelBodyX = movementCounterRotAccel;
-  pushbackData->writeToSim();
+  pushbackData->writeDataToSim();
 
   return true;
 }

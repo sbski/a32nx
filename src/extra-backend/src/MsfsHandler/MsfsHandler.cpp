@@ -62,8 +62,8 @@ bool MsfsHandler::update(sGaugeDrawData* pData) {
   }
 
   // detect pause - uses the base sim data definition to retrieve the SIMULATION TIME
-  // and run a separate pair of requestFromSim() and requestData() for it
-  if (baseSimData->requestFromSim()) dataManager.requestData();
+  // and run a separate pair of requestData() and requestDataFromSim() for it
+  if (baseSimData->requestDataFromSim()) dataManager.requestData();
   if (simData.simulationTime == previousSimulationTime) return true;
   previousSimulationTime = simData.simulationTime;
   tickCounter++;

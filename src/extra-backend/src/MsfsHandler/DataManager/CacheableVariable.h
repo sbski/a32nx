@@ -83,7 +83,7 @@ protected:
    * sim
    * @param autoWriting Used by external classes to determine if the variable should be automatically written to the sim
    * @param maxAgeTime The maximum age of the variable in seconds when using requestUpdateFromSim()
-   * @param maxAgeTicks The maximum age of the variable in ticks when using updateToSim()
+   * @param maxAgeTicks The maximum age of the variable in ticks when using updateDataToSim()
    */
 public:
   CacheableVariable(
@@ -166,7 +166,7 @@ public:
   /**
    * Raw write call to the sim.
    * Must be implemented by specialized classes.
-   * This method is called by the writeToSim()methods.
+   * This method is called by the writeDataToSim()methods.
    */
   virtual void rawWriteToSim() = 0;
 

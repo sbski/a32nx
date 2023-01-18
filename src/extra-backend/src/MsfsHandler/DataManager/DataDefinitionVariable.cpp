@@ -9,7 +9,7 @@
 
 #include "DataDefinitionVariable.h"
 
-bool DataDefinitionVariable::requestFromSim() const {
+bool DataDefinitionVariable::requestDataFromSim() const {
   if (!SUCCEEDED(SimConnect_RequestDataOnSimObject(
     hSimConnect,
     requestId,
@@ -44,15 +44,15 @@ bool DataDefinitionVariable::requestUpdateFromSim(FLOAT64 timeStamp, UINT64 tick
   return true;
 }
 
-void DataDefinitionVariable::updateFromSimObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA* pData) {
+void DataDefinitionVariable::receiveDataFromSimCallback(const SIMCONNECT_RECV_SIMOBJECT_DATA* pData) {
   SIMPLE_ASSERT(structSize == pData->dwDefineCount * sizeof(FLOAT64),
-                "DataDefinitionVariable::updateFromSimObjectData: Struct size mismatch")
+                "DataDefinitionVariable::receiveDataFromSimCallback: Struct size mismatch")
   SIMPLE_ASSERT(pData->dwRequestID == requestId,
-                "DataDefinitionVariable::updateFromSimObjectData: Request ID mismatch")
+                "DataDefinitionVariable::receiveDataFromSimCallback: Request ID mismatch")
   std::memcpy(pDataStruct, &pData->dwData, structSize);
 }
 
-bool DataDefinitionVariable::writeToSim() {
+bool DataDefinitionVariable::writeDataToSim() {
   const bool result = SUCCEEDED(SimConnect_SetDataOnSimObject(
     hSimConnect, dataDefId, SIMCONNECT_OBJECT_ID_USER, 0, 0, structSize, pDataStruct));
   if (!result) {
@@ -62,8 +62,8 @@ bool DataDefinitionVariable::writeToSim() {
   return result;
 }
 
-bool DataDefinitionVariable::updateToSim(FLOAT64 timeStamp, UINT64 tickCounter) {
-  if (writeToSim()) {
+bool DataDefinitionVariable::updateDataToSim(FLOAT64 timeStamp, UINT64 tickCounter) {
+  if (writeDataToSim()) {
     timeStampSimTime = timeStamp;
     tickStamp = tickCounter;
     return true;

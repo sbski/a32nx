@@ -80,7 +80,7 @@ void CacheableVariable::writeToSim() {
     rawWriteToSim();
     return;
   }
-  std::cerr << "CacheableVariable::writeToSim() called on \"" << name
+  std::cerr << "CacheableVariable::writeDataToSim() called on \"" << name
             << "\" but no value is cached"
             << std::endl;
 }

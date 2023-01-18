@@ -95,8 +95,8 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
   // write all data definitions set to automatically write
   for (auto &ddv: dataDefinitionVariables) {
     if (ddv->isAutoWrite()) {
-      if (!ddv->updateToSim(timeStamp, tickCounter)) {
-        std::cerr << "DataManager::postUpdate(): updateToSim() failed for "
+      if (!ddv->updateDataToSim(timeStamp, tickCounter)) {
+        std::cerr << "DataManager::postUpdate(): updateDataToSim() failed for "
                   << ddv->getName() << std::endl;
       }
 #if LOG_LEVEL >= DEBUG_LVL
@@ -115,7 +115,7 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
 bool DataManager::processSimObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA* data) {
   for (auto &ddv: dataDefinitionVariables) {
     if (ddv->getRequestId() == data->dwRequestID) {
-      ddv->updateFromSimObjectData(data);
+      ddv->receiveDataFromSimCallback(data);
       return true;
     }
   }

@@ -27,7 +27,7 @@
  * 3. the sim will send an message (SIMCONNECT_RECV_ID_SIMOBJECT_DATA) to signal that the data is
  *    ready to be read. This event also contains a pointer to the provided data. <br/>
  *
- * The DataManager class will provide the requestData() method to read the sim's message queue.
+ * The DataManager class will provide the requestDataFromSim() method to read the sim's message queue.
  * Currently SIMCONNECT_PERIOD is not used and data is requested on demand via the DataManager.
  */
 class DataDefinitionVariable : public ManagedDataObjectBase {
@@ -127,7 +127,7 @@ public:
     //  Might need to move this out of the constructor and into a separate method
 
     SIMPLE_ASSERT(structSize == dataDefinitions.size() * sizeof(FLOAT64),
-                  "DataDefinitionVariable::updateFromSimObjectData: Struct size mismatch")
+                  "DataDefinitionVariable::receiveDataFromSimCallback: Struct size mismatch")
 
     for (auto &ddef: dataDefinitions) {
       std::string fullVarName = ddef.name;
@@ -153,7 +153,7 @@ public:
    * @See SimConnect_RequestDataOnSimObject
    */
   [[nodiscard]]
-  bool requestFromSim() const;
+  bool requestDataFromSim() const;
 
   /**
    * Checks the age (time/ticks) of the data and requests an update from the sim if the data is too old.
@@ -171,13 +171,13 @@ public:
    * @param pointer to the SIMCONNECT_RECV_SIMOBJECT_DATA structure
    * @See SIMCONNECT_RECV_SIMOBJECT_DATA
    */
-  void updateFromSimObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA* pData);
+  void receiveDataFromSimCallback(const SIMCONNECT_RECV_SIMOBJECT_DATA* pData);
 
   /**
    * Writes the data to the sim without updating the time stamps for time and ticks.
    * @return true if the write was successful, false otherwise
    */
-  bool writeToSim();
+  bool writeDataToSim();
 
   /**
    * Writes the data to the sim and updates the time stamps for time and ticks.
@@ -185,7 +185,7 @@ public:
    * @param tickCounter the current tick counter (taken from a custom counter at each update event)
    * @return true if the write was successful, false otherwise
    */
-  bool updateToSim(FLOAT64 timeStamp, UINT64 tickCounter);
+  bool updateDataToSim(FLOAT64 timeStamp, UINT64 tickCounter);
 
   // Getters and setters
 

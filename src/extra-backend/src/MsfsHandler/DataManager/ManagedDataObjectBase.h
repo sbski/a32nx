@@ -98,7 +98,7 @@ public:
   /**
    * Sets the autoWrite flag.
    * If set to true the variable will be written to the sim in the DataManagers postUpdate() method.
-   * If set to false the variable will not be written to the sim automatically and writeToSim() must
+   * If set to false the variable will not be written to the sim automatically and writeDataToSim() must
    * be called manually.
    * @param autoWriting the new value for the autoWrite flag
    */

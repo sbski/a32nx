@@ -151,7 +151,7 @@ bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
     //    beaconLightSwitchPtr->setAndWriteToSim(beaconLightSwitchPtr->get() == 0.0 ? 1.0 : 0.0);
     //
     //    exampleDataStruct.strobeLightSwitch = exampleDataStruct.strobeLightSwitch == 0.0 ? 1.0 : 0.0;
-    //    exampleDataPtr->writeToSim();
+    //    exampleDataPtr->writeDataToSim();
 
   }
 
