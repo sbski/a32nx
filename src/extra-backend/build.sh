@@ -27,6 +27,9 @@ LOGGING="LOG_LEVEL=${LOG_LEVEL}"
 # Can be used in the code to differentiate between the different aircraft
 AIRCRAFT="A32NX"
 
+# Uncomment if Examples should be compiled into the Gauge
+EXAMPLES="-DEXAMPLES"
+
 set -ex
 
 # create temporary folder for o files
@@ -38,6 +41,7 @@ clang++ \
   -c \
   -D${AIRCRAFT} \
   -D${LOGGING} \
+  ${EXAMPLES} \
   ${CLANG_ARGS} \
   -std=c++17 \
   -Wall \

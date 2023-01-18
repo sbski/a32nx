@@ -26,8 +26,10 @@
 // ADD ADDITIONAL MODULES HERE
 // This is the only place these have to be added - everything else is handled automatically
 MsfsHandler msfsHandler("Gauge_Extra_Backend");
+#ifdef EXAMPLES
 [[maybe_unused]]
 ExampleModule exampleModule(&msfsHandler);
+#endif
 [[maybe_unused]]
 LightingPresets lightingPresets(&msfsHandler);
 [[maybe_unused]]

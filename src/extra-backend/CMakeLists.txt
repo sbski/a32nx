@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(MSFS_SDK "C:\\MSFS SDK")
 
 set(AIRCRAFT "A32NX")
+set(EXAMPLES "EXAMPLES")
 
 if (${CMAKE_BUILD_TYPE} MATCHES "DEBUG")
     set(DEBUG "-DDEBUG")
@@ -21,7 +22,7 @@ endif ()
 # TRACE_LVL 6
 set(LOG_LEVEL 4)
 
-set(CMAKE_CXX_FLAGS "-c -D${AIRCRAFT} ${DEBUG} -DLOG_LEVEL=${LOG_LEVEL} -std=c++17 -Wall -Wextra --sysroot \"${MSFS_SDK}/WASM/wasi-sysroot\" -target wasm32-unknown-wasi  -D_MSFS_WASM=1 -D__wasi__ -D_LIBCC_NO_EXCEPTIONS -D_LIBCPP_HAS_NO_THREADS -D_WINDLL -D_MBCS -mthread-model single -fno-exceptions -fms-extensions -fvisibility=hidden")
+set(CMAKE_CXX_FLAGS "-c -D${AIRCRAFT} -D${EXAMPLES} ${DEBUG} -DLOG_LEVEL=${LOG_LEVEL} -std=c++17 -Wall -Wextra --sysroot \"${MSFS_SDK}/WASM/wasi-sysroot\" -target wasm32-unknown-wasi  -D_MSFS_WASM=1 -D__wasi__ -D_LIBCC_NO_EXCEPTIONS -D_LIBCPP_HAS_NO_THREADS -D_WINDLL -D_MBCS -mthread-model single -fno-exceptions -fms-extensions -fvisibility=hidden")
 # -Wno-unused-function -Wno-unused-command-line-argument -Wno-ignored-attributes -Wno-macro-redefined
 
 include_directories("${MSFS_SDK}/WASM/include")
