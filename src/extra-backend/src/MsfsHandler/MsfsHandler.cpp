@@ -8,6 +8,7 @@
 #include "Module.h"
 #include "MsfsHandler.h"
 #include "Units.h"
+#include "SimObjectBase.h"
 
 // =================================================================================================
 // PUBLIC METHODS
@@ -48,7 +49,7 @@ bool MsfsHandler::initialize() {
   a32nxIsDevelopmentState = dataManager.make_named_var("DEVELOPER_STATE", UNITS.Bool, true);
   a32nxIsReady = dataManager.make_named_var("IS_READY", UNITS.Bool, true);
   // base sim data mainly for pause detection
-  std::vector<DataDefinitionVariable::DataDefinition> baseDataDef = {{"SIMULATION TIME", 0, UNITS.Number},};
+  std::vector<SimObjectBase::DataDefinition> baseDataDef = {{"SIMULATION TIME", 0, UNITS.Number},};
   baseSimData = dataManager.make_datadefinition_var("BASE DATA", baseDataDef, &simData, sizeof(simData));
 
   isInitialized = result;

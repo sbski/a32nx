@@ -8,8 +8,9 @@
 #include <sstream>
 
 #include "IDGenerator.h"
-#include "ManagedDataObjectBase.h"
 #include "simple_assert.h"
+#include "ManagedDataObjectBase.h"
+#include "SimObjectBase.h"
 
 /**
  * A class that represents a data definition variable (custom sim object).<br/>
@@ -30,44 +31,15 @@
  * The DataManager class will provide the requestDataFromSim() method to read the sim's message queue.
  * Currently SIMCONNECT_PERIOD is not used and data is requested on demand via the DataManager.
  */
-class DataDefinitionVariable : public ManagedDataObjectBase {
-public:
-
-  /**
-   * DataDefinition to be used to register a data definition with the sim. <p/>
-   * name: the name of the variable <br/>
-   * index: the index of the variable <br/>
-   * unit: the unit of the variable <br/>
-   */
-  struct DataDefinition {
-    std::string name;
-    int index;
-    Unit unit;
-  };
+class DataDefinitionVariable : public SimObjectBase {
 
 private:
-  /**
-   * SimConnect handle is required for data definitions.
-   */
-  HANDLE hSimConnect;
 
   /**
    * List of data definitions to add to the sim object data
    * Used for "SimConnect_AddToDataDefinition"
    */
   std::vector<DataDefinition> dataDefinitions;
-
-  /**
-   * Each data definition variable has its own unique id so the sim can map registered data sim
-   * objects to data definitions.
-   */
-  DWORD dataDefId = 0;
-
-  /**
-   * Each request for sim object data requires a unique id so the sim can provide the request ID
-   * in the response (message SIMCONNECT_RECV_ID_SIMOBJECT_DATA).
-   */
-  DWORD requestId = 0;
 
   /**
    * Pointer to the data struct that will be used to store the data from the sim.
@@ -83,8 +55,8 @@ private:
 public:
 
   DataDefinitionVariable() = delete; // no default constructor
-  DataDefinitionVariable(const DataDefinitionVariable&) = delete; // no copy constructor
-  DataDefinitionVariable& operator=(const DataDefinitionVariable&) = delete; // no copy assignment
+  DataDefinitionVariable(const DataDefinitionVariable &) = delete; // no copy constructor
+  DataDefinitionVariable &operator=(const DataDefinitionVariable &) = delete; // no copy assignment
 
   ~DataDefinitionVariable() override = default;
 
@@ -103,27 +75,22 @@ public:
    * @param maxAgeTicks The maximum age of the value in ticks before it is updated from the sim by the requestUpdateFromSim() method.
    */
   DataDefinitionVariable(
-    HANDLE hdlSimConnect,
+    HANDLE hSimConnect,
     const std::string &varName,
-    std::vector<DataDefinition> &dataDefinitions,
-    ID dataDefinitionId,
-    ID requestId,
-    void* pDataStruct,
+    const std::vector<DataDefinition> &dataDefinitions,
+    DWORD dataDefId,
+    DWORD requestId,
+    void* pDataStruct, // TODO: use template
     size_t structSize,
-    bool autoReading,
-    bool autoWriting,
+    bool autoRead,
+    bool autoWrite,
     FLOAT64 maxAgeTime,
-    UINT64 maxAgeTicks)
-    :
-    ManagedDataObjectBase(varName, autoReading, autoWriting, maxAgeTime, maxAgeTicks),
-    hSimConnect(hdlSimConnect),
-    dataDefinitions(dataDefinitions),
-    dataDefId(dataDefinitionId),
-    requestId(requestId),
-    pDataStruct(pDataStruct),
-    structSize(structSize) {
+    UINT64 maxAgeTicks
+    )
+    : SimObjectBase(varName, autoRead, autoWrite, maxAgeTime, maxAgeTicks, dataDefId, hSimConnect, requestId),
+      dataDefinitions(dataDefinitions), pDataStruct(pDataStruct), structSize(structSize) {
 
-    // TODO: what happens if definition is wrong - will this cause a sim crash?
+  // TODO: what happens if definition is wrong - will this cause a sim crash?
     //  Might need to move this out of the constructor and into a separate method
 
     SIMPLE_ASSERT(structSize == dataDefinitions.size() * sizeof(FLOAT64),
@@ -137,7 +104,7 @@ public:
 
       if (!SUCCEEDED(SimConnect_AddToDataDefinition(
         hSimConnect,
-        dataDefinitionId,
+        dataDefId,
         fullVarName.c_str(),
         ddef.unit.name,
         SIMCONNECT_DATATYPE_FLOAT64))) {
@@ -147,45 +114,11 @@ public:
     }
   }
 
-  /**
-   * Sends a data request to the sim to have the sim prepare the requested data.
-   * @return true if the request was successful, false otherwise
-   * @See SimConnect_RequestDataOnSimObject
-   */
-  [[nodiscard]]
-  bool requestDataFromSim() const;
-
-  /**
-   * Checks the age (time/ticks) of the data and requests an update from the sim if the data is too old.
-   * @param timeStamp the current sim time (taken from the sim update event)
-   * @param tickCounter the current tick counter (taken from a custom counter at each update event
-   * @return false if the request was not successful, true otherwise
-   *         (also true when max age is not exceeded - no request will be sent to the sim in this case
-   */
-  [[nodiscard]]
-  bool requestUpdateFromSim(FLOAT64 timeStamp, UINT64 tickCounter);
-
-  /**
-   * Called by the DataManager when a SIMCONNECT_RECV_ID_SIMOBJECT_DATA message for this
-   * variables request ID is received.
-   * @param pointer to the SIMCONNECT_RECV_SIMOBJECT_DATA structure
-   * @See SIMCONNECT_RECV_SIMOBJECT_DATA
-   */
-  void receiveDataFromSimCallback(const SIMCONNECT_RECV_SIMOBJECT_DATA* pData);
-
-  /**
-   * Writes the data to the sim without updating the time stamps for time and ticks.
-   * @return true if the write was successful, false otherwise
-   */
-  bool writeDataToSim();
-
-  /**
-   * Writes the data to the sim and updates the time stamps for time and ticks.
-   * @param timeStamp the current sim time (taken from the sim update event)
-   * @param tickCounter the current tick counter (taken from a custom counter at each update event)
-   * @return true if the write was successful, false otherwise
-   */
-  bool updateDataToSim(FLOAT64 timeStamp, UINT64 tickCounter);
+  [[nodiscard]] bool requestDataFromSim() const override;
+  [[nodiscard]] bool requestUpdateFromSim(FLOAT64 timeStamp, UINT64 tickCounter) override;
+  void receiveDataFromSimCallback(const SIMCONNECT_RECV_SIMOBJECT_DATA* pData) override;
+  bool writeDataToSim() override;
+  bool updateDataToSim(FLOAT64 timeStamp, UINT64 tickCounter) override;
 
   // Getters and setters
 
@@ -197,12 +130,6 @@ public:
 
   [[maybe_unused]] [[nodiscard]]
   void* getPDataStruct() const { return pDataStruct; }
-
-  [[maybe_unused]] [[nodiscard]]
-  DWORD getDataDefID() const { return dataDefId; }
-
-  [[nodiscard]]
-  DWORD getRequestId() const { return requestId; }
 
   [[nodiscard]]
   std::string str() const {

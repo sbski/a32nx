@@ -45,16 +45,17 @@ bool DataDefinitionVariable::requestUpdateFromSim(FLOAT64 timeStamp, UINT64 tick
 }
 
 void DataDefinitionVariable::receiveDataFromSimCallback(const SIMCONNECT_RECV_SIMOBJECT_DATA* pData) {
-  SIMPLE_ASSERT(structSize == pData->dwDefineCount * sizeof(FLOAT64),
+  SIMPLE_ASSERT(DataDefinitionVariable::structSize == pData->dwDefineCount * sizeof(FLOAT64),
                 "DataDefinitionVariable::receiveDataFromSimCallback: Struct size mismatch")
   SIMPLE_ASSERT(pData->dwRequestID == requestId,
                 "DataDefinitionVariable::receiveDataFromSimCallback: Request ID mismatch")
-  std::memcpy(pDataStruct, &pData->dwData, structSize);
+
+  memcpy(DataDefinitionVariable::pDataStruct, &pData->dwData, DataDefinitionVariable::structSize);
 }
 
 bool DataDefinitionVariable::writeDataToSim() {
   const bool result = SUCCEEDED(SimConnect_SetDataOnSimObject(
-    hSimConnect, dataDefId, SIMCONNECT_OBJECT_ID_USER, 0, 0, structSize, pDataStruct));
+    hSimConnect, dataDefId, SIMCONNECT_OBJECT_ID_USER, 0, 0, DataDefinitionVariable::structSize, DataDefinitionVariable::pDataStruct));
   if (!result) {
     std::cerr << "Setting data to sim for " << name << " with dataDefId=" << dataDefId << " failed!"
               << std::endl;

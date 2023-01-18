@@ -18,6 +18,7 @@
 #include "AircraftVariable.h"
 #include "DataDefinitionVariable.h"
 #include "Event.h"
+#include "SimObjectBase.h"
 
 typedef std::shared_ptr<NamedVariable> NamedVariablePtr;
 typedef std::shared_ptr<AircraftVariable> AircraftVariablePtr;
@@ -216,7 +217,7 @@ AircraftVariablePtr make_aircraft_var(
    */
   DataDefinitionVariablePtr make_datadefinition_var(
     const std::string &name,
-    std::vector<DataDefinitionVariable::DataDefinition> &dataDefinitions,
+    std::vector<SimObjectBase::DataDefinition> &dataDefinitions,
     void* dataStruct,
     size_t dataStructSize,
     bool autoReading = false,

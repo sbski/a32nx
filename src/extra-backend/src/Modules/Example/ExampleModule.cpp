@@ -4,6 +4,7 @@
 #include "logging.h"
 #include "MsfsHandler.h"
 #include "ExampleModule.h"
+#include "SimObjectBase.h"
 
 bool ExampleModule::initialize() {
 
@@ -46,7 +47,7 @@ bool ExampleModule::initialize() {
                                                       beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
 
   // Data definition variables
-  std::vector<DataDefinitionVariable::DataDefinition> exampleDataDef = {
+  std::vector<SimObjectBase::DataDefinition> exampleDataDef = {
     {"LIGHT STROBE",  0, UNITS.Bool},
     {"LIGHT WING",    0, UNITS.Bool},
     {"ZULU TIME",     0, UNITS.Number},

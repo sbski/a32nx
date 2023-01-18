@@ -6,6 +6,7 @@
 #include "logging.h"
 #include "DataManager.h"
 #include "SimconnectExceptionStrings.h"
+#include "SimObjectBase.h"
 
 DataManager::DataManager() = default;
 
@@ -321,7 +322,7 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
 
 DataDefinitionVariablePtr DataManager::make_datadefinition_var(
   const std::string &name,
-  std::vector<DataDefinitionVariable::DataDefinition> &dataDefinitions,
+  std::vector<SimObjectBase::DataDefinition> &dataDefinitions,
   void* dataStruct,
   size_t dataStructSize,
   bool autoReading,

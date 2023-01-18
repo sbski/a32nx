@@ -79,6 +79,7 @@ clang++ \
   "${DIR}/src/MsfsHandler/DataManager/CacheableVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/NamedVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/AircraftVariable.cpp" \
+  "${DIR}/src/MsfsHandler/DataManager/SimObjectBase.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/DataDefinitionVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/ClientDataAreaVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/Event.cpp" \

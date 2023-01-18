@@ -7,6 +7,7 @@
 #include "Pushback.h"
 #include "Units.h"
 #include "logging.h"
+#include "SimObjectBase.h"
 
 static constexpr double SPEED_RATIO = 18.0;
 static constexpr double TURN_SPEED_RATIO = 0.16;
@@ -51,7 +52,7 @@ bool Pushback::initialize() {
   windVelBodyZ = dataManager->make_simple_aircraft_var("RELATIVE WIND VELOCITY BODY Z");
 
   // Data definitions for PushbackDataID
-  std::vector<DataDefinitionVariable::DataDefinition> pushBackDataDef = {
+  std::vector<SimObjectBase::DataDefinition> pushBackDataDef = {
     {"Pushback Wait",                0, UNITS.Bool},
     {"VELOCITY BODY Z",              0, UNITS.FeetSec},
     {"ROTATION VELOCITY BODY Y",     0, UNITS.FeetSec},
