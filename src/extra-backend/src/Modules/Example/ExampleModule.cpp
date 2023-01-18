@@ -31,9 +31,9 @@ bool ExampleModule::initialize() {
 
   // Aircraft variables - requested twice to demonstrate de-duplication
   beaconLightSwitchPtr = dataManager->make_aircraft_var("LIGHT BEACON", 0, "",
-                                            beaconLightSetEventPtr, UNITS.Bool, false, false, 0, 0);
+                                                        beaconLightSetEventPtr, UNITS.Bool, false, false, 0, 0);
   beaconLightSwitch2Ptr = dataManager->make_aircraft_var("LIGHT BEACON", 0, "",
-                                            beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
+                                                         beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
   beaconLightSwitch3Ptr = dataManager->make_simple_aircraft_var("LIGHT BEACON", UNITS.Bool);
 
   // E: variables - don't seem to work as aircraft variables
@@ -41,9 +41,9 @@ bool ExampleModule::initialize() {
 
   // A:FUELSYSTEM PUMP SWITCH:#ID#
   fuelPumpSwitch1Ptr = dataManager->make_aircraft_var("FUELSYSTEM PUMP SWITCH", 1, "",
-                                             beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
+                                                      beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
   fuelPumpSwitch2Ptr = dataManager->make_aircraft_var("FUELSYSTEM PUMP SWITCH", 2, "",
-                                             beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
+                                                      beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
 
   // Data definition variables
   std::vector<DataDefinitionVariable::DataDefinition> exampleDataDef = {

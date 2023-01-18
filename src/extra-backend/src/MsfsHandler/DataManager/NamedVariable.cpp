@@ -5,29 +5,16 @@
 
 #include <MSFS/Legacy/gauges.h>
 
-#include "aircraft_prefix.h"
 #include "NamedVariable.h"
-#include "DataObjectBase.h"
-
-NamedVariable::NamedVariable(
-  const std::string &name,
-  Unit unit,
-  bool autoReading,
-  bool autoWriting,
-  FLOAT64 maxAgeTime,
-  UINT64 maxAgeTicks)
-  : CacheableVariable(std::string(AIRCRAFT_PREFIX) + name, 0, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks) {
-
-  dataID = register_named_variable(varName.c_str());
-}
+#include "logging.h"
 
 FLOAT64 NamedVariable::rawReadFromSim() {
   const FLOAT64 d = get_named_variable_value(dataID);
-  //  std::cout << "NamedVariable::rawReadFromSim() "
-  //            << varName
-  //            << " fromSim = "  << d
-  //            << " cached  = "  << cachedValue.value_or(-999999)
-  //            << std::endl;
+  LOG_TRACE("NamedVariable::rawReadFromSim() "
+            + this->name
+            + " fromSim = " + d
+            + " cached  = " + cachedValue.value_or(-999999)
+            + std::endl);
   return d;
 }
 

@@ -3,49 +3,32 @@
 
 #include "AircraftVariable.h"
 #include "DataObjectBase.h"
+#include "ManagedDataObjectBase.h"
 
 #include <utility>
 
-AircraftVariable::AircraftVariable(
-  const std::string &varName,
-  int varIndex,
-  std::string setterEventName,
-  EventPtr setterEvent,
-  Unit unit,
-  bool autoReading,
-  bool autoWriting,
-  FLOAT64 maxAgeTime,
-  UINT64 maxAgeTicks)
-  : CacheableVariable(varName, varIndex, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks),
-    setterEventName(std::move(setterEventName)), setterEvent(std::move(setterEvent)) {
-
-  // check if variable is indexed and register the correct index
-  dataID = get_aircraft_var_enum(varName.c_str());
-  if (dataID == -1) { // cannot throw an exception in MSFS
-    std::cerr << ("Aircraft variable " + varName + " not found") << std::endl;
-  }
-}
-
 FLOAT64 AircraftVariable::rawReadFromSim() {
   if (dataID == -1) {
-    std::cerr << ("Aircraft variable " + varName + " not found") << std::endl;
+    std::cerr << ("Aircraft variable " + name + " not found") << std::endl;
     return FLOAT64{};
   }
   return aircraft_varget(dataID, unit.id, index);
 }
 
+// these are overwritten to issue a error message if the variable is read-only
 void AircraftVariable::set(FLOAT64 value) {
   if (setterEventName.empty() && setterEvent == nullptr) {
-    std::cerr << "AircraftVariable::set() called on [" << varName
+    std::cerr << "AircraftVariable::set() called on [" << name
               << "] but no setter event name is set" << std::endl;
     return;
   }
   CacheableVariable::set(value);
 }
 
+// these are overwritten to issue a error message if the variable is read-only
 void AircraftVariable::rawWriteToSim() {
   if (setterEventName.empty() && setterEvent == nullptr) {
-    std::cerr << "AircraftVariable::setAndWriteToSim() called on \"" << varName
+    std::cerr << "AircraftVariable::setAndWriteToSim() called on \"" << name
               << "\" but no setter event name is set" << std::endl;
     return;
   }
@@ -60,7 +43,7 @@ void AircraftVariable::rawWriteToSim() {
 
 void AircraftVariable::setAutoWrite(bool autoWriting) {
   if (setterEventName.empty() && setterEvent == nullptr) {
-    std::cerr << "AircraftVariable::setAutoWrite() called on [" << varName
+    std::cerr << "AircraftVariable::setAutoWrite() called on [" << name
               << "] but no setter event name is set" << std::endl;
     return;
   }
@@ -103,7 +86,7 @@ void AircraftVariable::useCalculatorCodeSetter() {
     }
   }
   else {
-    std::cerr << "Failed to precompile calculator code for " << varName << std::endl;
+    std::cerr << "Failed to precompile calculator code for " << name << std::endl;
   }
 }
 

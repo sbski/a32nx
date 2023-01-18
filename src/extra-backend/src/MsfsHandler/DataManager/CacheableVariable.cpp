@@ -3,29 +3,26 @@
 
 #include <iostream>
 
-#include "CacheableVariable.h"
 #include "math_utils.h"
-#include "DataObjectBase.h"
+#include "CacheableVariable.h"
 
 FLOAT64 CacheableVariable::get() const {
   if (cachedValue.has_value()) {
     if (dirty) {
-      std::cerr << "CacheableVariable::requestUpdateFromSim() called on " << varName
+      std::cerr << "CacheableVariable::requestUpdateFromSim() called on " << name
                 << " but the value is dirty" << std::endl;
     }
     return cachedValue.value();
   }
-  std::cerr << "CacheableVariable::get() called on " << varName << " but no value is cached"
+  std::cerr << "CacheableVariable::get() called on " << name << " but no value is cached"
             << std::endl;
   return FLOAT64{};
 }
 
 FLOAT64 CacheableVariable::updateFromSim(FLOAT64 timeStamp, UINT64 tickCounter) {
-  if (!cachedValue.has_value()) {
-    return readFromSim();
-  }
   // only update if the value is equal or older than the max age for sim time or ticks
-  if (timeStampSimTime + maxAgeTime >= timeStamp || tickStamp + maxAgeTicks >= tickCounter) {
+  if (cachedValue.has_value()
+      && (timeStampSimTime + maxAgeTime >= timeStamp || tickStamp + maxAgeTicks >= tickCounter)) {
     changed = false;
     return cachedValue.value();
   }
@@ -38,6 +35,7 @@ FLOAT64 CacheableVariable::updateFromSim(FLOAT64 timeStamp, UINT64 tickCounter) 
 
 FLOAT64 CacheableVariable::readFromSim() {
   // TODO: check last read tickStamp and time and only read if not already read this tick
+
   const FLOAT64 fromSim = rawReadFromSim();
   changed = !cachedValue.has_value()
             || !helper::Math::almostEqual(fromSim, cachedValue.value(), epsilon);
@@ -82,7 +80,7 @@ void CacheableVariable::writeToSim() {
     rawWriteToSim();
     return;
   }
-  std::cerr << "CacheableVariable::writeToSim() called on \"" << varName
+  std::cerr << "CacheableVariable::writeToSim() called on \"" << name
             << "\" but no value is cached"
             << std::endl;
 }

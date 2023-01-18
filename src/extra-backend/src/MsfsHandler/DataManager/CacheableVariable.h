@@ -12,7 +12,7 @@
 #include <MSFS/Legacy/gauges.h>
 
 #include "lib/Units.h"
-#include "DataObjectBase.h"
+#include "ManagedDataObjectBase.h"
 
 /**
  * Virtual base class for sim variable like named variables, aircraft variables and
@@ -20,7 +20,7 @@
  * Specialized classes must implement the rawReadFromSim and rawWriteToSim methods and can
  * overwrite any other method if the default implementation is not sufficient.
  */
-class CacheableVariable : public DataObjectBase {
+class CacheableVariable : public ManagedDataObjectBase {
 protected:
 
   /**
@@ -34,44 +34,6 @@ protected:
    * @See https://docs.flightsimulator.com/html/Programming_Tools/SimVars/Simulation_Variable_Units.htm
    */
   Unit unit{UNITS.Number};
-
-  /**
-   * Used by external classes to determine if the variable should be updated from the sim when
-   * a sim update call occurs. Updates are currently done manually by the external classes.
-   * not using the SimConnect SIMCONNECT_PERIOD.
-   * E.g. if autoRead is true the variable will be updated from the sim every time the
-   * DataManager::preUpdate() method is called.
-   */
-  bool autoRead = false;
-
-  /**
-   * Used by external classes to determine if the variable should written to the sim when
-   * a sim update call occurs.
-   * E.g. if autoWrite is true the variable will be updated from the sim every time the
-   * DataManager::postUpdate() method is called
-   */
-  bool autoWrite = false;
-
-  /**
-   * The time stamp of the last update from the sim
-   */
-  FLOAT64 timeStampSimTime{};
-
-  /**
-   * The maximum age of the value in sim time before it is updated from the sim by the
-   * requestUpdateFromSim() method.
-   */
-  FLOAT64 maxAgeTime = 0;
-
-  /**
-   * The tick counter of the last update from the sim
-   */
-  UINT64 tickStamp = 0;
-
-  /**
-   * The maximum age of the value in ticks before it is updated from the sim by the
-   */
-  UINT64 maxAgeTicks = 0;
 
   /**
    * The value of the variable as it was last read from the sim or updated by the
@@ -111,12 +73,11 @@ public:
   CacheableVariable& operator=(const CacheableVariable&) = delete; // no copy assignment
 
 protected:
-  virtual ~CacheableVariable() = default;
+  ~CacheableVariable() override = default;
 
   /**
    * Constructor
    * @param name The name of the variable in the sim
-   * @param index The index of an indexed sim variable
    * @param unit The unit of the variable as per the sim (see Unit.h)
    * @param autoReading Used by external classes to determine if the variable should be automatically updated from the
    * sim
@@ -125,10 +86,14 @@ protected:
    * @param maxAgeTicks The maximum age of the variable in ticks when using updateToSim()
    */
 public:
-  CacheableVariable(std::string  name, int index, const Unit &unit, bool autoRead, bool autoWrite,
-                    FLOAT64 timeStampSimTime, FLOAT64 maxAgeTime)
-    : DataObjectBase(std::move(name)), index(index), unit(unit), autoRead(autoRead), autoWrite(autoWrite),
-      timeStampSimTime(timeStampSimTime), maxAgeTime(maxAgeTime) {}
+  CacheableVariable(
+    const std::string &varName,
+    const Unit &unit,
+    bool autoRead,
+    bool autoWrite,
+    FLOAT64 maxAgeTime,
+    UINT64 maxAgeTicks)
+    : ManagedDataObjectBase(varName, autoRead, autoWrite, maxAgeTime, maxAgeTicks), unit(unit) {}
 
 public:
   /**
@@ -237,66 +202,6 @@ public:
    * @return the index of the variable
    */
   [[nodiscard]] int getIndex() const { return index; }
-
-  /**
-   * @return true if the variable should be automatically updated from the sim n the DataManagers
-   *         postUpdate() method.
-   */
-  [[nodiscard]] bool isAutoRead() const { return autoRead; }
-
-  /**
-   * Sets the autoRead flag.
-   * If true the variable will be automatically updated from the sim in the DataManager's
-   * preUpdate() method.
-   * @param autoReading the new value for the autoRead flag
-   */
-  void setAutoRead(bool autoReading) { autoRead = autoReading; }
-
-  /**
-   * @return true if the variable will be written to the sim in the DataManagers postUpdate() method.
-   */
-  [[nodiscard]] bool isAutoWrite() const { return autoWrite; }
-
-  /**
-   * Sets the autoWrite flag.
-   * If set to true the variable will be written to the sim in the DataManagers postUpdate() method.
-   * If set to false the variable will not be written to the sim automatically and writeToSim() must
-   * be called manually.
-   * @param autoWriting the new value for the autoWrite flag
-   */
-  virtual void setAutoWrite(bool autoWriting) { autoRead = autoWriting; }
-
-  /**
-   * @return the time stamp of the last read from the sim
-   */
-  [[nodiscard]] FLOAT64 getTimeStamp() const { return timeStampSimTime; }
-
-  /**
-   * @return the maximum age of the variable in second
-   */
-  [[nodiscard]] FLOAT64 getMaxAgeTime() const { return maxAgeTime; }
-
-  /**
-   * Sets the maximum age of the variable in seconds
-   * @param maxAgeTimeInMilliseconds
-   */
-  void setMaxAgeTime(FLOAT64 maxAgeTimeInMilliseconds) { maxAgeTime = maxAgeTimeInMilliseconds; }
-
-  /**
-   * @return the tick count when variable was last read from the sim
-   */
-  [[nodiscard]] UINT64 getTickStamp() const { return tickStamp; }
-
-  /**
-   * @return the maximum age of the variable in ticks
-   */
-  [[nodiscard]] UINT64 getMaxAgeTicks() const { return maxAgeTicks; }
-
-  /**
-   * Sets the maximum age of the variable in ticks
-   * @param maxAgeTicksInTicks the maximum age of the variable in ticks
-   */
-  void setMaxAgeTicks(UINT64 maxAgeTicksInTicks) { maxAgeTicks = maxAgeTicksInTicks; }
 
   /**
    * @return true if the value has been changed via set() since the last read from the sim.

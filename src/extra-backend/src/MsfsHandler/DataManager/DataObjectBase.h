@@ -17,8 +17,7 @@ protected:
   /**
    * The name of the variable in the sim
    */
-  const std::string varName;
-
+  const std::string name;
 
 public:
 
@@ -26,13 +25,15 @@ public:
   DataObjectBase(const DataObjectBase&) = delete; // no copy constructor
   DataObjectBase& operator=(const DataObjectBase&) = delete; // no copy assignment
 
-  explicit DataObjectBase(std::string varName) : varName(std::move(varName)) {}
+  virtual ~DataObjectBase() = default;
+
+  explicit DataObjectBase(std::string varName) : name(std::move(varName)) {}
 
   /**
    * @return the name of the variable
    */
   [[nodiscard]]
-  const std::string &getVarName() const { return varName; }
+  const std::string &getVarName() const { return name; }
 };
 
 #endif //FLYBYWIRE_A32NX_DATAOBJECTBASE_H

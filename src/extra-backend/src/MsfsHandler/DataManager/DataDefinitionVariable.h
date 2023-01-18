@@ -8,6 +8,8 @@
 #include <sstream>
 
 #include "IDGenerator.h"
+#include "ManagedDataObjectBase.h"
+#include "simple_assert.h"
 
 /**
  * A class that represents a data definition variable (custom sim object).<br/>
@@ -28,7 +30,7 @@
  * The DataManager class will provide the requestData() method to read the sim's message queue.
  * Currently SIMCONNECT_PERIOD is not used and data is requested on demand via the DataManager.
  */
-class DataDefinitionVariable {
+class DataDefinitionVariable : public ManagedDataObjectBase {
 public:
 
   /**
@@ -48,11 +50,6 @@ private:
    * SimConnect handle is required for data definitions.
    */
   HANDLE hSimConnect;
-
-  /**
-   * Arbitrary name for the data definition variable for debugging purposes
-   */
-  std::string name{};
 
   /**
    * List of data definitions to add to the sim object data
@@ -83,50 +80,13 @@ private:
    */
   size_t structSize = 0;
 
-  /**
-  * Used by external classes to determine if the variable should updated from the sim when
-  * a sim update call occurs. <br/>
-  * E.g. if autoRead is true the variable will be updated from the sim every time the
-  * DataManager::preUpdate() method is called
-  */
-  bool autoRead = false;
-
-  /**
-   * Used by external classes to determine if the variable should written to the sim when
-   * a sim update call occurs. <br/>
-   * E.g. if autoWrite is true the variable will be updated from the sim every time the
-   * DataManager::postUpdate() method is called
-   */
-  bool autoWrite = false;
-
-  /**
-   * The time stamp of the last update from the sim
-   */
-  FLOAT64 timeStampSimTime{};
-
-  /**
-   * The maximum age of the value in sim time before it is updated from the sim by the
-   * requestUpdateFromSim() method.
-   */
-  FLOAT64 maxAgeTime = 0;
-
-  /**
-   * The tick counter of the last update from the sim
-   */
-  UINT64 tickStamp = 0;
-
-  /**
-   * The maximum age of the value in ticks before it is updated from the sim by the
-   */
-  UINT64 maxAgeTicks = 0;
-
-
 public:
 
   DataDefinitionVariable() = delete; // no default constructor
   DataDefinitionVariable(const DataDefinitionVariable&) = delete; // no copy constructor
   DataDefinitionVariable& operator=(const DataDefinitionVariable&) = delete; // no copy assignment
-  ~DataDefinitionVariable() = default;
+
+  ~DataDefinitionVariable() override = default;
 
   /**
    * Creates a new instance of a DataDefinitionVariable.
@@ -143,17 +103,49 @@ public:
    * @param maxAgeTicks The maximum age of the value in ticks before it is updated from the sim by the requestUpdateFromSim() method.
    */
   DataDefinitionVariable(
-    HANDLE hSimConnect,
-    std::string name,
+    HANDLE hdlSimConnect,
+    const std::string &varName,
     std::vector<DataDefinition> &dataDefinitions,
     ID dataDefinitionId,
     ID requestId,
     void* pDataStruct,
     size_t structSize,
-    bool autoReading = false,
-    bool autoWriting = false,
-    FLOAT64 maxAgeTime = 0,
-    UINT64 maxAgeTicks = 0);
+    bool autoReading,
+    bool autoWriting,
+    FLOAT64 maxAgeTime,
+    UINT64 maxAgeTicks)
+    :
+    ManagedDataObjectBase(varName, autoReading, autoWriting, maxAgeTime, maxAgeTicks),
+    hSimConnect(hdlSimConnect),
+    dataDefinitions(dataDefinitions),
+    dataDefId(dataDefinitionId),
+    requestId(requestId),
+    pDataStruct(pDataStruct),
+    structSize(structSize) {
+
+    // TODO: what happens if definition is wrong - will this cause a sim crash?
+    //  Might need to move this out of the constructor and into a separate method
+
+    SIMPLE_ASSERT(structSize == dataDefinitions.size() * sizeof(FLOAT64),
+                  "DataDefinitionVariable::updateFromSimObjectData: Struct size mismatch")
+
+    for (auto &ddef: dataDefinitions) {
+      std::string fullVarName = ddef.name;
+      if (ddef.index != 0) {
+        fullVarName += ":" + std::to_string(ddef.index);
+      }
+
+      if (!SUCCEEDED(SimConnect_AddToDataDefinition(
+        hSimConnect,
+        dataDefinitionId,
+        fullVarName.c_str(),
+        ddef.unit.name,
+        SIMCONNECT_DATATYPE_FLOAT64))) {
+
+        std::cerr << "Failed to add " << ddef.name << " to data definition." << std::endl;
+      }
+    }
+  }
 
   /**
    * Sends a data request to the sim to have the sim prepare the requested data.
@@ -211,36 +203,6 @@ public:
 
   [[nodiscard]]
   DWORD getRequestId() const { return requestId; }
-
-  [[nodiscard]]
-  bool isAutoRead() const { return autoRead; }
-
-  [[maybe_unused]]
-  void setAutoRead(bool autoReading) { autoRead = autoReading; }
-
-  [[nodiscard]]
-  bool isAutoWrite() const { return autoWrite; }
-
-  [[maybe_unused]]
-  void setAutoWrite(bool autoWriting) { autoRead = autoWriting; }
-
-  [[maybe_unused]] [[nodiscard]]
-  FLOAT64 getTimeStamp() const { return timeStampSimTime; }
-
-  [[nodiscard]]
-  FLOAT64 getMaxAgeTime() const { return maxAgeTime; }
-
-  [[maybe_unused]]
-  void setMaxAgeTime(FLOAT64 maxAgeTimeInMilliseconds) { maxAgeTime = maxAgeTimeInMilliseconds; }
-
-  [[maybe_unused]] [[nodiscard]]
-  UINT64 getTickStamp() const { return tickStamp; }
-
-  [[nodiscard]]
-  UINT64 getMaxAgeTicks() const { return maxAgeTicks; }
-
-  [[maybe_unused]]
-  void setMaxAgeTicks(int64_t newMaxAgeTicks) { maxAgeTicks = newMaxAgeTicks; }
 
   [[nodiscard]]
   std::string str() const {

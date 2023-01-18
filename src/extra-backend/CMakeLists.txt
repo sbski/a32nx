@@ -47,15 +47,21 @@ add_executable(flybywire-a32nx-extra-backend
         src/lib/simple_assert.h
         src/lib/IDGenerator.h
         src/MsfsHandler/DataManager/SimconnectExceptionStrings.h
+
         src/Gauge_Extra_Backend.cpp
+
         src/MsfsHandler/MsfsHandler.cpp src/MsfsHandler/MsfsHandler.h
         src/MsfsHandler/DataManager/DataManager.cpp src/MsfsHandler/DataManager/DataManager.h
+
+        src/MsfsHandler/DataManager/DataObjectBase.h
+        src/MsfsHandler/DataManager/ManagedDataObjectBase.h
         src/MsfsHandler/DataManager/CacheableVariable.cpp src/MsfsHandler/DataManager/CacheableVariable.h
         src/MsfsHandler/DataManager/NamedVariable.cpp src/MsfsHandler/DataManager/NamedVariable.h
         src/MsfsHandler/DataManager/AircraftVariable.cpp src/MsfsHandler/DataManager/AircraftVariable.h
         src/MsfsHandler/DataManager/DataDefinitionVariable.cpp src/MsfsHandler/DataManager/DataDefinitionVariable.h
         src/MsfsHandler/DataManager/ClientDataAreaVariable.cpp src/MsfsHandler/DataManager/ClientDataAreaVariable.h
         src/MsfsHandler/DataManager/Event.cpp src/MsfsHandler/DataManager/Event.h
+
         src/MsfsHandler/Module.cpp src/MsfsHandler/Module.h
         src/Modules/Example/ExampleModule.cpp src/Modules/Example/ExampleModule.h
         src/Modules/LightingPresets/LightingPresets.cpp src/Modules/LightingPresets/LightingPresets.h
@@ -63,4 +69,4 @@ add_executable(flybywire-a32nx-extra-backend
         src/Modules/Pushback/InertialDampener.cpp src/Modules/Pushback/InertialDampener.h
         src/Modules/AircraftPresets/AircraftPresets.cpp src/Modules/AircraftPresets/AircraftPresets.h
         src/Modules/AircraftPresets/AircraftProcedures.h
-        )
+       )

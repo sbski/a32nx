@@ -16,7 +16,6 @@
 #include "Units.h"
 #include "NamedVariable.h"
 #include "AircraftVariable.h"
-#include "AircraftVariable.h"
 #include "DataDefinitionVariable.h"
 #include "Event.h"
 
@@ -177,7 +176,7 @@ public:
 AircraftVariablePtr make_aircraft_var(
     const std::string &varName,
     int index = 0,
-    std::string setterEventName = "",
+    const std::string& setterEventName = "",
     EventPtr setterEvent = nullptr,
     Unit unit = UNITS.Number,
     bool autoReading = false,

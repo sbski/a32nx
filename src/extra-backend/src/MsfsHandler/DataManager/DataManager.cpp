@@ -5,7 +5,6 @@
 
 #include "logging.h"
 #include "DataManager.h"
-#include "NamedVariable.h"
 #include "SimconnectExceptionStrings.h"
 
 DataManager::DataManager() = default;
@@ -17,7 +16,7 @@ bool DataManager::initialize(HANDLE hdl) {
 }
 
 bool DataManager::preUpdate(sGaugeDrawData* pData) {
-  LOG_DEBUG("DataManager::preUpdate()");
+  LOG_TRACE("DataManager::preUpdate()");
   if (!isInitialized) {
     std::cerr << "DataManager::preUpdate() called but DataManager is not initialized" << std::endl;
     return false;
@@ -58,7 +57,7 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
   // get requested sim object data
   requestData();
 
-  LOG_DEBUG("DataManager::preUpdate() - done");
+  LOG_TRACE("DataManager::preUpdate() - done");
   return true;
 }
 
@@ -72,7 +71,7 @@ bool DataManager::update([[maybe_unused]] sGaugeDrawData* pData) const {
 }
 
 bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
-  LOG_DEBUG("DataManager::postUpdate()");
+  LOG_TRACE("DataManager::postUpdate()");
   if (!isInitialized) {
     std::cerr << "DataManager::postUpdate() called but DataManager is not initialized" << std::endl;
     return false;
@@ -109,7 +108,7 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
     }
   }
 
-  LOG_DEBUG("DataManager::postUpdate() - done");
+  LOG_TRACE("DataManager::postUpdate() - done");
   return true;
 }
 
@@ -200,7 +199,7 @@ NamedVariablePtr DataManager::make_named_var(
 AircraftVariablePtr DataManager::make_aircraft_var(
   const std::string &varName,
   int index,
-  std::string setterEventName,
+  const std::string& setterEventName,
   EventPtr setterEvent,
   Unit unit,
   bool autoReading,
@@ -243,10 +242,17 @@ AircraftVariablePtr DataManager::make_aircraft_var(
     return std::dynamic_pointer_cast<AircraftVariable>(variables[uniqueName]);
   }
   // Create new var and store it in the map
-  std::shared_ptr<AircraftVariable> var =
-    std::make_shared<AircraftVariable>(
-      varName, index, std::move(setterEventName), std::move(setterEvent),
-      unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
+  std::shared_ptr<AircraftVariable> var;
+  if (setterEventName.empty()) {
+    var = setterEventName.empty() ?
+          std::make_shared<AircraftVariable>(
+            varName, index, std::move(setterEvent),
+            unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks)
+                                  :
+          std::make_shared<AircraftVariable>(
+            varName, index, setterEventName,
+            unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
+  }
 
 #if LOG_LEVEL >= DEBUG_LVL
   std::cout << "DataManager::make_named_var(): creating variable "
@@ -299,9 +305,8 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
   }
 
   // Create new var and store it in the map
-  AircraftVariablePtr var =
-    std::make_shared<AircraftVariable>(
-      varName, 0, "", nullptr, unit, autoReading, false, maxAgeTime, maxAgeTicks);
+  AircraftVariablePtr var = std::make_shared<AircraftVariable>(
+    varName, 0, "", unit, autoReading, false, maxAgeTime, maxAgeTicks);
 
 #if LOG_LEVEL >= DEBUG_LVL
   std::cout << "DataManager::make_simple_aircraft_var(): creating variable "
@@ -376,7 +381,10 @@ void DataManager::processDispatchMessage(SIMCONNECT_RECV* pRecv, [[maybe_unused]
 
     case SIMCONNECT_RECV_ID_EXCEPTION:
       std::cerr << "DataManager: Exception in SimConnect connection: ";
-      std::cerr << SimconnectExceptionStrings::getSimConnectExceptionString(static_cast<SIMCONNECT_EXCEPTION>(static_cast<SIMCONNECT_RECV_EXCEPTION*>(pRecv)->dwException));
+      std::cerr
+        << SimconnectExceptionStrings::getSimConnectExceptionString(
+          static_cast<SIMCONNECT_EXCEPTION>(
+            static_cast<SIMCONNECT_RECV_EXCEPTION*>(pRecv)->dwException));
       break;
 
     default:
