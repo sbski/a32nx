@@ -8,9 +8,8 @@ The `src` directory is structured as follows:
 - base            <msfs package base files>
 - behavior        <behavior sources files>
 - fonts           <fonts files>
-- instruments     <instrument react src files>
 - model           <model sources files>
+- systems         <TypeScrtipt absed systems incl. instruments>
 - textures        <textures files>
-- typescript      <typescript non-react sources files>
-- wasm            <wasm sources files>
+- wasm            <rust and c++ sources files for wasm>
 ```
