@@ -7,7 +7,7 @@ set(MSFS_SDK "C:\\MSFS SDK")
 set(AIRCRAFT "A32NX")
 set(EXAMPLES "EXAMPLES")
 
-if (${CMAKE_BUILD_TYPE} MATCHES "DEBUG")
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     set(DEBUG "-DDEBUG")
 else()
     set(DEBUG "-DNDEBUG")
@@ -20,7 +20,7 @@ endif ()
 # INFO_LVL 4
 # DEBUG_LVL 5
 # TRACE_LVL 6
-set(LOG_LEVEL 4)
+set(LOG_LEVEL 5)
 
 set(CMAKE_CXX_FLAGS "-c -D${AIRCRAFT} -D${EXAMPLES} ${DEBUG} -DLOG_LEVEL=${LOG_LEVEL} -std=c++17 -Wall -Wextra --sysroot \"${MSFS_SDK}/WASM/wasi-sysroot\" -target wasm32-unknown-wasi  -D_MSFS_WASM=1 -D__wasi__ -D_LIBCC_NO_EXCEPTIONS -D_LIBCPP_HAS_NO_THREADS -D_WINDLL -D_MBCS -mthread-model single -fno-exceptions -fms-extensions -fvisibility=hidden")
 # -Wno-unused-function -Wno-unused-command-line-argument -Wno-ignored-attributes -Wno-macro-redefined

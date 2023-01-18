@@ -20,7 +20,7 @@ fi
 # INFO_LVL 4
 # DEBUG_LVL 5
 # TRACE_LVL 6
-LOG_LEVEL=4
+LOG_LEVEL=5
 LOGGING="LOG_LEVEL=${LOG_LEVEL}"
 
 # Define which flavor of aircraft should be compiled

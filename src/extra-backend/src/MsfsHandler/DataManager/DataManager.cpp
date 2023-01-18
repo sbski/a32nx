@@ -40,16 +40,16 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
   }
 
   // request all data definitions set to automatically read
-  for (auto &ddv: dataDefinitionVariables) {
+  for (auto &ddv: simObjects) {
     if (ddv->isAutoRead()) {
       if (!ddv->requestUpdateFromSim(timeStamp, tickCounter)) {
         std::cerr << "DataManager::preUpdate(): requestUpdateFromSim() failed for "
-                  << ddv->getName() << std::endl;
+                  << ddv->getVarName() << std::endl;
       }
 #if LOG_LEVEL >= DEBUG_LVL
       if (tickCounter % 100 == 0) {
         std::cout << "DataManager::preUpdate() - auto read simobjects: "
-                  << ddv->getName() << std::endl;
+                  << ddv->getVarName() << std::endl;
       }
 #endif
     }
@@ -94,16 +94,16 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
   }
 
   // write all data definitions set to automatically write
-  for (auto &ddv: dataDefinitionVariables) {
+  for (auto &ddv: simObjects) {
     if (ddv->isAutoWrite()) {
       if (!ddv->updateDataToSim(timeStamp, tickCounter)) {
         std::cerr << "DataManager::postUpdate(): updateDataToSim() failed for "
-                  << ddv->getName() << std::endl;
+                  << ddv->getVarName() << std::endl;
       }
 #if LOG_LEVEL >= DEBUG_LVL
       if (tickCounter % 100 == 0) {
         std::cout << "DataManager::postUpdate() - auto write simobjects"
-                  << ddv->getName()  << std::endl;
+                  << ddv->getVarName()  << std::endl;
       }
 #endif
     }
@@ -114,7 +114,7 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
 }
 
 bool DataManager::processSimObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA* data) {
-  for (auto &ddv: dataDefinitionVariables) {
+  for (auto &ddv: simObjects) {
     if (ddv->getRequestId() == data->dwRequestID) {
       ddv->receiveDataFromSimCallback(data);
       return true;
@@ -319,38 +319,6 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
 
   return var;
 }
-
-DataDefinitionVariablePtr DataManager::make_datadefinition_var(
-  const std::string &name,
-  std::vector<SimObjectBase::DataDefinition> &dataDefinitions,
-  void* dataStruct,
-  size_t dataStructSize,
-  bool autoReading,
-  bool autoWriting,
-  FLOAT64 maxAgeTime,
-  UINT64 maxAgeTicks) {
-  DataDefinitionVariablePtr var =
-    std::make_shared<DataDefinitionVariable>(
-      hSimConnect,
-      name,
-      dataDefinitions,
-      dataDefIDGen.getNextId(),
-      dataReqIDGen.getNextId(),
-      dataStruct,
-      dataStructSize,
-      autoReading,
-      autoWriting,
-      maxAgeTime,
-      maxAgeTicks);
-
-#if LOG_LEVEL >= DEBUG_LVL
-  std::cout << "DataManager::make_datadefinition_var(): " << name << std::endl;
-#endif
-
-  dataDefinitionVariables.push_back(var);
-  return var;
-}
-
 
 EventPtr DataManager::make_event(const std::string &eventName) {
   if (events.find(eventName) != events.end()) {

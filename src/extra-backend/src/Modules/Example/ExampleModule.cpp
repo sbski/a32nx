@@ -54,8 +54,8 @@ bool ExampleModule::initialize() {
     {"LOCAL TIME",    0, UNITS.Number},
     {"ABSOLUTE TIME", 0, UNITS.Number},
   };
-  exampleDataPtr = dataManager->make_datadefinition_var(
-    "EXAMPLE DATA", exampleDataDef, &exampleDataStruct, sizeof(exampleDataStruct), true, false, 0, 0);
+  exampleDataPtr = dataManager->make_datadefinition_var<ExampleData>(
+    "EXAMPLE DATA", exampleDataDef, true, false, 0, 0);
 
   isInitialized = true;
   LOG_INFO("ExampleModule initialized");

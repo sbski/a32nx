@@ -56,17 +56,17 @@ class MsfsHandler {
    */
   bool isInitialized = false;
 
-  // Common variables required by the MsfsHandler itself
-  NamedVariablePtr a32nxIsReady;
-  NamedVariablePtr a32nxIsDevelopmentState;
-  DataDefinitionVariablePtr  baseSimData;
-
   /**
    * This struct is used to define the data definition for the base sim data.
    */
   struct BaseSimData {
     FLOAT64 simulationTime;
-  } simData{};
+  };
+
+  // Common variables required by the MsfsHandler itself
+  NamedVariablePtr a32nxIsReady;
+  NamedVariablePtr a32nxIsDevelopmentState;
+  std::shared_ptr<DataDefinitionVariable<BaseSimData>> baseSimData;
 
   /**
    * Used to detect pause in the sim.

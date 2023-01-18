@@ -50,7 +50,7 @@ bool MsfsHandler::initialize() {
   a32nxIsReady = dataManager.make_named_var("IS_READY", UNITS.Bool, true);
   // base sim data mainly for pause detection
   std::vector<SimObjectBase::DataDefinition> baseDataDef = {{"SIMULATION TIME", 0, UNITS.Number},};
-  baseSimData = dataManager.make_datadefinition_var("BASE DATA", baseDataDef, &simData, sizeof(simData));
+  baseSimData = dataManager.make_datadefinition_var<BaseSimData>("BASE DATA", baseDataDef);
 
   isInitialized = result;
   return result;
@@ -65,8 +65,8 @@ bool MsfsHandler::update(sGaugeDrawData* pData) {
   // detect pause - uses the base sim data definition to retrieve the SIMULATION TIME
   // and run a separate pair of requestData() and requestDataFromSim() for it
   if (baseSimData->requestDataFromSim()) dataManager.requestData();
-  if (simData.simulationTime == previousSimulationTime) return true;
-  previousSimulationTime = simData.simulationTime;
+  if (baseSimData->data().simulationTime == previousSimulationTime) return true;
+  previousSimulationTime = baseSimData->data().simulationTime;
   tickCounter++;
 
   // Call preUpdate(), update() and postUpdate() for all modules

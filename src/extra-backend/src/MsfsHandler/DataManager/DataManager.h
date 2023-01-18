@@ -22,7 +22,6 @@
 
 typedef std::shared_ptr<NamedVariable> NamedVariablePtr;
 typedef std::shared_ptr<AircraftVariable> AircraftVariablePtr;
-typedef std::shared_ptr<DataDefinitionVariable> DataDefinitionVariablePtr;
 typedef std::shared_ptr<Event> EventPtr;
 
 /**
@@ -45,9 +44,9 @@ private:
   std::map<std::string, std::shared_ptr<CacheableVariable>> variables{};
 
   /**
-   * A vector of all registered data definitions.
+   * A vector of all registered SimObjects.
    */
-  std::vector<std::shared_ptr<DataDefinitionVariable>> dataDefinitionVariables{};
+  std::vector<std::shared_ptr<SimObjectBase>> simObjects{};
 
   /**
    * A vector of all registered events
@@ -57,7 +56,7 @@ private:
   /**
    * Handle to the simconnect instance.
    */
-HANDLE hSimConnect{};
+  HANDLE hSimConnect{};
 
   /**
    * Flag to indicate if the data manager is initialized.
@@ -174,10 +173,10 @@ public:
    * @return A shared pointer to the variable
    * @see Units.h for available units
    */
-AircraftVariablePtr make_aircraft_var(
+  AircraftVariablePtr make_aircraft_var(
     const std::string &varName,
     int index = 0,
-    const std::string& setterEventName = "",
+    const std::string &setterEventName = "",
     EventPtr setterEvent = nullptr,
     Unit unit = UNITS.Number,
     bool autoReading = false,
@@ -204,26 +203,43 @@ AircraftVariablePtr make_aircraft_var(
 
   /**
    * Creates a new data definition variable and adds it to the list of managed variables.
+   * @typename T Type of the data structure to use to store the data
    * @param name An arbitrary name for the data definition variable for debugging purposes
    * @param dataDefinitions A vector of data definitions for the data definition variable
-   * @param dataStruct A pointer to the data structure for the data definition variable.
-   * THIS STRUCTURE MUST MATCH THE DATA DEFINITIONS!
-   * @param dataStructSize The size of the data structure for the data definition variable.
    * @param autoReading optional flag to indicate if the variable should be read automatically (default=false)
    * @param autoWriting optional flag to indicate if the variable should be written automatically (default=false)
    * @param maxAgeTime optional maximum age of the variable in seconds (default=0)
    * @param maxAgeTicks optional Maximum age of the variable in ticks (default=0)
    * @return A shared pointer to the variable
    */
-  DataDefinitionVariablePtr make_datadefinition_var(
+  template<typename T>
+  std::shared_ptr<DataDefinitionVariable<T>> make_datadefinition_var(
     const std::string &name,
     std::vector<SimObjectBase::DataDefinition> &dataDefinitions,
-    void* dataStruct,
-    size_t dataStructSize,
     bool autoReading = false,
     bool autoWriting = false,
     FLOAT64 maxAgeTime = 0.0,
-    UINT64 maxAgeTicks = 0);
+    UINT64 maxAgeTicks = 0) {
+
+    std::shared_ptr<DataDefinitionVariable<T>> var =
+      std::make_shared<DataDefinitionVariable<T>>(
+        hSimConnect,
+        name,
+        dataDefinitions,
+        dataDefIDGen.getNextId(),
+        dataReqIDGen.getNextId(),
+        autoReading,
+        autoWriting,
+        maxAgeTime,
+        maxAgeTicks);
+
+#if LOG_LEVEL >= DEBUG_LVL
+    std::cout << "DataManager::make_datadefinition_var(): " << name << std::endl;
+#endif
+
+    simObjects.push_back(var);
+    return var;
+  }
 
   /**
    * Creates a new event and adds it to the list of managed events.
@@ -231,6 +247,7 @@ AircraftVariablePtr make_aircraft_var(
   std::shared_ptr<Event> make_event(const std::string &eventName);
 
 private:
+
   /**
    * This is called everytime we receive a message from the sim.
    * Currently this only happens when manually calling requestDataFromSim().

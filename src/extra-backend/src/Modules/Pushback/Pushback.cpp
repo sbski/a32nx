@@ -58,8 +58,8 @@ bool Pushback::initialize() {
     {"ROTATION VELOCITY BODY Y",     0, UNITS.FeetSec},
     {"ROTATION ACCELERATION BODY X", 0, UNITS.RadSecSquared}
   };
-  pushbackData = dataManager->make_datadefinition_var(
-    "PUSHBACK DATA", pushBackDataDef, &pushbackDataStruct, sizeof(PushbackData));
+  pushbackData = dataManager->make_datadefinition_var<PushbackData>(
+    "PUSHBACK DATA", pushBackDataDef);
 
   // Events
   tugHeadingEvent = dataManager->make_event("KEY_TUG_HEADING");
@@ -140,10 +140,10 @@ bool Pushback::update(sGaugeDrawData* pData) {
   //  tugSpeedEvent->trigger_ex1(static_cast<DWORD>(inertiaSpeed));
 
   // Update sim data
-  pushbackDataStruct.pushbackWait = inertiaSpeed == 0 ? 1 : 0;
-  pushbackDataStruct.velBodyZ = inertiaSpeed;
-  pushbackDataStruct.rotVelBodyY = computedRotationVelocity;
-  pushbackDataStruct.rotAccelBodyX = movementCounterRotAccel;
+  pushbackData->data().pushbackWait = inertiaSpeed == 0 ? 1 : 0;
+  pushbackData->data().velBodyZ = inertiaSpeed;
+  pushbackData->data().rotVelBodyY = computedRotationVelocity;
+  pushbackData->data().rotAccelBodyX = movementCounterRotAccel;
   pushbackData->writeDataToSim();
 
   return true;

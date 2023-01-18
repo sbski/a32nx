@@ -56,13 +56,13 @@ private:
   AircraftVariablePtr windVelBodyZ;
 
   // Data structure for PushbackDataID
-  DataDefinitionVariablePtr pushbackData;
   struct PushbackData {
     [[maybe_unused]] FLOAT64 pushbackWait;
     [[maybe_unused]] FLOAT64 velBodyZ;
     [[maybe_unused]] FLOAT64 rotVelBodyY;
     [[maybe_unused]] FLOAT64 rotAccelBodyX;
-  } pushbackDataStruct{};
+  };
+  std::shared_ptr<DataDefinitionVariable<PushbackData>> pushbackData;
 
   // Events
   EventPtr tugHeadingEvent;
