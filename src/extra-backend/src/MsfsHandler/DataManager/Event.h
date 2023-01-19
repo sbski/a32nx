@@ -55,7 +55,6 @@ public:
    *
    * This uses the "SimConnect_TransmitClientEvent_EX1" function.
    */
-  [[nodiscard]]
   void trigger_ex1(DWORD data0 = 0, DWORD data1 = 0, DWORD data2 = 0, DWORD data3 = 0,
                    DWORD data4 = 0) const;
 
@@ -65,7 +64,7 @@ public:
    *
    * This uses the "SimConnect_TransmitClientEvent" function.
    */
-  [[maybe_unused]] [[nodiscard]]
+  [[maybe_unused]]
   void trigger(DWORD data0 = 0) const;
 
   // Getter and setter

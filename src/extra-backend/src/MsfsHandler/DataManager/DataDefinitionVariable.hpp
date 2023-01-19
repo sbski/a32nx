@@ -35,7 +35,7 @@
  *    ready to be read. This event also contains a pointer to the provided data. <br/>
  *
  * The DataManager class will provide the requestPeriodicDataFromSim() method to read the sim's message queue.
- * Currently SIMCONNECT_PERIOD is not used (at the mometen) and data is requested on demand via
+ * Currently SIMCONNECT_PERIOD is not used (at the moment) and data is requested on demand via
  * the DataManager.
  */
 template<typename T>

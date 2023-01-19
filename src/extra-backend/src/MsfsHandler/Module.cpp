@@ -3,7 +3,6 @@
 
 #include "Module.h"
 #include "MsfsHandler.h"
-#include "DataManager.h"
 
 Module::Module(MsfsHandler *backRef) : msfsHandler(backRef){
   msfsHandler->registerModule(this);

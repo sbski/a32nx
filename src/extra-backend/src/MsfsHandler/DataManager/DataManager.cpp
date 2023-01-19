@@ -29,12 +29,12 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
   for (auto &var: variables) {
     if (var.second->isAutoRead()) {
       var.second->updateFromSim(timeStamp, tickCounter);
-      LOG_DEBUG_START
+      LOG_DEBUG_BLOCK(
         if (tickCounter % 100 == 0) {
           std::cout << "DataManager::preUpdate() - auto read named and aircraft: "
                     << var.second->getVarName() << " = " << var.second->get() << std::endl;
         }
-      LOG_DEBUG_END
+      )
     }
   }
 
@@ -45,12 +45,12 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
         std::cerr << "DataManager::preUpdate(): requestUpdateFromSim() failed for "
                   << ddv.second->getVarName() << std::endl;
       }
-      LOG_DEBUG_START
+      LOG_DEBUG_BLOCK(
         if (tickCounter % 100 == 0) {
           std::cout << "DataManager::preUpdate() - auto read simobjects: "
                     << ddv.second->getVarName() << std::endl;
         }
-      LOG_DEBUG_END
+      )
     }
   }
 
@@ -81,12 +81,12 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
   for (auto &var: variables) {
     if (var.second->isAutoWrite()) {
       var.second->updateToSim();
-      LOG_DEBUG_START
+      LOG_DEBUG_BLOCK(
         if (tickCounter % 100 == 0) {
           std::cout << "DataManager::postUpdate() - auto write named and aircraft: "
                     << var.second->getVarName() << " = " << var.second->get() << std::endl;
         }
-      LOG_DEBUG_END
+      )
     }
   }
 
@@ -97,12 +97,12 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
         std::cerr << "DataManager::postUpdate(): updateDataToSim() failed for "
                   << ddv.second->getVarName() << std::endl;
       }
-      LOG_DEBUG_START
+      LOG_DEBUG_BLOCK(
         if (tickCounter % 100 == 0) {
           std::cout << "DataManager::postUpdate() - auto write simobjects"
                     << ddv.second->getVarName() << std::endl;
         }
-      LOG_DEBUG_END
+      )
     }
   }
 
@@ -327,5 +327,3 @@ void DataManager::processDispatchMessage(SIMCONNECT_RECV* pRecv, [[maybe_unused]
       break;
   }
 }
-
-

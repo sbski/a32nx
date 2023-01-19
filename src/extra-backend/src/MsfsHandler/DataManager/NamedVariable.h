@@ -59,7 +59,7 @@ public:
   FLOAT64 rawReadFromSim() override;
   void rawWriteToSim() override;
 
-  std::string str() const override;
+  [[nodiscard]] std::string str() const override;
 };
 
 #endif // FLYBYWIRE_NAMEDVARIABLE_H

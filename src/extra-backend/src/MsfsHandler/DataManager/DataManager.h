@@ -17,7 +17,7 @@
 #include "Units.h"
 #include "NamedVariable.h"
 #include "AircraftVariable.h"
-#include "DataDefinitionVariable.h"
+#include "DataDefinitionVariable.hpp"
 #include "Event.h"
 #include "SimObjectBase.h"
 
