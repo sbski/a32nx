@@ -20,7 +20,7 @@ fi
 # INFO_LVL 4
 # DEBUG_LVL 5
 # TRACE_LVL 6
-LOG_LEVEL=5
+LOG_LEVEL=4
 LOGGING="LOG_LEVEL=${LOG_LEVEL}"
 
 # Define which flavor of aircraft should be compiled
@@ -28,7 +28,7 @@ LOGGING="LOG_LEVEL=${LOG_LEVEL}"
 AIRCRAFT="A32NX"
 
 # Uncomment if Examples should be compiled into the Gauge
-EXAMPLES="-DEXAMPLES"
+#EXAMPLES="-DEXAMPLES"
 
 set -ex
 
@@ -79,8 +79,7 @@ clang++ \
   "${DIR}/src/MsfsHandler/DataManager/CacheableVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/NamedVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/AircraftVariable.cpp" \
-  "${DIR}/src/MsfsHandler/DataManager/SimObjectBase.cpp" \
-  "${DIR}/src/MsfsHandler/DataManager/DataDefinitionVariable.cpp" \
+  "${DIR}/src/MsfsHandler/DataManager/DataDefinitionVariable.hpp" \
   "${DIR}/src/MsfsHandler/DataManager/ClientDataAreaVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/Event.cpp" \
   "${DIR}/src/MsfsHandler/Module.cpp" \
@@ -110,4 +109,3 @@ wasm-ld \
   -lc++ -lc++abi \
   ${DIR}/obj/*.o \
   -o $OUTPUT
-

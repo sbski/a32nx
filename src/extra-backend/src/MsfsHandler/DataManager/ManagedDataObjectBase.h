@@ -86,6 +86,8 @@ public:
    * Sets the autoRead flag.
    * If true the variable will be automatically updated from the sim in the DataManager's
    * preUpdate() method.
+   * If set to false the variable will not be updated from the sim in the DataManager's preUpdate()
+   * method.
    * @param autoReading the new value for the autoRead flag
    */
   void setAutoRead(bool autoReading) { autoRead = autoReading; }
