@@ -170,26 +170,6 @@ public:
    */
   virtual void rawWriteToSim() = 0;
 
-  /**
-   * Returns a string representing the object
-   * @return object as string
-   */
-  [[nodiscard]] std::string str() const {
-    std::stringstream os;
-    os << "Variable{ name='" << getVarName() << "'";
-    os << " index=" << getIndex();
-    os << " value=" << get();
-    os << " changed=" << (hasChanged() ? "true" : "false");
-    os << " dirty=" << (isDirty() ? "true" : "false");
-    os << " unit=\"" << getUnit().name << "\"";
-    os << " autoRead=" << (isAutoRead() ? "autoR" : "manualR");
-    os << " autoWrite=" << (isAutoWrite() ? "autoW" : "manualW");
-    os << " maxAgeTime=" << getMaxAgeTime() << "ms";
-    os << " maxAgesTicks=" << getMaxAgeTicks() << "ticks";
-    os << " }";
-    return os.str();
-  };
-
   // Getters and Setters
 
   /**

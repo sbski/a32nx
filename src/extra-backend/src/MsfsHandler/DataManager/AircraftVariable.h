@@ -122,6 +122,8 @@ public:
   void setAutoWrite(bool autoWriting) override;
   void set(FLOAT64 value) override;
 
+  [[nodiscard]] std::string str() const override;
+
 private:
   void useEventSetter();
   void useCalculatorCodeSetter();

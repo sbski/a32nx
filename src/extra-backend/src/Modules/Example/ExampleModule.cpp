@@ -77,6 +77,11 @@ bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
   // Use this to throttle output frequency
   if (msfsHandler->getTickCounter() % 100 == 0) {
 
+    std::cout << debugLVARPtr->str() << std::endl;
+    std::cout << debugLVAR2Ptr->str() << std::endl;
+    std::cout << beaconLightSwitchPtr->str() << std::endl;
+    std::cout << exampleDataPtr->str() << std::endl;
+
     //    // Read vars which auto update each tick
     //    std::cout << "debugLVARPtr =  " << debugLVARPtr->get() << " changed? "
     //              << (debugLVARPtr->hasChanged() ? "yes" : "no")

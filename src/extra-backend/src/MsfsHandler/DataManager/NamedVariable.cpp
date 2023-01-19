@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <MSFS/Legacy/gauges.h>
+#include <cmath>
 
 #include "NamedVariable.h"
 #include "logging.h"
@@ -20,6 +21,23 @@ FLOAT64 NamedVariable::rawReadFromSim() {
 
 void NamedVariable::rawWriteToSim() {
   set_named_variable_value(dataID, cachedValue.value());
+}
+
+std::string NamedVariable::str() const {
+  std::stringstream ss;
+  ss << "NamedVariable: [" << name;
+  ss << ", value: " << (cachedValue.has_value() ? std::to_string(cachedValue.value()) : "N/A");
+  ss << ", unit: " << unit.name;
+  ss << ", changed: " << changed;
+  ss << ", dirty: " << dirty;
+  ss << ", timeStamp: " << timeStampSimTime;
+  ss << ", tickStamp: " << tickStamp;
+  ss << ", autoRead: " << autoRead;
+  ss << ", autoWrite: " << autoWrite;
+  ss << ", maxAgeTime: " << maxAgeTime;
+  ss << ", maxAgeTicks: " << maxAgeTicks;
+  ss << "]";
+  return ss.str();
 }
 
 

@@ -90,4 +90,21 @@ void AircraftVariable::useCalculatorCodeSetter() {
   }
 }
 
+std::string AircraftVariable::str() const {
+  std::stringstream ss;
+  ss << "AircraftVariable: [" << name << (index ? ":" + std::to_string(index) : "");
+  ss << ", value: " << (cachedValue.has_value() ? std::to_string(cachedValue.value()) : "N/A");
+  ss << ", unit: " << unit.name;
+  ss << ", changed: " << changed;
+  ss << ", dirty: " << dirty;
+  ss << ", timeStamp: " << timeStampSimTime;
+  ss << ", tickStamp: " << tickStamp;
+  ss << ", autoRead: " << autoRead;
+  ss << ", autoWrite: " << autoWrite;
+  ss << ", maxAgeTime: " << maxAgeTime;
+  ss << ", maxAgeTicks: " << maxAgeTicks;
+  ss << "]";
+  return ss.str();
+}
+
 

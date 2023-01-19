@@ -48,9 +48,9 @@ private:
   std::vector<DataDefinition> dataDefinitions;
 
   /**
-   * Pointer to the data struct that will be used to store the data from the sim.
+   * The data struct that will be used to store the data from the sim.
    */
-  T pDataStruct{};
+  T dataStruct{};
 
 public:
 
@@ -86,7 +86,7 @@ public:
     UINT64 maxAgeTicks
   )
     : SimObjectBase(varName, autoRead, autoWrite, maxAgeTime, maxAgeTicks, dataDefId, hSimConnect, requestId),
-      dataDefinitions(dataDefinitions), pDataStruct{} {
+      dataDefinitions(dataDefinitions), dataStruct{} {
 
     // TODO: what happens if definition is wrong - will this cause a sim crash?
     //  Might need to move this out of the constructor and into a separate method
@@ -154,7 +154,7 @@ public:
     SIMPLE_ASSERT(pData->dwRequestID == requestId,
                   "DataDefinitionVariable::receiveDataFromSimCallback: Request ID mismatch")
 
-    std::memcpy(&pDataStruct, &pData->dwData, sizeof(T));
+    std::memcpy(&dataStruct, &pData->dwData, sizeof(T));
   };
 
   bool writeDataToSim() override {
@@ -166,7 +166,7 @@ public:
         0,
         0,
         sizeof(T),
-        &pDataStruct));
+        &dataStruct));
 
     if (!result) {
       std::cerr << "Setting data to sim for " << name << " with dataDefId=" << dataDefId
@@ -198,28 +198,29 @@ public:
    * @return T& Reference to the data container
    */
   [[maybe_unused]] [[nodiscard]]
-  T &data() { return pDataStruct; }
+  T &data() { return dataStruct; }
 
   /**
    * Returns a constant reference to the data container
    * @return std::vector<T>& Reference to the data container
    */
   [[maybe_unused]] [[nodiscard]]
-  const T &data() const { return pDataStruct; }
+  const T &data() const { return dataStruct; }
 
   [[nodiscard]]
-  std::string str() const {
-    std::stringstream os;
-    os << "DataDefinition{ name='" << getName() << "'";
-    os << " definitions=" << dataDefinitions.size();
-    os << " ptrStruct=" << pDataStruct;
-    os << " structSize=" << sizeof(T);
-    os << " autoRead=" << (isAutoRead() ? "autoR" : "manualR");
-    os << " autoWrite=" << (isAutoWrite() ? "autoW" : "manualW");
-    os << " maxAgeTime=" << getMaxAgeTime() << "ms";
-    os << " maxAgesTicks=" << getMaxAgeTicks() << "ticks";
-    os << " }";
-    return os.str();
+  std::string str() const override {
+    std::stringstream ss;
+    ss << "DataDefinition[ name='" << getName() << "'";
+    ss << " definitions=" << dataDefinitions.size();
+    ss << " structSize=" << sizeof(T);
+    ss << ", timeStamp: " << timeStampSimTime;
+    ss << ", tickStamp: " << tickStamp;
+    ss << ", autoRead: " << autoRead;
+    ss << ", autoWrite: " << autoWrite;
+    ss << ", maxAgeTime: " << maxAgeTime;
+    ss << ", maxAgeTicks: " << maxAgeTicks;
+    ss << "]";
+    return ss.str();
   }
 };
 

@@ -34,6 +34,16 @@ public:
    */
   [[nodiscard]]
   const std::string &getVarName() const { return name; }
+
+  /**
+   * @return as string representation of the data object for logging and debugging purposes
+   */
+  [[nodiscard]]
+  virtual std::string str() const {
+    std::stringstream ss;
+    ss << name;
+    return ss.str();
+  }
 };
 
 #endif //FLYBYWIRE_A32NX_DATAOBJECTBASE_H
