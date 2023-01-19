@@ -28,38 +28,61 @@
 
 #if LOG_LEVEL > ZERO_LVL
 #define LOG_CRITICAL(msg) logger->critical(msg)
+#define LOG_CRITICAL_START while (1) {
+#define LOG_CRITICAL_END break;}
 #else
 #define LOG_CRITICAL(msg) void(0)
+#define LOG_CRITICAL_START while (0) {
+#define LOG_CRITICAL_END }
 #endif
+
 
 #if LOG_LEVEL > CRITICAL_LVL
 #define LOG_ERROR(msg) logger->error(msg)
+#define LOG_ERROR_START while (1) {
+#define LOG_ERROR_END break;}
 #else
 #define LOG_ERROR(msg) void(0)
+#define LOG_ERROR_START while (0) {
+#define LOG_ERROR_END }
 #endif
 
 #if LOG_LEVEL > ERROR_LVL
 #define LOG_WARN(msg) logger->warn(msg)
+#define LOG_WARN_START while (1) {
+#define LOG_WARN_END break;}
 #else
 #define LOG_WARN(msg) void(0)
+#define LOG_WARN_START while (0) {
+#define LOG_WARN_END }
 #endif
 
 #if LOG_LEVEL > WARN_LVL
 #define LOG_INFO(msg) logger->info(msg)
+#define LOG_INFO_START while (1) {
+#define LOG_INFO_END break;}
 #else
 #define LOG_INFO(msg) void(0)
+#define LOG_INFO_START while (0) {
+#define LOG_INFO_END }
 #endif
 
 #if LOG_LEVEL > INFO_LVL
 #define LOG_DEBUG(msg) logger->debug(msg)
+#define LOG_DEBUG_START while (1) {
+#define LOG_DEBUG_END break;}
 #else
 #define LOG_DEBUG(msg) void(0)
 #endif
 
 #if LOG_LEVEL > DEBUG_LVL
 #define LOG_TRACE(msg) logger->trace(msg)
+#define LOG_TRACE_START while (1) {
+#define LOG_TRACE_END break;}
 #else
 #define LOG_TRACE(msg) void(0)
+#define LOG_TRACE_START while (0) {
+#define LOG_TRACE_END }
 #endif
 
 /**
