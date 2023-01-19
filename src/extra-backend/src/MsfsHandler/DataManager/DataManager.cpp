@@ -3,7 +3,6 @@
 
 #include <iostream>
 
-#include "logging.h"
 #include "DataManager.h"
 #include "SimconnectExceptionStrings.h"
 #include "SimObjectBase.h"
@@ -30,33 +29,33 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
   for (auto &var: variables) {
     if (var.second->isAutoRead()) {
       var.second->updateFromSim(timeStamp, tickCounter);
-#if LOG_LEVEL >= DEBUG_LVL
-      if (tickCounter % 100 == 0) {
-        std::cout << "DataManager::preUpdate() - auto read named and aircraft: "
-        << var.second->getVarName()  << " = " << var.second->get()  << std::endl;
-      }
-#endif
+      LOG_DEBUG_START
+        if (tickCounter % 100 == 0) {
+          std::cout << "DataManager::preUpdate() - auto read named and aircraft: "
+                    << var.second->getVarName() << " = " << var.second->get() << std::endl;
+        }
+      LOG_DEBUG_END
     }
   }
 
   // request all data definitions set to automatically read
   for (auto &ddv: simObjects) {
-    if (ddv->isAutoRead()) {
-      if (!ddv->requestUpdateFromSim(timeStamp, tickCounter)) {
+    if (ddv.second->isAutoRead()) {
+      if (!ddv.second->requestUpdateFromSim(timeStamp, tickCounter)) {
         std::cerr << "DataManager::preUpdate(): requestUpdateFromSim() failed for "
-                  << ddv->getVarName() << std::endl;
+                  << ddv.second->getVarName() << std::endl;
       }
-#if LOG_LEVEL >= DEBUG_LVL
-      if (tickCounter % 100 == 0) {
-        std::cout << "DataManager::preUpdate() - auto read simobjects: "
-                  << ddv->getVarName() << std::endl;
-      }
-#endif
+      LOG_DEBUG_START
+        if (tickCounter % 100 == 0) {
+          std::cout << "DataManager::preUpdate() - auto read simobjects: "
+                    << ddv.second->getVarName() << std::endl;
+        }
+      LOG_DEBUG_END
     }
   }
 
   // get requested sim object data
-  requestData();
+  getRequestedData();
 
   LOG_TRACE("DataManager::preUpdate() - done");
   return true;
@@ -84,28 +83,28 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
   for (auto &var: variables) {
     if (var.second->isAutoWrite()) {
       var.second->updateToSim();
-#if LOG_LEVEL >= DEBUG_LVL
-      if (tickCounter % 100 == 0) {
-        std::cout << "DataManager::postUpdate() - auto write named and aircraft: "
-                  << var.second->getVarName()  << " = " << var.second->get()  << std::endl;
-      }
-#endif
+      LOG_DEBUG_START
+        if (tickCounter % 100 == 0) {
+          std::cout << "DataManager::postUpdate() - auto write named and aircraft: "
+                    << var.second->getVarName() << " = " << var.second->get() << std::endl;
+        }
+      LOG_DEBUG_END
     }
   }
 
   // write all data definitions set to automatically write
   for (auto &ddv: simObjects) {
-    if (ddv->isAutoWrite()) {
-      if (!ddv->updateDataToSim(timeStamp, tickCounter)) {
+    if (ddv.second->isAutoWrite()) {
+      if (!ddv.second->updateDataToSim(timeStamp, tickCounter)) {
         std::cerr << "DataManager::postUpdate(): updateDataToSim() failed for "
-                  << ddv->getVarName() << std::endl;
+                  << ddv.second->getVarName() << std::endl;
       }
-#if LOG_LEVEL >= DEBUG_LVL
-      if (tickCounter % 100 == 0) {
-        std::cout << "DataManager::postUpdate() - auto write simobjects"
-                  << ddv->getVarName()  << std::endl;
-      }
-#endif
+      LOG_DEBUG_START
+        if (tickCounter % 100 == 0) {
+          std::cout << "DataManager::postUpdate() - auto write simobjects"
+                    << ddv.second->getVarName() << std::endl;
+        }
+      LOG_DEBUG_END
     }
   }
 
@@ -114,13 +113,12 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
 }
 
 bool DataManager::processSimObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA* data) {
-  for (auto &ddv: simObjects) {
-    if (ddv->getRequestId() == data->dwRequestID) {
-      ddv->receiveDataFromSimCallback(data);
-      return true;
-    }
+  if (auto pair = simObjects.find(data->dwRequestID); pair != simObjects.end()) {
+    pair->second->receiveDataFromSimCallback(data);
+    return true;
   }
-  std::cout << "DataManager::processSimObjectData(): no matching request id found" << std::endl;
+  std::cerr << "DataManager::processSimObjectData() - unknown request id: " << data->dwRequestID
+            << std::endl;
   return false;
 }
 
@@ -130,7 +128,7 @@ bool DataManager::shutdown() {
   return true;
 }
 
-void DataManager::requestData() {
+void DataManager::getRequestedData() {
   DWORD cbData;
   SIMCONNECT_RECV* ptrData;
   while (SUCCEEDED(SimConnect_GetNextDispatch(hSimConnect, &ptrData, &cbData))) {
@@ -151,9 +149,7 @@ NamedVariablePtr DataManager::make_named_var(
   // used in different places with different expected values via Units.
   const std::string uniqueName = varName + ":" + unit.name;
 
-#if LOG_LEVEL >= DEBUG_LVL
-  std::cout << "DataManager::make_named_var(): " << uniqueName << std::endl;
-#endif
+  LOG_DEBUG("DataManager::make_named_var(): " + uniqueName);
 
   // Check if variable already exists
   // Check which update method and frequency to use - if two variables are the same
@@ -171,12 +167,12 @@ NamedVariablePtr DataManager::make_named_var(
     if (!variables[uniqueName]->isAutoWrite() && autoWriting) {
       variables[uniqueName]->setAutoWrite(true);
     }
-#if LOG_LEVEL >= DEBUG_LVL
-    std::cout << "DataManager::make_named_var(): variable "
-              << uniqueName << " already exists: "
-              << variables[uniqueName]
-              << std::endl;
-#endif
+    LOG_DEBUG_START
+      std::cout << "DataManager::make_named_var(): variable "
+                << uniqueName << " already exists: "
+                << variables[uniqueName]
+                << std::endl;
+    LOG_DEBUG_END
     return std::dynamic_pointer_cast<NamedVariable>(variables[uniqueName]);
   }
 
@@ -184,11 +180,11 @@ NamedVariablePtr DataManager::make_named_var(
   std::shared_ptr<NamedVariable> var =
     std::make_shared<NamedVariable>(varName, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
 
-#if LOG_LEVEL >= DEBUG_LVL
-  std::cout << "DataManager::make_named_var(): creating variable "
-            << varName << " (" << var << ")"
-            << std::endl;
-#endif
+  LOG_DEBUG_START
+    std::cout << "DataManager::make_named_var(): creating variable "
+              << varName << " (" << var << ")"
+              << std::endl;
+  LOG_DEBUG_END
 
   //  the actual var name of the created variable will have a prefix added to it
   //  so we canÄt use var->getVarName() here
@@ -200,7 +196,7 @@ NamedVariablePtr DataManager::make_named_var(
 AircraftVariablePtr DataManager::make_aircraft_var(
   const std::string &varName,
   int index,
-  const std::string& setterEventName,
+  const std::string &setterEventName,
   EventPtr setterEvent,
   Unit unit,
   bool autoReading,
@@ -213,9 +209,7 @@ AircraftVariablePtr DataManager::make_aircraft_var(
   // used in different places with different expected values via Index and Units.
   const std::string uniqueName = varName + ":" + std::to_string(index) + ":" + unit.name;
 
-#if LOG_LEVEL >= DEBUG_LVL
-  std::cout << "DataManager::make_aircraft_var(): " << uniqueName << std::endl;
-#endif
+  LOG_DEBUG("DataManager::make_aircraft_var(): " + uniqueName);
 
   // Check if variable already exists
   // Check which update method and frequency to use - if two variables are the same
@@ -234,12 +228,13 @@ AircraftVariablePtr DataManager::make_aircraft_var(
       variables[uniqueName]->setAutoWrite(true);
     }
 
-#if LOG_LEVEL >= DEBUG_LVL
-    std::cout << "DataManager::make_aircraft_var(): variable "
-              << uniqueName << " already exists: "
-              << variables[uniqueName]
-              << std::endl;
-#endif
+    LOG_DEBUG_START
+      std::cout << "DataManager::make_aircraft_var(): variable "
+                << uniqueName << " already exists: "
+                << variables[uniqueName]
+                << std::endl;
+    LOG_DEBUG_END
+
     return std::dynamic_pointer_cast<AircraftVariable>(variables[uniqueName]);
   }
   // Create new var and store it in the map
@@ -255,11 +250,11 @@ AircraftVariablePtr DataManager::make_aircraft_var(
             unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
   }
 
-#if LOG_LEVEL >= DEBUG_LVL
-  std::cout << "DataManager::make_named_var(): creating variable "
-            << varName << " (" << var << ")"
-            << std::endl;
-#endif
+  LOG_DEBUG_START
+    std::cout << "DataManager::make_named_var(): creating variable "
+              << varName << " (" << var << ")"
+              << std::endl;
+  LOG_DEBUG_END
 
   variables[uniqueName] = var;
 
@@ -273,9 +268,7 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
   FLOAT64 maxAgeTime,
   UINT64 maxAgeTicks) {
 
-#if LOG_LEVEL >= DEBUG_LVL
-  std::cout << "DataManager::make_simple_aircraft_var(): " << varName << std::endl;
-#endif
+  LOG_DEBUG("DataManager::make_simple_aircraft_var(): " + varName);
 
   // The name needs to contain all the information to identify the variable
   // and the expected value uniquely. This is because the same variable can be
@@ -296,12 +289,13 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
       variables[uniqueName]->setMaxAgeTicks(maxAgeTicks);
     }
 
-#if LOG_LEVEL >= DEBUG_LVL
-    std::cout << "DataManager::make_simple_aircraft_var(): variable "
-              << uniqueName << " already exists: "
-              << variables[uniqueName]
-              << std::endl;
-#endif
+    LOG_DEBUG_START
+      std::cout << "DataManager::make_simple_aircraft_var(): variable "
+                << uniqueName << " already exists: "
+                << variables[uniqueName]
+                << std::endl;
+    LOG_DEBUG_END
+
     return std::dynamic_pointer_cast<AircraftVariable>(variables[uniqueName]);
   }
 
@@ -309,11 +303,11 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
   AircraftVariablePtr var = std::make_shared<AircraftVariable>(
     varName, 0, "", unit, autoReading, false, maxAgeTime, maxAgeTicks);
 
-#if LOG_LEVEL >= DEBUG_LVL
-  std::cout << "DataManager::make_simple_aircraft_var(): creating variable "
-            << varName << " (" << var << ")"
-            << std::endl;
-#endif
+  LOG_DEBUG_START
+    std::cout << "DataManager::make_simple_aircraft_var(): creating variable "
+              << varName << " (" << var << ")"
+              << std::endl;
+  LOG_DEBUG_END
 
   variables[uniqueName] = var;
 

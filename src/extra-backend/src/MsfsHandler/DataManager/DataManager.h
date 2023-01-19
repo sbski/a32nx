@@ -13,6 +13,7 @@
 #include <MSFS/MSFS.h>
 #include <SimConnect.h>
 
+#include "logging.h"
 #include "Units.h"
 #include "NamedVariable.h"
 #include "AircraftVariable.h"
@@ -46,7 +47,7 @@ private:
   /**
    * A vector of all registered SimObjects.
    */
-  std::vector<std::shared_ptr<SimObjectBase>> simObjects{};
+  std::map<DWORD, std::shared_ptr<SimObjectBase>> simObjects{};
 
   /**
    * A vector of all registered events
@@ -136,9 +137,9 @@ public:
   /**
    * Must be called to retrieve requested sim object data (data definition variables) from the sim.
    * Will be called everytime preUpdate() is called.
-   * Request data by calling DataDefinitions::requestDataFromSim() on the data definition variable.
+   * Request data by calling DataDefinitions::requestPeriodicDataFromSim() on the data definition variable.
    */
-  void requestData();
+  void getRequestedData();
 
   /**
    * Creates a new named variable and adds it to the list of managed variables
@@ -233,11 +234,10 @@ public:
         maxAgeTime,
         maxAgeTicks);
 
-#if LOG_LEVEL >= DEBUG_LVL
-    std::cout << "DataManager::make_datadefinition_var(): " << name << std::endl;
-#endif
+    LOG_DEBUG("DataManager::make_datadefinition_var(): " + name);
 
-    simObjects.push_back(var);
+    simObjects.insert({var->getRequestId(), var});
+
     return var;
   }
 
@@ -250,7 +250,7 @@ private:
 
   /**
    * This is called everytime we receive a message from the sim.
-   * Currently this only happens when manually calling requestDataFromSim().
+   * Currently this only happens when manually calling requestPeriodicDataFromSim().
    * Evtl. this can be used a callback directly called from the sim.
    *
    * @param pRecv
