@@ -357,10 +357,15 @@ export class DescentGuidance {
             this.isInOverspeedCondition = false;
         } else if (!this.isInOverspeedCondition && airspeed > upperLimit + 5) {
             this.isInOverspeedCondition = true;
+            // Make sure we're not in over and underspeed at the same time
+            this.isInUnderspeedCondition = false;
         }
 
         if (!this.isInUnderspeedCondition && airspeed < lowerLimit) {
             this.isInUnderspeedCondition = true;
+            this.isInOverspeedCondition = false;
+        } else if (this.isInUnderspeedCondition && airspeed > lowerLimit + 5) {
+            this.isInUnderspeedCondition = false;
         }
     }
 }
