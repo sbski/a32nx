@@ -102,7 +102,7 @@ public:
    * be called manually.
    * @param autoWriting the new value for the autoWrite flag
    */
-  virtual void setAutoWrite(bool autoWriting) { autoRead = autoWriting; }
+  virtual void setAutoWrite(bool autoWriting) { autoWrite = autoWriting; }
 
   /**
    * @return the time stamp of the last read from the sim

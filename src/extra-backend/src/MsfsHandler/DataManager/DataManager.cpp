@@ -78,8 +78,6 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
   }
 
   // write all variables set to automatically write
-  // aircraft variables are not writeable and will return false for isAutoWrite()
-  // so this will not be called
   for (auto &var: variables) {
     if (var.second->isAutoWrite()) {
       var.second->updateToSim();
@@ -167,12 +165,9 @@ NamedVariablePtr DataManager::make_named_var(
     if (!variables[uniqueName]->isAutoWrite() && autoWriting) {
       variables[uniqueName]->setAutoWrite(true);
     }
-    LOG_DEBUG_START
-      std::cout << "DataManager::make_named_var(): variable "
-                << uniqueName << " already exists: "
-                << variables[uniqueName]
-                << std::endl;
-    LOG_DEBUG_END
+
+    LOG_DEBUG("DataManager::make_named_var(): already exists: " + variables[uniqueName]->str());
+
     return std::dynamic_pointer_cast<NamedVariable>(variables[uniqueName]);
   }
 
@@ -180,15 +175,11 @@ NamedVariablePtr DataManager::make_named_var(
   std::shared_ptr<NamedVariable> var =
     std::make_shared<NamedVariable>(varName, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
 
-  LOG_DEBUG_START
-    std::cout << "DataManager::make_named_var(): creating variable "
-              << varName << " (" << var << ")"
-              << std::endl;
-  LOG_DEBUG_END
-
-  //  the actual var name of the created variable will have a prefix added to it
-  //  so we canÄt use var->getVarName() here
+  //  the actual var name of the created variable will have a prefix added to it,
+  //  so we can't use var->getVarName() here
   variables[uniqueName] = var;
+
+  LOG_DEBUG("DataManager::make_named_var(): created variable " + var->str());
 
   return var;
 }
@@ -228,12 +219,7 @@ AircraftVariablePtr DataManager::make_aircraft_var(
       variables[uniqueName]->setAutoWrite(true);
     }
 
-    LOG_DEBUG_START
-      std::cout << "DataManager::make_aircraft_var(): variable "
-                << uniqueName << " already exists: "
-                << variables[uniqueName]
-                << std::endl;
-    LOG_DEBUG_END
+    LOG_DEBUG("DataManager::make_aircraft_var(): already exists: " + variables[uniqueName]->str());
 
     return std::dynamic_pointer_cast<AircraftVariable>(variables[uniqueName]);
   }
@@ -250,13 +236,9 @@ AircraftVariablePtr DataManager::make_aircraft_var(
             unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
   }
 
-  LOG_DEBUG_START
-    std::cout << "DataManager::make_named_var(): creating variable "
-              << varName << " (" << var << ")"
-              << std::endl;
-  LOG_DEBUG_END
-
   variables[uniqueName] = var;
+
+  LOG_DEBUG("DataManager::make_aircraft_var(): created variable " + var->str());
 
   return var;
 }
@@ -289,12 +271,7 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
       variables[uniqueName]->setMaxAgeTicks(maxAgeTicks);
     }
 
-    LOG_DEBUG_START
-      std::cout << "DataManager::make_simple_aircraft_var(): variable "
-                << uniqueName << " already exists: "
-                << variables[uniqueName]
-                << std::endl;
-    LOG_DEBUG_END
+    LOG_DEBUG("DataManager::make_simple_aircraft_var(): already exists: " + variables[uniqueName]->str());
 
     return std::dynamic_pointer_cast<AircraftVariable>(variables[uniqueName]);
   }
@@ -303,13 +280,9 @@ AircraftVariablePtr DataManager::make_simple_aircraft_var(
   AircraftVariablePtr var = std::make_shared<AircraftVariable>(
     varName, 0, "", unit, autoReading, false, maxAgeTime, maxAgeTicks);
 
-  LOG_DEBUG_START
-    std::cout << "DataManager::make_simple_aircraft_var(): creating variable "
-              << varName << " (" << var << ")"
-              << std::endl;
-  LOG_DEBUG_END
-
   variables[uniqueName] = var;
+
+  LOG_DEBUG("DataManager::make_simple_aircraft_var(): already exists: " + var->str());
 
   return var;
 }
