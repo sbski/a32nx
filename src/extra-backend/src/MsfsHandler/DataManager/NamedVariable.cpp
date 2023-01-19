@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include <MSFS/Legacy/gauges.h>
-#include <cmath>
 
 #include "NamedVariable.h"
 #include "logging.h"

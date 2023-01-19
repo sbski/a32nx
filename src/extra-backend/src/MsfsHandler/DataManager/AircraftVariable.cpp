@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
 #include "AircraftVariable.h"
-#include "DataObjectBase.h"
-#include "ManagedDataObjectBase.h"
 
 #include <utility>
 
@@ -15,7 +13,7 @@ FLOAT64 AircraftVariable::rawReadFromSim() {
   return aircraft_varget(dataID, unit.id, index);
 }
 
-// these are overwritten to issue a error message if the variable is read-only
+// these are overwritten to issue an error message if the variable is read-only
 void AircraftVariable::set(FLOAT64 value) {
   if (setterEventName.empty() && setterEvent == nullptr) {
     std::cerr << "AircraftVariable::set() called on [" << name
@@ -25,7 +23,7 @@ void AircraftVariable::set(FLOAT64 value) {
   CacheableVariable::set(value);
 }
 
-// these are overwritten to issue a error message if the variable is read-only
+// these are overwritten to issue an error message if the variable is read-only
 void AircraftVariable::rawWriteToSim() {
   if (setterEventName.empty() && setterEvent == nullptr) {
     std::cerr << "AircraftVariable::setAndWriteToSim() called on \"" << name

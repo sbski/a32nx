@@ -4,7 +4,7 @@
 #ifndef FLYBYWIRE_CLIENTDATAAREAVARIABLE_H
 #define FLYBYWIRE_CLIENTDATAAREAVARIABLE_H
 
-#include "CacheableVariable.h"
+#include "SimObjectBase.h"
 
 // TODO: To be implemented
 // SimConnect_MapClientDataNameToID https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Events_And_Data/SimConnect_MapClientDataNameToID.htm?rhhlterm=SimConnect_MapClientDataNameToID&rhsearch=SimConnect_MapClientDataNameToID
@@ -12,7 +12,9 @@
 // SimConnect_CreateClientData
 // SimConnect_SetClientData
 // to inherit from CacheableVariable
-class ClientDataAreaVariable {
+
+
+class ClientDataAreaVariable : public SimObjectBase {
 
 };
 
