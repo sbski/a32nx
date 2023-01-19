@@ -69,11 +69,14 @@ class MsfsHandler {
   std::shared_ptr<DataDefinitionVariable<BaseSimData>> baseSimData;
 
   /**
-   * Used to detect pause in the sim.
+   * Current simulation time used for pause detection and time stamping variable updates
    */
-  FLOAT64 previousSimulationTime{};
+  FLOAT64 timeStamp{};
 
-  UINT64 tickCounter = 0;
+  /**
+   * Counts the number of ticks since start instance creation (calls to update).
+   */
+  UINT64 tickCounter{};
 
 public:
   /**
@@ -122,17 +125,34 @@ private:
 // Getters and setters
 public:
 
+  /**
+   * @return a modifiable reference to the data manager.
+   */
   DataManager &getDataManager() { return dataManager; }
 
+  /**
+   * @return value of LVAR A32NX_IS_READY
+   */
   [[maybe_unused]] [[nodiscard]]
   bool getA32NxIsReady() const { return a32nxIsReady->getAsBool(); }
 
+  /**
+   *
+   * @return value of LVAR A32NX_DEVELOPMENT_STATE
+   */
   [[maybe_unused]] [[nodiscard]]
   FLOAT64 getA32NxIsDevelopmentState() const { return a32nxIsDevelopmentState->get(); }
 
+  /**
+   * @return the current simulation time
+   */
   [[maybe_unused]] [[nodiscard]]
-  FLOAT64 getPreviousSimulationTime() const { return previousSimulationTime; }
+  FLOAT64 getTimeStamp() const { return timeStamp; }
 
+
+  /**
+   * @return the current tick counter
+   */
   [[maybe_unused]] [[nodiscard]]
   UINT64 getTickCounter() const { return tickCounter; }
 };

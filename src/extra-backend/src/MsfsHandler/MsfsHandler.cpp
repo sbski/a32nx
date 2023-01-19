@@ -63,22 +63,27 @@ bool MsfsHandler::update(sGaugeDrawData* pData) {
   }
 
   // detect pause - uses the base sim data definition to retrieve the SIMULATION TIME
-  // and run a separate pair of requestData() and requestDataFromSim() for it
-  if (baseSimData->requestDataFromSim()) dataManager.requestData();
-  if (baseSimData->data().simulationTime == previousSimulationTime) return true;
-  previousSimulationTime = baseSimData->data().simulationTime;
+  // and run a separate pair of getRequestedData() and requestPeriodicDataFromSim() for it
+  if (baseSimData->requestDataFromSim()) dataManager.getRequestedData();
+  if ((baseSimData->data().simulationTime) == timeStamp) return true;
+  timeStamp = baseSimData->data().simulationTime;
   tickCounter++;
 
   // Call preUpdate(), update() and postUpdate() for all modules
-  bool result = true;
+  // Datamanager is always called first to ensure that all variables are updated before the modules
+  // are called.
+
   // PRE UPDATE
+  bool result = true;
   result &= dataManager.preUpdate(pData);
   result &= std::all_of(modules.begin(), modules.end(), [&pData](
     Module* pModule) { return pModule->preUpdate(pData); });
+
   // UPDATE
   result &= dataManager.update(pData);
   result &= std::all_of(modules.begin(), modules.end(), [&pData](
     Module* pModule) { return pModule->update(pData); });
+
   // POST UPDATE
   result &= dataManager.postUpdate(pData);
   result &= std::all_of(modules.begin(), modules.end(), [&pData](
@@ -106,3 +111,4 @@ bool MsfsHandler::shutdown() {
 bool MsfsHandler::initializeSimConnect() {
   return SUCCEEDED(SimConnect_Open(&hSimConnect, simConnectName.c_str(), nullptr, 0, 0, 0));
 }
+
