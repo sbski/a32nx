@@ -34,7 +34,7 @@
  * 3. the sim will send an message (SIMCONNECT_RECV_ID_SIMOBJECT_DATA) to signal that the data is
  *    ready to be read. This event also contains a pointer to the provided data. <br/>
  *
- * The DataManager class will provide the requestDataFromSim() method to read the sim's message queue.
+ * The DataManager class will provide the requestPeriodicDataFromSim() method to read the sim's message queue.
  * Currently SIMCONNECT_PERIOD is not used (at the mometen) and data is requested on demand via
  * the DataManager.
  */
@@ -120,7 +120,34 @@ public:
       requestId,
       dataDefId,
       SIMCONNECT_OBJECT_ID_USER,
-      SIMCONNECT_PERIOD_ONCE))) { // TODO - evtl. support using SIMCONNECT_PERIOD
+      SIMCONNECT_PERIOD_ONCE))) {
+
+      std::cerr << "Failed to request data from sim." << std::endl;
+      return false;
+    }
+    return true;
+  };
+
+  /**
+   * Sends a data request to the sim to have the sim prepare the requested data.
+   * This is an alternative to autoRead which is used by the DataManager to request data from the
+   * sim.
+   * @param period the SIMCONNECT_PERIOD with which the sim should send the data
+   * @return true if the request was successful, false otherwise
+   * @See https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Structures_And_Enumerations/SIMCONNECT_CLIENT_DATA_PERIOD.htm?rhhlterm=SIMCONNECT_CLIENT_DATA_PERIOD&rhsearch=SIMCONNECT_CLIENT_DATA_PERIOD
+   */
+  [[nodiscard]] bool requestPeriodicDataFromSim(SIMCONNECT_PERIOD period) const {
+    if (autoRead && period >= SIMCONNECT_PERIOD_ONCE) {
+      std::cerr << "Requested periodic data update from sim is ignored as autoRead is enabled. "
+                << std::endl;
+      return false;
+    }
+    if (!SUCCEEDED(SimConnect_RequestDataOnSimObject(
+      hSimConnect,
+      requestId,
+      dataDefId,
+      SIMCONNECT_OBJECT_ID_USER,
+      period))) {
 
       std::cerr << "Failed to request data from sim." << std::endl;
       return false;

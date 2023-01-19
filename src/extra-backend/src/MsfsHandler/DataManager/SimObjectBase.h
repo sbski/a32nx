@@ -76,6 +76,8 @@ public:
 
   /**
    * Sends a data request to the sim to have the sim prepare the requested data.
+   * The sim will send the data exactly once via the SIMCONNECT_RECV_ID_SIMOBJECT_DATA message.
+   * This calls receiveDataFromSimCallback() to process the data.
    * @return true if the request was successful, false otherwise
    * @See SimConnect_RequestDataOnSimObject
    */

@@ -55,7 +55,11 @@ bool ExampleModule::initialize() {
     {"ABSOLUTE TIME", 0, UNITS.Number},
   };
   exampleDataPtr = dataManager->make_datadefinition_var<ExampleData>(
-    "EXAMPLE DATA", exampleDataDef, true, false, 0, 0);
+    "EXAMPLE DATA", exampleDataDef, false, false, 0, 0);
+  // Alternative to use autoRead it is possible to set the SIMCONNECT_PERIOD.
+  if (!exampleDataPtr->requestPeriodicDataFromSim(SIMCONNECT_PERIOD_VISUAL_FRAME)){
+    std::cerr << "Failed to request periodic data from sim" << std::endl;
+  };
 
   isInitialized = true;
   LOG_INFO("ExampleModule initialized");
@@ -75,12 +79,16 @@ bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
   if (!msfsHandler->getA32NxIsReady()) return true;
 
   // Use this to throttle output frequency
-  if (msfsHandler->getTickCounter() % 100 == 0) {
+  if (msfsHandler->getTickCounter() % 50 == 0) {
 
-    std::cout << debugLVARPtr->str() << std::endl;
-    std::cout << debugLVAR2Ptr->str() << std::endl;
-    std::cout << beaconLightSwitchPtr->str() << std::endl;
-    std::cout << exampleDataPtr->str() << std::endl;
+    //    std::cout << debugLVARPtr->str() << std::endl;
+    //    std::cout << debugLVAR2Ptr->str() << std::endl;
+    //    std::cout << beaconLightSwitchPtr->str() << std::endl;
+    //    std::cout << exampleDataPtr->str() << std::endl;
+
+    std::cout << "LIGHT WING " << exampleDataPtr->data().wingLightSwitch << std::endl;
+    std::cout << "ZULU       " << exampleDataPtr->data().zuluTime << std::endl;
+    std::cout << "LOCAL      " << exampleDataPtr->data().localTime << std::endl;
 
     //    // Read vars which auto update each tick
     //    std::cout << "debugLVARPtr =  " << debugLVARPtr->get() << " changed? "
