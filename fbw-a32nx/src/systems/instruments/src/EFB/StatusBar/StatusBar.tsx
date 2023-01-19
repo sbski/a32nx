@@ -12,7 +12,6 @@ import { TooltipWrapper } from '../UtilComponents/TooltipWrapper';
 import { BatteryStatus } from './BatteryStatus';
 import { useAppSelector } from '../Store/store';
 import { initialState } from '../Store/features/simBrief';
-import { ClientState } from '@simbridge/index';
 import { QuickControls } from './QuickControls';
 
 interface StatusBarProps {
