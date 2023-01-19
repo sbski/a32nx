@@ -16,6 +16,8 @@
 #include "ManagedDataObjectBase.h"
 #include "SimObjectBase.h"
 
+#define quote(x) #x
+
 /**
  * A class that represents a data definition variable (custom sim object).<br/>
  *
@@ -210,15 +212,16 @@ public:
   [[nodiscard]]
   std::string str() const override {
     std::stringstream ss;
-    ss << "DataDefinition[ name='" << getName() << "'";
+    ss << "DataDefinition[ name=" << getName();
     ss << " definitions=" << dataDefinitions.size();
-    ss << " structSize=" << sizeof(T);
+    ss << ", structSize=" << sizeof(T);
     ss << ", timeStamp: " << timeStampSimTime;
     ss << ", tickStamp: " << tickStamp;
     ss << ", autoRead: " << autoRead;
     ss << ", autoWrite: " << autoWrite;
     ss << ", maxAgeTime: " << maxAgeTime;
     ss << ", maxAgeTicks: " << maxAgeTicks;
+    ss << ", dataType=" << typeid(dataStruct).name() << "::" << quote(dataStruct);
     ss << "]";
     return ss.str();
   }
