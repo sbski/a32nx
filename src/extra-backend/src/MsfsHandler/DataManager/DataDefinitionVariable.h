@@ -11,8 +11,9 @@
 #include <MSFS/Legacy/gauges.h>
 #include <SimConnect.h>
 
-#include "IDGenerator.h"
+#include "logging.h"
 #include "simple_assert.h"
+#include "IDGenerator.h"
 #include "ManagedDataObjectBase.h"
 #include "SimObjectBase.h"
 
@@ -90,9 +91,6 @@ public:
     : SimObjectBase(varName, autoRead, autoWrite, maxAgeTime, maxAgeTicks, dataDefId, hSimConnect, requestId),
       dataDefinitions(dataDefinitions), dataStruct{} {
 
-    // TODO: what happens if definition is wrong - will this cause a sim crash?
-    //  Might need to move this out of the constructor and into a separate method
-
     SIMPLE_ASSERT(sizeof(T) == dataDefinitions.size() * sizeof(FLOAT64),
                   "DataDefinitionVariable::receiveDataFromSimCallback: Struct size mismatch")
 
@@ -109,7 +107,7 @@ public:
         ddef.unit.name,
         SIMCONNECT_DATATYPE_FLOAT64))) {
 
-        std::cerr << "Failed to add " << ddef.name << " to data definition." << std::endl;
+        LOG_ERROR("Failed to add " + ddef.name + " to data definition.");
       }
     }
   }
@@ -122,7 +120,7 @@ public:
       SIMCONNECT_OBJECT_ID_USER,
       SIMCONNECT_PERIOD_ONCE))) {
 
-      std::cerr << "Failed to request data from sim." << std::endl;
+      LOG_ERROR("Failed to request data from sim.");
       return false;
     }
     return true;
@@ -138,8 +136,7 @@ public:
    */
   [[nodiscard]] bool requestPeriodicDataFromSim(SIMCONNECT_PERIOD period) const {
     if (autoRead && period >= SIMCONNECT_PERIOD_ONCE) {
-      std::cerr << "Requested periodic data update from sim is ignored as autoRead is enabled. "
-                << std::endl;
+      LOG_ERROR("Requested periodic data update from sim is ignored as autoRead is enabled.");
       return false;
     }
     if (!SUCCEEDED(SimConnect_RequestDataOnSimObject(
@@ -149,7 +146,7 @@ public:
       SIMCONNECT_OBJECT_ID_USER,
       period))) {
 
-      std::cerr << "Failed to request data from sim." << std::endl;
+      LOG_ERROR("Failed to request data from sim.");
       return false;
     }
     return true;
@@ -168,10 +165,9 @@ public:
       requestId,
       dataDefId,
       SIMCONNECT_OBJECT_ID_USER,
-      SIMCONNECT_PERIOD_ONCE))) { // TODO: evtl. support SIMCONNECT_PERIOD
+      SIMCONNECT_PERIOD_ONCE))) {
 
-      std::cerr << "Failed to request data from sim." << std::endl;
-      std::cerr << "Failed to request data from sim." << std::endl;
+      LOG_ERROR("Failed to request data from sim.");
       return false;
     }
     return true;
@@ -187,7 +183,7 @@ public:
   };
 
   bool writeDataToSim() override {
-    const bool result = SUCCEEDED(
+    if (!SUCCEEDED(
       SimConnect_SetDataOnSimObject(
         hSimConnect,
         dataDefId,
@@ -195,20 +191,16 @@ public:
         0,
         0,
         sizeof(T),
-        &dataStruct));
+        &dataStruct))) {
 
-    if (!result) {
-      std::cerr << "Setting data to sim for " << name << " with dataDefId=" << dataDefId
-                << " failed!"
-                << std::endl;
+      LOG_ERROR("Setting data to sim for " + name + " with dataDefId=" + std::to_string(dataDefId) + " failed!");
+      return false;
     }
-    return result;
+    return true;
   };
 
-  bool updateDataToSim(FLOAT64 timeStamp, UINT64 tickCounter) override {
+  bool updateDataToSim() override {
     if (writeDataToSim()) {
-      timeStampSimTime = timeStamp;
-      tickStamp = tickCounter;
       return true;
     }
     return false;

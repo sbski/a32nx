@@ -14,9 +14,7 @@
 #include <MSFS/Legacy/gauges.h>
 #include <MSFS/MSFS.h>
 #include <MSFS/MSFS_Render.h>
-#include <SimConnect.h>
 
-#include "logging.h"
 #include "MsfsHandler/MsfsHandler.h"
 #include "Example/ExampleModule.h"
 #include "LightingPresets/LightingPresets.h"

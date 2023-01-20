@@ -1,8 +1,9 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
+#ifdef EXAMPLES
+
 #include "logging.h"
-#include "MsfsHandler.h"
 #include "ExampleModule.h"
 #include "SimObjectBase.h"
 
@@ -23,36 +24,43 @@ bool ExampleModule::initialize() {
 
   // Events
   beaconLightSetEventPtr = dataManager->make_event("BEACON_LIGHTS_SET");
+
+  // Event with Callback example
   toggleFlightDirectorEventPtr = dataManager->make_event("TOGGLE_FLIGHT_DIRECTOR");
   toggleFlightDirectorEventPtr->subscribeToSim();
-  toggleFlightDirectorEventPtr
-  ->addCallback([&](int number, DWORD param0, DWORD param1, DWORD param2, DWORD param3, DWORD param4) {
-    LOG_DEBUG("Callback 1: TOGGLE_FLIGHT_DIRECTOR event received with " + std::to_string(number)
-              + " params:"
-              + " 0: " + std::to_string(param0)
-              + " 1: " + std::to_string(param1)
-              + " 2: " + std::to_string(param2)
-              + " 3: " + std::to_string(param3)
-              + " 4: " + std::to_string(param4)
-    );
-  });
+  toggleFlightDirectorCallbackID = toggleFlightDirectorEventPtr
+    ->addCallback([&](int number, DWORD param0, DWORD param1, DWORD param2, DWORD param3,
+                      DWORD param4) {
+      LOG_DEBUG("Callback 1: TOGGLE_FLIGHT_DIRECTOR event received with " + std::to_string(number)
+                + " params:"
+                + " 0: " + std::to_string(param0)
+                + " 1: " + std::to_string(param1)
+                + " 2: " + std::to_string(param2)
+                + " 3: " + std::to_string(param3)
+                + " 4: " + std::to_string(param4)
+      );
+    });
 
+  // Event with Callback example - twice to see multiple callbacks added to a single event
   lightPotentiometerSetEventPtr = dataManager->make_event("LIGHT_POTENTIOMETER_SET");
   lightPotentiometerSetCallbackID = lightPotentiometerSetEventPtr
-    ->addCallback([&](int number, DWORD param0, DWORD param1, DWORD param2, DWORD param3, DWORD param4) {
+    ->addCallback([&](int number, DWORD param0, DWORD param1, DWORD param2, DWORD param3,
+                      DWORD param4) {
       LOG_DEBUG("Callback 1: LIGHT_POTENTIOMETER_SET event received with " + std::to_string(number)
-      + " params:"
-      + " 0: " + std::to_string(param0)
-      + " 1: " + std::to_string(param1)
-      + " 2: " + std::to_string(param2)
-      + " 3: " + std::to_string(param3)
-      + " 4: " + std::to_string(param4)
+                + " params:"
+                + " 0: " + std::to_string(param0)
+                + " 1: " + std::to_string(param1)
+                + " 2: " + std::to_string(param2)
+                + " 3: " + std::to_string(param3)
+                + " 4: " + std::to_string(param4)
       );
     });
   lightPotentiometerSetEventPtr->subscribeToSim();
+
   lightPotentiometerSetEvent2Ptr = dataManager->make_event("LIGHT_POTENTIOMETER_SET");
   lightPotentiometerSetCallback2ID = lightPotentiometerSetEvent2Ptr
-    ->addCallback([&](int number, DWORD param0, DWORD param1, DWORD param2, DWORD param3, DWORD param4) {
+    ->addCallback([&](int number, DWORD param0, DWORD param1, DWORD param2, DWORD param3,
+                      DWORD param4) {
       LOG_DEBUG("Callback 2: LIGHT_POTENTIOMETER_SET event received with " + std::to_string(number)
                 + " params:"
                 + " 0: " + std::to_string(param0)
@@ -65,13 +73,14 @@ bool ExampleModule::initialize() {
 
   // LVARS
   debugLVARPtr = dataManager->make_named_var("DEBUG_LVAR", UNITS.Number, true, false, 0, 0);
-  debugLVARPtr->setEpsilon(1.0); // only read when difference is 1.0 or more
-  // requested twice to demonstrate de-duplication
-  debugLVAR2Ptr = dataManager->make_named_var("DEBUG_LVAR", UNITS.Percent, true, false, 0, 0);
+  debugLVARPtr->setEpsilon(1.0); // only read when difference is >1.0
+  // requested twice to demonstrate de-duplication - also shows optional parameters
+  debugLVAR2Ptr = dataManager->make_named_var("DEBUG_LVAR", UNITS.Percent, true);
 
   // Aircraft variables - requested twice to demonstrate de-duplication
   beaconLightSwitchPtr = dataManager->make_aircraft_var(
     "LIGHT BEACON", 0, "", beaconLightSetEventPtr, UNITS.Bool, false, false, 0, 0);
+  // this has autoRead on - this updates the de-duplicated variable to also have autoRead on
   beaconLightSwitch2Ptr = dataManager->make_aircraft_var(
     "LIGHT BEACON", 0, "", beaconLightSetEventPtr, UNITS.Bool, true, true, 0, 0);
   beaconLightSwitch3Ptr = dataManager->make_simple_aircraft_var("LIGHT BEACON", UNITS.Bool);
@@ -79,7 +88,7 @@ bool ExampleModule::initialize() {
   // E: variables - don't seem to work as aircraft variables
   zuluTimePtr = dataManager->make_simple_aircraft_var("ZULU TIME", UNITS.Number, true);
 
-  // A:FUELSYSTEM PUMP SWITCH:#ID#
+  // A:FUELSYSTEM PUMP SWITCH:#ID#  - demonstrates variable with index
   fuelPumpSwitch1Ptr = dataManager->make_aircraft_var("FUELSYSTEM PUMP SWITCH", 1, "",
                                                       beaconLightSetEventPtr, UNITS.Bool, true, false, 0, 0);
   fuelPumpSwitch2Ptr = dataManager->make_aircraft_var("FUELSYSTEM PUMP SWITCH", 2, "",
@@ -95,9 +104,11 @@ bool ExampleModule::initialize() {
   };
   exampleDataPtr = dataManager->make_datadefinition_var<ExampleData>(
     "EXAMPLE DATA", exampleDataDef, false, false, 0, 0);
+
   // Alternative to use autoRead it is possible to set the SIMCONNECT_PERIOD.
+  // See https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Structures_And_Enumerations/SIMCONNECT_CLIENT_DATA_PERIOD.htm?rhhlterm=SIMCONNECT_CLIENT_DATA_PERIOD&rhsearch=SIMCONNECT_CLIENT_DATA_PERIOD
   if (!exampleDataPtr->requestPeriodicDataFromSim(SIMCONNECT_PERIOD_VISUAL_FRAME)) {
-    std::cerr << "Failed to request periodic data from sim" << std::endl;
+    LOG_ERROR("Failed to request periodic data from sim");
   }
 
   isInitialized = true;
@@ -106,30 +117,37 @@ bool ExampleModule::initialize() {
 }
 
 bool ExampleModule::preUpdate([[maybe_unused]] sGaugeDrawData* pData) {
+  // empty  could be used to manually update variables if they are not autoRead
   return true;
 }
 
 bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
   if (!isInitialized) {
-    std::cerr << "ExampleModule::update() - not initialized" << std::endl;
+    LOG_ERROR("ExampleModule::update() - not initialized");
     return false;
   }
 
+  // Do not do anything if the sim is not running - this is not required but is a good idea
+  // It is ready after the click on "READY TO FLY"
   if (!msfsHandler->getA32NxIsReady()) return true;
 
-  // Use this to throttle output frequency
+  // Use this to throttle output frequency while you are debugging
   if (msfsHandler->getTickCounter() % 100 == 0) {
 
-    // testing removing an even callback
+    // testing removing an event callback
     //    if (msfsHandler->getTimeStamp() >= 30 && msfsHandler->getTimeStamp() < 31) {
     //      lightPotentiometerSetEvent2Ptr->removeCallback(lightPotentiometerSetCallback2ID);
     //    }
 
+    // testing doubled LVARs
     //    std::cout << debugLVARPtr->str() << std::endl;
     //    std::cout << debugLVAR2Ptr->str() << std::endl;
+
+    // testing aircraft variables
     //    std::cout << beaconLightSwitchPtr->str() << std::endl;
+
+    // testing data definition variables
     //    std::cout << exampleDataPtr->str() << std::endl;
-    //
     //    std::cout << "LIGHT WING " << exampleDataPtr->data().wingLightSwitch << std::endl;
     //    std::cout << "ZULU       " << exampleDataPtr->data().zuluTime << std::endl;
     //    std::cout << "LOCAL      " << exampleDataPtr->data().localTime << std::endl;
@@ -197,7 +215,7 @@ bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
     //              << " time = " << msfsHandler->getPreviousSimulationTime()
     //              << " tick = " << msfsHandler->getTickCounter()
     //              << std::endl;
-
+    //
     //    std::cout << "strobeLightSwitch =  " << exampleDataStruct.strobeLightSwitch
     //              << " (time = " << msfsHandler->getPreviousSimulationTime()
     //              << " tick = " << msfsHandler->getTickCounter() << ")"
@@ -206,13 +224,17 @@ bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
     //    // Set a variable which does not auto write
     //    debugLVARPtr->setAndWriteToSim(debugLVARPtr->get() + 1);
     //
+    // Test writing an aircraft variable by toggling the beacon light switch
+    // Immediate write
     //    beaconLightSwitchPtr->setAndWriteToSim(beaconLightSwitchPtr->get() == 0.0 ? 1.0 : 0.0);
+    // autoWrite in postUpdate
     //    beaconLightSwitch2Ptr->set(beaconLightSwitch2Ptr->get() == 0.0 ? 1.0 : 0.0);
     //
+    // Test writing a data definition variable by toggling the strobe light switch
     //    exampleDataStruct.strobeLightSwitch = exampleDataStruct.strobeLightSwitch == 0.0 ? 1.0 : 0.0;
     //    exampleDataPtr->writeDataToSim();
 
-  }
+  } // throttle
 
   return true;
 }
@@ -226,3 +248,5 @@ bool ExampleModule::shutdown() {
   std::cout << "ExampleModule::shutdown()" << std::endl;
   return true;
 }
+
+#endif

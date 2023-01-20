@@ -10,7 +10,10 @@
 
 #include <MSFS/Legacy/gauges.h>
 
-class Unit {
+/**
+ * Helper struct representing one unit
+ */
+struct Unit {
 public:
   const char* name;
   const ENUM id;
@@ -47,6 +50,7 @@ public:
   const Unit Seconds{"Seconds"};
 };
 
+// Global instance of the Units class
 inline Units UNITS{};
 
 #endif //FLYBYWIRE_UNITS_H

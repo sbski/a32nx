@@ -13,7 +13,7 @@
 /**
  * Specialized class for named cacheable variables (LVARS).
  *
- * NamedVariables can't by copy constructed or assigned. They can only be moved.
+ * NamedVariables can't be copy constructed or assigned. They can only be moved.
  * Create a NamedVariable instance instead.
  *
  * @see CacheableVariable

@@ -21,8 +21,10 @@
 #include "EventBase.h"
 #include "Event.h"
 
+typedef std::shared_ptr<CacheableVariable> CacheableVariablePtr;
 typedef std::shared_ptr<NamedVariable> NamedVariablePtr;
 typedef std::shared_ptr<AircraftVariable> AircraftVariablePtr;
+typedef std::shared_ptr<SimObjectBase> SimObjectBasePtr;
 typedef std::shared_ptr<Event> SubscribableEventPtr;
 
 /**
@@ -42,19 +44,19 @@ private:
   /**
    * A map of all registered variables.
    */
-  std::map<std::string, std::shared_ptr<CacheableVariable>> variables{};
+  std::map<std::string, CacheableVariablePtr> variables{};
 
   /**
-   * A vector of all registered SimObjects.
+   * A map of all registered SimObjects.
    * Map over the request id to quickly find the SimObject.
    */
-  std::map<SIMCONNECT_DATA_REQUEST_ID, std::shared_ptr<SimObjectBase>> simObjects{};
+  std::map<SIMCONNECT_DATA_REQUEST_ID, SimObjectBasePtr> simObjects{};
 
   /**
-   * A vector of all registered events.
+   * A map of all registered events.
    * Map over the event id to quickly find the event - make creating an event a bit less efficient.
    */
-  std::map<SIMCONNECT_CLIENT_EVENT_ID, std::shared_ptr<Event>> events{};
+  std::map<SIMCONNECT_CLIENT_EVENT_ID, SubscribableEventPtr> events{};
 
   /**
    * Handle to the simconnect instance.
@@ -84,10 +86,15 @@ private:
   IDGenerator eventIDGen{};
 
 public:
+
   /**
    * Creates an instance of the DataManager.
    */
-  DataManager();
+  DataManager() = default;
+
+  DataManager(const DataManager &) = delete; // no copy constructor
+  DataManager &operator=(const DataManager &) = delete; // no copy assignment
+  ~DataManager() = default;
 
   /**
    * Initializes the data manager.
@@ -99,6 +106,7 @@ public:
   /**
    * Called by the MsfsHandler update() method.
    * Updates all variables marked for automatic reading.
+   * Calls SimConnect_GetNextDispatch to retrieve all messages from the simconnect queue.
    * @param pData Pointer to the data structure of gauge pre-draw event
    * @return true if successful, false otherwise
    */
@@ -109,7 +117,7 @@ public:
  * @param pData Pointer to the data structure of gauge pre-draw event
  * @return true if successful, false otherwise
  */
-  bool update([[maybe_unused]] sGaugeDrawData* pData) const;
+  bool update(sGaugeDrawData* pData) const;
 
   /**
  * Called by the MsfsHandler update() method.
@@ -117,7 +125,7 @@ public:
  * @param pData Pointer to the data structure of gauge pre-draw event
  * @return true if successful, false otherwise
  */
-  bool postUpdate([[maybe_unused]] sGaugeDrawData* pData);
+  bool postUpdate(sGaugeDrawData* pData);
 
   /**
    * Called by the MsfsHandler shutdown() method.
@@ -128,8 +136,9 @@ public:
 
   /**
    * Must be called to retrieve requested sim object data (data definition variables) from the sim.
-   * Will be called everytime preUpdate() is called.
-   * Request data by calling DataDefinitions::requestPeriodicDataFromSim() on the data definition variable.
+   * Will be called at the end of preUpdate() whenever preUpdate() is called.
+   * Request data by calling any of the DataDefinitions::request...() methods
+   * on the data definition variable.
    */
   void getRequestedData();
 
@@ -158,7 +167,7 @@ public:
    * @param index Index of the indexed variable in the sim
    * @param setterEventName the name of the event to set the variable with an event or calculator code
    * @param setterEvent an instance of an event variable to set the variable with an event or calculator code
-   * @param optional unit Unit of the variable (default=Number)
+   * @param unit Unit of the variable (default=Number)
    * @param autoReading optional flag to indicate if the variable should be read automatically (default=false)
    * @param autoWriting optional flag to indicate if the variable should be written automatically (default=false)
    * @param maxAgeTime optional maximum age of the variable in seconds (default=0)
@@ -180,7 +189,7 @@ public:
   /**
    * Creates a new readonly non-indexed AircraftVariable and adds it to the list of managed variables.
    * @param varName Name of the variable in the sim
-   * @param optional unit Unit of the variable (default=Number)
+   * @param unit Unit of the variable (default=Number)
    * @param autoReading optional flag to indicate if the variable should be read automatically (default=false)
    * @param maxAgeTime optional maximum age of the variable in seconds (default=0)
    * @param maxAgeTicks optional Maximum age of the variable in ticks (default=0)
@@ -237,6 +246,13 @@ public:
    * Creates a new event and adds it to the list of managed events.
    * Per default does not subscribe to the event. Use the subscribeToSim() method
    * to subscribeToSim to the event.
+   * @param eventName Name of the event in the sim
+   * @param immediateSubscribe optional flag to indicate if the event should be subscribed to immediately (default=false)
+   * @param maksEvent True indicates that the event will be masked by this client and will not be
+   *                  transmitted to any more clients, possibly including Microsoft Flight Simulator
+   *                  itself (if the priority of the client exceeds that of Flight Simulator).
+   *                  False is the default.
+   * @return A shared pointer to the event instance
    */
   SubscribableEventPtr make_event(
     const std::string &eventName,
@@ -264,7 +280,16 @@ private:
    */
   void processSimObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA* data);
 
+  /**
+   * Called from processDispatchMessage() for SIMCONNECT_RECV_ID_EVENT messages.
+   * @param pRecv the SIMCONNECT_RECV_EVENT structure
+   */
   void processEvent(const SIMCONNECT_RECV_EVENT* pRecv);
+
+  /**
+   * Called from processDispatchMessage() for SIMCONNECT_RECV_EVENT_EX1 messages.
+   * @param pRecv the SIMCONNECT_RECV_EVENT_EX1 structure
+   */
   void processEvent(const SIMCONNECT_RECV_EVENT_EX1* pRecv);
 };
 

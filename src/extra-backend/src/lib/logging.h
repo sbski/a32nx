@@ -78,6 +78,7 @@
 
 /**
  * Singleton class for Logger
+ * Very simple implementation for now.
  */
 class Logger {
 public:

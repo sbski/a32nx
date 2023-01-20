@@ -42,7 +42,7 @@ private:
   NamedVariablePtr parkingBrakeEngaged;
   NamedVariablePtr tugCommandedHeadingFactor;
   NamedVariablePtr tugCommandedSpeedFactor;
-  // debug purposes - send as LVARs for debugging in the flyPad
+  // debug purposes - send as LVARs for debugging to the flyPad
   NamedVariablePtr tugCommandedHeading;
   NamedVariablePtr tugCommandedSpeed;
   NamedVariablePtr tugInertiaSpeed;
@@ -72,9 +72,9 @@ public:
   Pushback() = delete;
 
   /**
-* Creates a new Pushback instance and takes a reference to the MsfsHandler instance.
-* @param msfsHandler The MsfsHandler instance that is used to communicate with the simulator.
-*/
+   * Creates a new Pushback instance and takes a reference to the MsfsHandler instance.
+   * @param msfsHandler The MsfsHandler instance that is used to communicate with the simulator.
+   */
   explicit Pushback(MsfsHandler* msfsHandler) : Module(msfsHandler) {}
 
   bool initialize() override;

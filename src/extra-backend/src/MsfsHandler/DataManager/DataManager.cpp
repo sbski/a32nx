@@ -8,8 +8,6 @@
 #include "SimconnectExceptionStrings.h"
 #include "Event.h"
 
-DataManager::DataManager() = default;
-
 bool DataManager::initialize(HANDLE hdl) {
   hSimConnect = hdl;
   isInitialized = true;
@@ -19,7 +17,7 @@ bool DataManager::initialize(HANDLE hdl) {
 bool DataManager::preUpdate(sGaugeDrawData* pData) {
   LOG_TRACE("DataManager::preUpdate()");
   if (!isInitialized) {
-    std::cerr << "DataManager::preUpdate() called but DataManager is not initialized" << std::endl;
+    LOG_ERROR("DataManager::preUpdate() called but DataManager is not initialized");
     return false;
   }
 
@@ -42,8 +40,8 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
   for (auto &ddv: simObjects) {
     if (ddv.second->isAutoRead()) {
       if (!ddv.second->requestUpdateFromSim(timeStamp, tickCounter)) {
-        std::cerr << "DataManager::preUpdate(): requestUpdateFromSim() failed for "
-                  << ddv.second->getVarName() << std::endl;
+        LOG_ERROR("DataManager::preUpdate(): requestUpdateFromSim() failed for "
+                  + ddv.second->getVarName());
       }
       LOG_DEBUG_BLOCK(if (tickCounter % 100 == 0) {
         std::cout << "DataManager::preUpdate() - auto read simobjects: " << ddv.second->getVarName()
@@ -61,7 +59,7 @@ bool DataManager::preUpdate(sGaugeDrawData* pData) {
 
 bool DataManager::update([[maybe_unused]] sGaugeDrawData* pData) const {
   if (!isInitialized) {
-    std::cerr << "DataManager::update() called but DataManager is not initialized" << std::endl;
+    LOG_ERROR("DataManager::update() called but DataManager is not initialized");
     return false;
   }
   // empty
@@ -71,7 +69,7 @@ bool DataManager::update([[maybe_unused]] sGaugeDrawData* pData) const {
 bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
   LOG_TRACE("DataManager::postUpdate()");
   if (!isInitialized) {
-    std::cerr << "DataManager::postUpdate() called but DataManager is not initialized" << std::endl;
+    LOG_ERROR("DataManager::postUpdate() called but DataManager is not initialized");
     return false;
   }
 
@@ -90,9 +88,9 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
   // write all data definitions set to automatically write
   for (auto &ddv: simObjects) {
     if (ddv.second->isAutoWrite()) {
-      if (!ddv.second->updateDataToSim(timeStamp, tickCounter)) {
-        std::cerr << "DataManager::postUpdate(): updateDataToSim() failed for "
-                  << ddv.second->getVarName() << std::endl;
+      if (!ddv.second->updateDataToSim()) {
+        LOG_ERROR("DataManager::postUpdate(): updateDataToSim() failed for "
+                  + ddv.second->getVarName());
       }
       LOG_DEBUG_BLOCK(if (tickCounter % 100 == 0) {
         std::cout << "DataManager::postUpdate() - auto write simobjects" << ddv.second->getVarName()
@@ -107,7 +105,7 @@ bool DataManager::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
 
 bool DataManager::shutdown() {
   isInitialized = false;
-  std::cout << "DataManager::shutdown()" << std::endl;
+  LOG_INFO("DataManager::shutdown()");
   return true;
 }
 
@@ -153,10 +151,9 @@ NamedVariablePtr DataManager::make_named_var(const std::string &varName,
   }
 
   // Create new var and store it in the map
-  std::shared_ptr<NamedVariable> var = std::make_shared<NamedVariable>(varName, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
+  NamedVariablePtr var
+    = std::make_shared<NamedVariable>(varName, unit, autoReading, autoWriting, maxAgeTime, maxAgeTicks);
 
-  //  the actual var name of the created variable will have a prefix added to it,
-  //  so we can't use var->getVarName() here
   variables[uniqueName] = var;
 
   LOG_DEBUG("DataManager::make_named_var(): created variable " + var->str());
@@ -202,7 +199,7 @@ AircraftVariablePtr DataManager::make_aircraft_var(const std::string &varName,
     return std::dynamic_pointer_cast<AircraftVariable>(pair->second);
   }
   // Create new var and store it in the map
-  std::shared_ptr<AircraftVariable> var;
+  AircraftVariablePtr var;
   if (setterEventName.empty()) {
     var = setterEventName.empty() ? std::make_shared<AircraftVariable>(varName, index, std::move(setterEvent), unit, autoReading,
                                                                        autoWriting, maxAgeTime, maxAgeTicks)
@@ -282,7 +279,6 @@ SubscribableEventPtr DataManager::make_event(
 // Private methods
 // =================================================================================================
 
-
 void DataManager::processDispatchMessage(SIMCONNECT_RECV* pRecv, [[maybe_unused]] DWORD* cbData) {
   switch (pRecv->dwID) {
     case SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
@@ -325,8 +321,8 @@ void DataManager::processSimObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA* dat
     pair->second->receiveDataFromSimCallback(data);
     return;
   }
-  std::cerr << "DataManager::processSimObjectData() - unknown request id: "
-               + std::to_string(data->dwRequestID);
+  LOG_ERROR("DataManager::processSimObjectData() - unknown request id: "
+            + std::to_string(data->dwRequestID));
 }
 
 void DataManager::processEvent(const SIMCONNECT_RECV_EVENT* pRecv) {
@@ -334,10 +330,8 @@ void DataManager::processEvent(const SIMCONNECT_RECV_EVENT* pRecv) {
     pair->second->processEvent(pRecv);
     return;
   }
-  // ignore unknown events as it can happen that non-subscribable events are also received
-  // which we can ignore
-  LOG_DEBUG("DataManager::processEvent() - unknown event id: "
-            + std::to_string(pRecv->uEventID));
+  LOG_WARN("DataManager::processEvent() - unknown event id: "
+           + std::to_string(pRecv->uEventID));
 }
 
 void DataManager::processEvent(const SIMCONNECT_RECV_EVENT_EX1* pRecv) {
@@ -345,8 +339,6 @@ void DataManager::processEvent(const SIMCONNECT_RECV_EVENT_EX1* pRecv) {
     pair->second->processEvent(pRecv);
     return;
   }
-  // ignore unknown events as it can happen that non-subscribable events are also received
-  // which we can ignore
-  LOG_DEBUG("DataManager::processEvent() - unknown event ex1 id: "
-            + std::to_string(pRecv->uEventID));
+  LOG_WARN("DataManager::processEvent() - unknown event id: "
+           + std::to_string(pRecv->uEventID));
 }

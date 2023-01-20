@@ -11,7 +11,8 @@
 class MsfsHandler;
 
 /**
- * TODO: docs comments
+ * This module is responsible for loading aircraft presets.
+ * It uses the AircraftProcedures.h definition of procedures to load the presets.
  */
 class AircraftPresets : public Module {
 private:

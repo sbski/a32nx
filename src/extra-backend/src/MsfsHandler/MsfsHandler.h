@@ -8,6 +8,7 @@
 #include <MSFS/MSFS.h>
 #include <SimConnect.h>
 
+#include <string>
 #include <vector>
 
 #include "DataManager/DataManager.h"
@@ -19,7 +20,7 @@ class Module;
  * communication with the simulator mainly for standard variables and events.
  * It is not meant to fully replace the SDK but to provide a simple interface for the most common
  * tasks.
- * It does not limit the usage of the SDK or Simconnect in any way!
+ * It does not limit the direct usage of the SDK or Simconnect in any way!
  */
 class MsfsHandler {
 
@@ -37,7 +38,7 @@ class MsfsHandler {
    * The data manager is responsible for managing all variables and events.
    * It is used to register variables and events and to update them.
    * It de-duplicates variables and events and only creates one instance of each if multiple modules
-   * use the same variable.
+   * use the same variable or event.
    */
   DataManager dataManager{};
 
@@ -74,7 +75,8 @@ class MsfsHandler {
   FLOAT64 timeStamp{};
 
   /**
-   * Counts the number of ticks since start instance creation (calls to update).
+   * Counts the number of ticks since start instance creation (calls to update). Used to
+   * tick stamping the variable updates.
    */
   UINT64 tickCounter{};
 
@@ -83,7 +85,7 @@ public:
    * Creates a new MsfsHandler instance.
    * @param name string containing an appropriate simconnect name for the client program.
    */
-  explicit MsfsHandler(std::string name);
+  explicit MsfsHandler(std::string name) : simConnectName(std::move(name)) {}
 
   /**
    * Initializes the MsfsHandler instance. This method must be called before any other method.
@@ -109,7 +111,8 @@ public:
   bool shutdown();
 
   /**
-   * Callback method for modules to register themselves.
+   * Callback method for modules to register themselves. This is done in the constructor of the
+   * module base class.
    * @param pModule pointer to the module that should be registered.
    */
   void registerModule(Module *pModule);

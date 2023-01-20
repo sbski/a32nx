@@ -20,7 +20,7 @@ fi
 # INFO_LVL 4
 # DEBUG_LVL 5
 # TRACE_LVL 6
-LOG_LEVEL=5
+LOG_LEVEL=4
 LOGGING="LOG_LEVEL=${LOG_LEVEL}"
 
 # Define which flavor of aircraft should be compiled
@@ -28,7 +28,7 @@ LOGGING="LOG_LEVEL=${LOG_LEVEL}"
 AIRCRAFT="A32NX"
 
 # Uncomment if Examples should be compiled into the Gauge
-EXAMPLES="-DEXAMPLES"
+#EXAMPLES="-DEXAMPLES"
 
 set -ex
 
@@ -85,7 +85,6 @@ clang++ \
   "${DIR}/src/MsfsHandler/DataManager/ClientDataAreaVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/EventBase.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/Event.cpp" \
-  "${DIR}/src/MsfsHandler/Module.cpp" \
   "${DIR}/src/Modules/Example/ExampleModule.cpp" \
   "${DIR}/src/Modules/LightingPresets/LightingPresets.cpp" \
   "${DIR}/src/Modules/Pushback/Pushback.cpp" \

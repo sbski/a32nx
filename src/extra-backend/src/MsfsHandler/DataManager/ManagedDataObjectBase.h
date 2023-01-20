@@ -16,6 +16,11 @@
 #include <sstream>
 #include <optional>
 
+/**
+ * Base class for all managed data objects.
+ * Adds the ability to to autoRead, autoWrite variables considering max age based on
+ * time- and tick-stamps.
+ */
 class ManagedDataObjectBase : public DataObjectBase {
 
 protected:
@@ -58,15 +63,14 @@ protected:
    */
   UINT64 maxAgeTicks = 0;
 
-public:
-  ManagedDataObjectBase() = delete; // no default constructor
-  ManagedDataObjectBase(const ManagedDataObjectBase&) = delete; // no copy constructor
-  ManagedDataObjectBase& operator=(const ManagedDataObjectBase&) = delete; // no copy assignment
-
-protected:
-  ~ManagedDataObjectBase() override = default;
-
-public:
+  /**
+   * Create base super class for all managed data objects.
+   * @param varName the name of the variable in the sim
+   * @param autoRead if true the variable will be updated from the sim every time the DataManager::preUpdate() method is called
+   * @param autoWrite if true the variable will be updated from the sim every time the DataManager::postUpdate() method is called
+   * @param maxAgeTime the maximum age of the value in sim time before it is updated from the sim
+   * @param maxAgeTicks the maximum age of the value in ticks before it is updated from the sim
+   */
   ManagedDataObjectBase(
     const std::string &varName,
     bool autoRead,
@@ -75,6 +79,13 @@ public:
     UINT64 maxAgeTicks)
     : DataObjectBase(varName), autoRead(autoRead), autoWrite(autoWrite), maxAgeTime(maxAgeTime),
       maxAgeTicks(maxAgeTicks) {}
+
+  ~ManagedDataObjectBase() override = default;
+
+public:
+  ManagedDataObjectBase() = delete; // no default constructor
+  ManagedDataObjectBase(const ManagedDataObjectBase&) = delete; // no copy constructor
+  ManagedDataObjectBase& operator=(const ManagedDataObjectBase&) = delete; // no copy assignment
 
   /**
    * @return true if the variable should be automatically updated from the sim n the DataManagers
@@ -95,7 +106,8 @@ public:
   /**
    * @return true if the variable will be written to the sim in the DataManagers postUpdate() method.
    */
-  [[nodiscard]] bool isAutoWrite() const { return autoWrite; }
+  [[nodiscard]]
+  bool isAutoWrite() const { return autoWrite; }
 
   /**
    * Sets the autoWrite flag.
@@ -109,12 +121,14 @@ public:
   /**
    * @return the time stamp of the last read from the sim
    */
-  [[nodiscard]] FLOAT64 getTimeStamp() const { return timeStampSimTime; }
+  [[nodiscard]]
+  FLOAT64 getTimeStamp() const { return timeStampSimTime; }
 
   /**
    * @return the maximum age of the variable in second
    */
-  [[nodiscard]] FLOAT64 getMaxAgeTime() const { return maxAgeTime; }
+  [[nodiscard]]
+  FLOAT64 getMaxAgeTime() const { return maxAgeTime; }
 
   /**
    * Sets the maximum age of the variable in seconds
@@ -125,12 +139,14 @@ public:
   /**
    * @return the tick count when variable was last read from the sim
    */
-  [[nodiscard]] UINT64 getTickStamp() const { return tickStamp; }
+  [[nodiscard]]
+  UINT64 getTickStamp() const { return tickStamp; }
 
   /**
    * @return the maximum age of the variable in ticks
    */
-  [[nodiscard]] UINT64 getMaxAgeTicks() const { return maxAgeTicks; }
+  [[nodiscard]]
+  UINT64 getMaxAgeTicks() const { return maxAgeTicks; }
 
   /**
    * Sets the maximum age of the variable in ticks

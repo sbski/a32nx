@@ -15,8 +15,7 @@
 #include "ManagedDataObjectBase.h"
 
 /**
- * Virtual base class for sim variable like named variables, aircraft variables and
- * DataDefinitions (custom defined SimObjects).
+ * Virtual base class for sim variable like named variables, aircraft variables.
  * Specialized classes must implement the rawReadFromSim and rawWriteToSim methods and can
  * overwrite any other method if the default implementation is not sufficient.
  */
@@ -67,11 +66,6 @@ protected:
    */
   ID dataID = -1;
 
-public:
-  CacheableVariable() = delete; // no default constructor
-  CacheableVariable(const CacheableVariable&) = delete; // no copy constructor
-  CacheableVariable& operator=(const CacheableVariable&) = delete; // no copy assignment
-
 protected:
   ~CacheableVariable() override = default;
 
@@ -85,7 +79,6 @@ protected:
    * @param maxAgeTime The maximum age of the variable in seconds when using requestUpdateFromSim()
    * @param maxAgeTicks The maximum age of the variable in ticks when using updateDataToSim()
    */
-public:
   CacheableVariable(
     const std::string &varName,
     const Unit &unit,
@@ -96,6 +89,10 @@ public:
     : ManagedDataObjectBase(varName, autoRead, autoWrite, maxAgeTime, maxAgeTicks), unit(unit) {}
 
 public:
+  CacheableVariable() = delete; // no default constructor
+  CacheableVariable(const CacheableVariable&) = delete; // no copy constructor
+  CacheableVariable& operator=(const CacheableVariable&) = delete; // no copy assignment
+
   /**
    * Returns the cached value or the default value (FLOAT64{}) if the cache is empty.
    * Prints an error to std::cerr if the cache is empty.
@@ -104,7 +101,8 @@ public:
    * (MSFS does not allow exceptions)
    * @return cached value or default value
    */
-  [[nodiscard]] FLOAT64 get() const;
+  [[nodiscard]]
+  FLOAT64 get() const;
 
   /**
    * Reads the value fom the sim if the cached value is older than the max age (time or ticks).
@@ -176,42 +174,57 @@ public:
    * @return the Unit of the variable
    * @see Unit.h
    */
-  [[nodiscard]] Unit getUnit() const { return unit; }
+  [[nodiscard]]
+  Unit getUnit() const { return unit; }
 
   /**
    * @return the index of the variable
    */
-  [[nodiscard]] int getIndex() const { return index; }
+  [[nodiscard]]
+  int getIndex() const { return index; }
 
   /**
    * @return true if the value has been changed via set() since the last read from the sim.
    */
-  [[nodiscard]] bool isDirty() const { return dirty; }
+  [[nodiscard]]
+  bool isDirty() const { return dirty; }
 
   /**
    * @return the value casted to a boolean
    */
-  [[nodiscard]] bool getAsBool() const { return static_cast<bool>(get()); }
+  [[nodiscard]]
+  bool getAsBool() const { return static_cast<bool>(get()); }
 
+  /**
+   * Sets the value from a bool and marks the variable as dirty.
+   * @param b the value to set
+   */
   void setAsBool(bool b) { set(b ? 1.0 : 0.0); }
 
   /**
    * casted to an INT64
    */
-  [[nodiscard]] INT64 getAsInt64() const { return static_cast<INT64>(get()); }
+  [[nodiscard]]
+  INT64 getAsInt64() const { return static_cast<INT64>(get()); }
 
+  /**
+   * Sets the value from an INT64 and marks the variable as dirty.
+   * @param i the value to set
+   */
   void setAsInt64(UINT64 i) { set(static_cast<FLOAT64>(i)); }
 
   /**
    * @return true if the value has changed since the last read from the sim.
    */
-  [[nodiscard]] bool hasChanged() const { return changed; }
+  [[nodiscard]]
+  bool hasChanged() const { return changed; }
 
   /**
    * @return Epsilon used for comparing floating point values. Variables are considered equal if the
    * difference is smaller than this value.
    */
-  [[nodiscard]] FLOAT64 getEpsilon() const { return epsilon; }
+  [[nodiscard]]
+  FLOAT64 getEpsilon() const { return epsilon; }
 
   /**
    * Epsilon used for comparing floating point values. Variables are considered equal if the

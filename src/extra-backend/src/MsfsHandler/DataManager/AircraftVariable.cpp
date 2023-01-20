@@ -7,7 +7,7 @@
 
 FLOAT64 AircraftVariable::rawReadFromSim() {
   if (dataID == -1) {
-    std::cerr << ("Aircraft variable " + name + " not found") << std::endl;
+    LOG_ERROR("Aircraft variable " + name + " not found in the Simulator");
     return FLOAT64{};
   }
   return aircraft_varget(dataID, unit.id, index);
@@ -16,8 +16,7 @@ FLOAT64 AircraftVariable::rawReadFromSim() {
 // these are overwritten to issue an error message if the variable is read-only
 void AircraftVariable::set(FLOAT64 value) {
   if (setterEventName.empty() && setterEvent == nullptr) {
-    std::cerr << "AircraftVariable::set() called on [" << name
-              << "] but no setter event name is set" << std::endl;
+    LOG_ERROR("AircraftVariable::set() called on [" + name + "] but no setter event name is set");
     return;
   }
   CacheableVariable::set(value);
@@ -26,8 +25,7 @@ void AircraftVariable::set(FLOAT64 value) {
 // these are overwritten to issue an error message if the variable is read-only
 void AircraftVariable::rawWriteToSim() {
   if (setterEventName.empty() && setterEvent == nullptr) {
-    std::cerr << "AircraftVariable::setAndWriteToSim() called on \"" << name
-              << "\" but no setter event name is set" << std::endl;
+    LOG_ERROR("AircraftVariable::setAndWriteToSim() called on [" + name + "] but no setter event name is set");
     return;
   }
   // use the given event if one is set
@@ -41,8 +39,7 @@ void AircraftVariable::rawWriteToSim() {
 
 void AircraftVariable::setAutoWrite(bool autoWriting) {
   if (setterEventName.empty() && setterEvent == nullptr) {
-    std::cerr << "AircraftVariable::setAutoWrite() called on [" << name
-              << "] but no setter event name is set" << std::endl;
+    LOG_ERROR("AircraftVariable::setAutoWrite() called on [" + name + "] but no setter event name is set");
     return;
   }
   CacheableVariable::setAutoWrite(autoWriting);
@@ -79,12 +76,11 @@ void AircraftVariable::useCalculatorCodeSetter() {
   UINT32 pCompiledSize{};
   if (gauge_calculator_code_precompile(&pCompiled, &pCompiledSize, calculator_code.c_str())) {
     if (!execute_calculator_code(pCompiled, nullptr, nullptr, nullptr)) {
-      std::cerr << "AircraftVariable::setAndWriteToSim() failed to execute calculator code: ["
-                << calculator_code << "]" << std::endl;
+      LOG_ERROR("AircraftVariable::setAndWriteToSim() failed to execute calculator code: [" + calculator_code + "]");
     }
   }
   else {
-    std::cerr << "Failed to precompile calculator code for " << name << std::endl;
+    LOG_ERROR("Failed to precompile calculator code for " + name);
   }
 }
 
@@ -104,5 +100,3 @@ std::string AircraftVariable::str() const {
   ss << "]";
   return ss.str();
 }
-
-

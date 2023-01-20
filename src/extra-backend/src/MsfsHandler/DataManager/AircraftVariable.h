@@ -6,8 +6,9 @@
 
 #include <iostream>
 
+#include "logging.h"
 #include "CacheableVariable.h"
-#include "EventBase.h"
+#include "Event.h"
 
 typedef std::shared_ptr<EventBase> EventPtr;
 
@@ -45,11 +46,7 @@ public:
 
   /**
    * Creates an instance of a writable aircraft variable.
-   *
-   * If a setter event name or event object is provided the variable will be writable.
-   * (the reason both are given as there seem to be differences in how the sim handles
-   * calculator code and events).
-   *
+   * If a setter event name is provided the variable will be writable.
    * @param varName The name of the variable in the sim.
    * @param varIndex The index of the variable in the sim.
    * @param setterEventName The name of the event used to write to the variable.
@@ -76,17 +73,13 @@ public:
 
     dataID = get_aircraft_var_enum(varName.c_str());
     if (dataID == -1) { // cannot throw an exception in MSFS
-      std::cerr << ("Aircraft variable " + varName + " not found") << std::endl;
+      LOG_ERROR("Aircraft variable " + varName + " not found in the Simulator");
     }
   }
 
   /**
    * Creates an instance of a writable aircraft variable.
-   *
-   * If a setter event name or event object is provided the variable will be writable.
-   * (the reason both are given as there seem to be differences in how the sim handles
-   * calculator code and events).
-   *
+   * If a setter event object is provided the variable will be writable.
    * @param varName The name of the variable in the sim.
    * @param varIndex The index of the variable in the sim.
    * @param setterEvent The event used to write to the variable.
@@ -113,7 +106,7 @@ public:
 
     dataID = get_aircraft_var_enum(varName.c_str());
     if (dataID == -1) { // cannot throw an exception in MSFS
-      std::cerr << ("Aircraft variable " + varName + " not found") << std::endl;
+      LOG_ERROR("Aircraft variable " + varName + " not found in the Simulator");
     }
   }
 

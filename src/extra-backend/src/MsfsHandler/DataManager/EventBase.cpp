@@ -10,7 +10,7 @@ EventBase::EventBase(HANDLE hdlSimConnect, const std::string &eventName, DWORD e
     : hSimConnect(hdlSimConnect), eventName(eventName), eventClientID(eventClientID) {
 
   if (!SUCCEEDED(SimConnect_MapClientEventToSimEvent(hSimConnect, eventClientID, eventName.c_str()))) {
-    LOG_DEBUG("Failed to map event " + eventName + " to client ID " + std::to_string(eventClientID));
+    LOG_ERROR("Failed to map event " + eventName + " to client ID " + std::to_string(eventClientID));
   }
 }
 

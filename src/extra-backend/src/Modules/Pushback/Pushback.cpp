@@ -58,8 +58,8 @@ bool Pushback::initialize() {
     {"ROTATION VELOCITY BODY Y",     0, UNITS.FeetSec},
     {"ROTATION ACCELERATION BODY X", 0, UNITS.RadSecSquared}
   };
-  pushbackData = dataManager->make_datadefinition_var<PushbackData>(
-    "PUSHBACK DATA", pushBackDataDef);
+  pushbackData = dataManager
+    ->make_datadefinition_var<PushbackData>("PUSHBACK DATA", pushBackDataDef);
 
   // Events
   tugHeadingEvent = dataManager->make_event("KEY_TUG_HEADING");

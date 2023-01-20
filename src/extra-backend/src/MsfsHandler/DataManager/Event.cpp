@@ -1,9 +1,10 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
+#include <sstream>
+
 #include <MSFS/Legacy/gauges.h>
 #include <SimConnect.h>
-#include <sstream>
 
 #include "logging.h"
 #include "Event.h"
@@ -14,7 +15,6 @@ Event::Event(
   : EventBase(hdlSimConnect, eventName, eventClientId), maskEvent(maskEvent) {
 
   if (immediateSubscribe) subscribeToSim();
-
 }
 
 void Event::subscribeToSim() {
@@ -71,7 +71,6 @@ void Event::processEvent(const SIMCONNECT_RECV_EVENT* pEvent) {
   for (const auto& [id, callback] : callbacks) {
     callback(1, pEvent->dwData,0,0,0,0);
   }
-
 }
 
 void Event::processEvent(const SIMCONNECT_RECV_EVENT_EX1* pEvent) {

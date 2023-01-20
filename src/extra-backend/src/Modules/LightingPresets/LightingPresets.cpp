@@ -30,6 +30,7 @@ bool LightingPresets::initialize() {
 
   dataManager = &msfsHandler->getDataManager();
 
+  // Events for setting the aircraft variables
   lightPotentiometerSetEvent = dataManager->make_event("LIGHT_POTENTIOMETER_SET");
   cabinLightSetEvent = dataManager->make_event("CABIN_LIGHTS_SET");
 
@@ -47,7 +48,7 @@ bool LightingPresets::initialize() {
 
   // Light Potentiometers - manual update and write when load/saving is requested
   lightCabin = dataManager->make_aircraft_var("LIGHT CABIN", 0, "", cabinLightSetEvent, UNITS.Percent);
-  lightCabinLevel  = getLightPotentiometerVar(7);
+  lightCabinLevel = getLightPotentiometerVar(7);
   ovhdIntegralLightLevel = getLightPotentiometerVar(86);
   glareshieldIntegralLightLevel = getLightPotentiometerVar(84);
   glareshieldLcdLightLevel = getLightPotentiometerVar(87);
@@ -79,7 +80,7 @@ bool LightingPresets::preUpdate([[maybe_unused]] sGaugeDrawData* pData) {
 
 bool LightingPresets::update([[maybe_unused]] sGaugeDrawData* pData) {
   if (!isInitialized) {
-    std::cerr << "LightingPresets::update() - not initialized" << std::endl;
+    LOG_ERROR("LightingPresets::update() - not initialized");
     return false;
   }
 
@@ -102,13 +103,13 @@ bool LightingPresets::update([[maybe_unused]] sGaugeDrawData* pData) {
 }
 
 bool LightingPresets::postUpdate([[maybe_unused]] sGaugeDrawData* pData) {
-  //  std::cout << "LightingPresets::postUpdate()" << std::endl;
+  // empty
   return true;
 }
 
 bool LightingPresets::shutdown() {
   isInitialized = false;
-  std::cout << "LightingPresets::shutdown()" << std::endl;
+  LOG_INFO("LightingPresets::shutdown()");
   return true;
 }
 
@@ -117,28 +118,23 @@ bool LightingPresets::shutdown() {
 // =================================================================================================
 
 void LightingPresets::loadLightingPreset(int64_t loadPresetRequest) {
-  std::cout << "LightingPresets: Loading preset: " << loadPresetRequest << std::endl;
+  LOG_INFO("LightingPresets: Loading preset: " + std::to_string(loadPresetRequest));
   if (readFromStore(loadPresetRequest)) {
     applyToAircraft();
-    std::cout << "LightingPresets: Lighting Preset: " << loadPresetRequest
-              << " successfully loaded."
-              << std::endl;
+    LOG_INFO("LightingPresets: Lighting Preset: " + std::to_string(loadPresetRequest) + " successfully loaded.");
     return;
   }
-  std::cout << "LightingPresets: Loading Lighting Preset: " << loadPresetRequest << " failed."
-            << std::endl;
+  LOG_WARN("LightingPresets: Loading Lighting Preset: " + std::to_string(loadPresetRequest) + " failed.");
 }
 
 void LightingPresets::saveLightingPreset(int64_t savePresetRequest) {
   std::cout << "LightingPresets: Save to Lighting Preset: " << savePresetRequest << std::endl;
   readFromAircraft();
   if (saveToStore(savePresetRequest)) {
-    std::cout << "LightingPresets: Lighting Preset: " << savePresetRequest << " successfully saved."
-              << std::endl;
+    LOG_INFO("LightingPresets: Lighting Preset: " + std::to_string(savePresetRequest) + " successfully saved.");
     return;
   }
-  std::cout << "LightingPresets: Saving Lighting Preset: " << savePresetRequest << " failed."
-            << std::endl;
+  LOG_WARN("LightingPresets: Saving Lighting Preset: " + std::to_string(savePresetRequest) + " failed.");
 }
 
 void LightingPresets::readFromAircraft() {
@@ -330,9 +326,8 @@ double LightingPresets::iniGetOrDefault(
       return value;
     }
     else {
-      std::cout << "FLYPAD_BACKEND: reading ini value for \""
-                << "[" << section << "] " << key << " = " << ini.get(section).get(key)
-                << "\" failed." << std::endl;
+      LOG_WARN("LightingPresets: reading ini value for ["
+               + section + "] " + key + " = " + ini.get(section).get(key) + " failed.");
     }
   }
   return defaultValue;
@@ -341,15 +336,8 @@ double LightingPresets::iniGetOrDefault(
 std::shared_ptr<AircraftVariable>
 LightingPresets::getLightPotentiometerVar(int index) const {
   return dataManager->make_aircraft_var(
-    "LIGHT POTENTIOMETER",
-    index,
-    "",
-    lightPotentiometerSetEvent,
-    UNITS.Percent,
-    false,
-    false,
-    0.0,
-    0);
+    "LIGHT POTENTIOMETER", index, "", lightPotentiometerSetEvent, UNITS.Percent,
+    false, false, 0.0, 0);
 }
 
 void LightingPresets::setValidCabinLightValue(FLOAT64 level) {

@@ -2,19 +2,16 @@
 // SPDX-License-Identifier: GPL-3.0
 
 #include <algorithm>
-#include <iostream>
-#include <utility>
 
-#include "Module.h"
+#include "logging.h"
 #include "MsfsHandler.h"
 #include "Units.h"
+#include "Module.h"
 #include "SimObjectBase.h"
 
 // =================================================================================================
 // PUBLIC METHODS
 // =================================================================================================
-
-MsfsHandler::MsfsHandler(std::string name) : simConnectName(std::move(name)) {}
 
 void MsfsHandler::registerModule(Module* pModule) {
   modules.push_back(pModule);
@@ -25,27 +22,28 @@ bool MsfsHandler::initialize() {
   bool result;
   result = initializeSimConnect();
   if (!result) {
-    std::cout << simConnectName << ": Failed to initialize SimConnect" << std::endl;
+    LOG_ERROR(simConnectName + ": Failed to initialize SimConnect");
     return false;
   }
 
   // Initialize data manager
   result = dataManager.initialize(hSimConnect);
   if (!result) {
-    std::cout << simConnectName << ": Failed to initialize data manager" << std::endl;
+    LOG_ERROR(simConnectName + ": Failed to initialize data manager");
     return false;
   }
 
   // Initialize modules
   result = true;
-  result &= std::all_of(modules.begin(), modules.end(), [](
-    Module* pModule) { return pModule->initialize(); });
+  result &= std::all_of(modules.begin(), modules.end(), [](Module* pModule) {
+    return pModule->initialize();
+  });
   if (!result) {
-    std::cout << simConnectName << ": Failed to initialize modules" << std::endl;
+    LOG_ERROR(simConnectName + ": Failed to initialize modules");
     return false;
   }
 
-  // initialize all data variables needed for the handler itself
+  // initialize all data variables needed for the MsfsHandler itself
   a32nxIsDevelopmentState = dataManager.make_named_var("DEVELOPER_STATE", UNITS.Bool, true);
   a32nxIsReady = dataManager.make_named_var("IS_READY", UNITS.Bool, true);
   // base sim data mainly for pause detection
@@ -58,7 +56,7 @@ bool MsfsHandler::initialize() {
 
 bool MsfsHandler::update(sGaugeDrawData* pData) {
   if (!isInitialized) {
-    std::cout << simConnectName << ": MsfsHandler::update() - not initialized" << std::endl;
+    LOG_ERROR(simConnectName + ": MsfsHandler::update() - not initialized");
     return false;
   }
 
@@ -76,21 +74,21 @@ bool MsfsHandler::update(sGaugeDrawData* pData) {
   // PRE UPDATE
   bool result = true;
   result &= dataManager.preUpdate(pData);
-  result &= std::all_of(modules.begin(), modules.end(), [&pData](
-    Module* pModule) { return pModule->preUpdate(pData); });
+  result &= std::all_of(modules.begin(), modules.end(),
+                        [&pData](Module* pModule) { return pModule->preUpdate(pData); });
 
   // UPDATE
   result &= dataManager.update(pData);
-  result &= std::all_of(modules.begin(), modules.end(), [&pData](
-    Module* pModule) { return pModule->update(pData); });
+  result &= std::all_of(modules.begin(), modules.end(),
+                        [&pData](Module* pModule) { return pModule->update(pData); });
 
   // POST UPDATE
   result &= dataManager.postUpdate(pData);
-  result &= std::all_of(modules.begin(), modules.end(), [&pData](
-    Module* pModule) { return pModule->postUpdate(pData); });
+  result &= std::all_of(modules.begin(), modules.end(),
+                        [&pData](Module* pModule) { return pModule->postUpdate(pData); });
 
   if (!result) {
-    std::cout << simConnectName << ": MsfsHandler::update() - failed" << std::endl;
+    LOG_ERROR(simConnectName + ": MsfsHandler::update() - failed");
   }
 
   return result;
@@ -99,8 +97,8 @@ bool MsfsHandler::update(sGaugeDrawData* pData) {
 bool MsfsHandler::shutdown() {
   bool result = true;
   result &= dataManager.shutdown();
-  result &= std::all_of(modules.begin(), modules.end(), [](
-    Module* pModule) { return pModule->shutdown(); });
+  result &= std::all_of(modules.begin(), modules.end(),
+                        [](Module* pModule) { return pModule->shutdown(); });
   return result;
 }
 
@@ -111,4 +109,3 @@ bool MsfsHandler::shutdown() {
 bool MsfsHandler::initializeSimConnect() {
   return SUCCEEDED(SimConnect_Open(&hSimConnect, simConnectName.c_str(), nullptr, 0, 0, 0));
 }
-

@@ -12,13 +12,14 @@
 #include "IDGenerator.h"
 
 /**
- * Simple EventBase class to wrap SimConnect events.
- * This current implementation is currently only supporting sending events to the sim.
- * Registering for receiving events is not yet implemented.
+ * EventBase class to wrap SimConnect events to be trigger-able.
  */
 class EventBase {
 protected:
 
+  /**
+   * Simconnect handle
+   */
   HANDLE hSimConnect;
 
   /**
@@ -49,6 +50,15 @@ public:
   /**
    * Sends the event with the given data to the sim.
    * @param data0 Parameter 0 of the event.
+   *
+   * This uses the "SimConnect_TransmitClientEvent" function.
+   */
+  [[maybe_unused]]
+  void trigger(DWORD data0 = 0) const;
+
+  /**
+   * Sends the event with the given data to the sim.
+   * @param data0 Parameter 0 of the event.
    * @param data1 Parameter 1 of the event.
    * @param data2 Parameter 2 of the event.
    * @param data3 Parameter 3 of the event.
@@ -59,23 +69,23 @@ public:
   void trigger_ex1(DWORD data0 = 0, DWORD data1 = 0, DWORD data2 = 0, DWORD data3 = 0,
                    DWORD data4 = 0) const;
 
-  /**
-   * Sends the event with the given data to the sim.
-   * @param data0 Parameter 0 of the event.
-   *
-   * This uses the "SimConnect_TransmitClientEvent" function.
-   */
-  [[maybe_unused]]
-  void trigger(DWORD data0 = 0) const;
-
   // Getter and setter
 public:
+  /**
+   * @return The name of the event.
+   */
   [[maybe_unused]] [[nodiscard]]
   const std::string &getEventName() const { return eventName; }
 
+  /**
+   * @return The client's ID of the event.
+   */
   [[maybe_unused]] [[nodiscard]]
   SIMCONNECT_CLIENT_EVENT_ID getEventClientId() const { return eventClientID; }
 
+  /**
+   * @return A string representation of the event.
+   */
   [[nodiscard]]
   virtual std::string str() const ;
 

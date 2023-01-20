@@ -5,17 +5,16 @@
 
 #include "math_utils.h"
 #include "CacheableVariable.h"
+#include "logging.h"
 
 FLOAT64 CacheableVariable::get() const {
   if (cachedValue.has_value()) {
     if (dirty) {
-      std::cerr << "CacheableVariable::requestUpdateFromSim() called on " << name
-                << " but the value is dirty" << std::endl;
+      LOG_ERROR("CacheableVariable::requestUpdateFromSim() called on " + name + " but the value is dirty");
     }
     return cachedValue.value();
   }
-  std::cerr << "CacheableVariable::get() called on " << name << " but no value is cached"
-            << std::endl;
+  LOG_ERROR("CacheableVariable::get() called on " + name + " but no value is cached");
   return FLOAT64{};
 }
 
@@ -27,15 +26,12 @@ FLOAT64 CacheableVariable::updateFromSim(FLOAT64 timeStamp, UINT64 tickCounter) 
     return cachedValue.value();
   }
   // update the value from the sim
-  const FLOAT64 simValue = readFromSim();
   timeStampSimTime = timeStamp;
   tickStamp = tickCounter;
-  return simValue;
+  return readFromSim();
 }
 
 FLOAT64 CacheableVariable::readFromSim() {
-  // TODO: check last read tickStamp and time and only read if not already read this tick
-
   const FLOAT64 fromSim = rawReadFromSim();
   changed = !cachedValue.has_value()
             || !helper::Math::almostEqual(fromSim, cachedValue.value(), epsilon);
@@ -76,12 +72,8 @@ void CacheableVariable::writeToSim() {
   if (cachedValue.has_value()) {
     changed = false;
     dirty = false;
-    // TODO: should we check for almostEqual() here?
     rawWriteToSim();
     return;
   }
-  std::cerr << "CacheableVariable::writeDataToSim() called on \"" << name
-            << "\" but no value is cached"
-            << std::endl;
+  LOG_ERROR("CacheableVariable::writeDataToSim() called on [" + name + "] but no value is cached");
 }
-

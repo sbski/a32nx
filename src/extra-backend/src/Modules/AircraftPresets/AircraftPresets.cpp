@@ -37,7 +37,7 @@ bool AircraftPresets::initialize() {
   loadAircraftPresetRequest = dataManager->make_named_var("AIRCRAFT_PRESET_LOAD", UNITS.Bool, true, true);
   progressAircraftPreset = dataManager->make_named_var("AIRCRAFT_PRESET_LOAD_PROGRESS");
   progressAircraftPresetId = dataManager->make_named_var("AIRCRAFT_PRESET_LOAD_CURRENT_ID");
-  loadAircraftPresetRequest->setAndWriteToSim(0);
+  loadAircraftPresetRequest->setAndWriteToSim(0); // reset to 0 on startup
 
   // Simvars
   simOnGround = dataManager->make_simple_aircraft_var("SIM ON GROUND", UNITS.Number, true);
@@ -54,7 +54,7 @@ bool AircraftPresets::preUpdate([[maybe_unused]] sGaugeDrawData* pData) {
 
 bool AircraftPresets::update(sGaugeDrawData* pData) {
   if (!isInitialized) {
-    std::cerr << "AircraftPresets::update() - not initialized" << std::endl;
+    LOG_ERROR("AircraftPresets::update() - not initialized");
     return false;
   }
 
@@ -65,8 +65,7 @@ bool AircraftPresets::update(sGaugeDrawData* pData) {
     // we do not allow loading of presets in the air to prevent users from
     // accidentally changing the aircraft configuration
     if (!simOnGround->getAsBool()) {
-      std::cerr << "AircraftPresets: Aircraft must be on the ground to load a preset!"
-                << std::endl;
+      LOG_ERROR("AircraftPresets: Aircraft must be on the ground to load a preset!");
       loadAircraftPresetRequest->set(0);
       loadingIsActive = false;
       return true;
@@ -83,8 +82,7 @@ bool AircraftPresets::update(sGaugeDrawData* pData) {
       const std::vector<const ProcedureStep*>* requestedProcedure =
         procedures.getProcedure(loadAircraftPresetRequest->getAsInt64());
       if (requestedProcedure == nullptr) {
-        std::cerr << "AircraftPresets: Preset " << loadAircraftPresetRequest->getAsInt64()
-                  << " not found!" << std::endl;
+        LOG_ERROR("AircraftPresets: Preset " + std::to_string(loadAircraftPresetRequest->getAsInt64()) + " not found!");
         loadAircraftPresetRequest->set(0);
         loadingIsActive = false;
         return true;
@@ -99,8 +97,7 @@ bool AircraftPresets::update(sGaugeDrawData* pData) {
       loadingIsActive = true;
       progressAircraftPreset->setAndWriteToSim(0);
       progressAircraftPresetId->setAndWriteToSim(0);
-      std::cout << "AircraftPresets: Aircraft Preset " << currentProcedureID
-                << " starting procedure!" << std::endl;
+      LOG_INFO("AircraftPresets: Aircraft Preset " + std::to_string(currentProcedureID) + " starting procedure!");
       return true;
     }
 
@@ -111,8 +108,7 @@ bool AircraftPresets::update(sGaugeDrawData* pData) {
 
     // check if all procedure steps are done and the procedure is finished
     if (currentStep >= currentProcedure->size()) {
-      std::cout << "AircraftPresets: Aircraft Preset " << currentProcedureID << " done!"
-                << std::endl;
+      LOG_ERROR("AircraftPresets: Aircraft Preset " + std::to_string(currentProcedureID) + " done!");
       progressAircraftPreset->setAndWriteToSim(0);
       progressAircraftPresetId->setAndWriteToSim(0);
       loadAircraftPresetRequest->set(0);
@@ -124,9 +120,7 @@ bool AircraftPresets::update(sGaugeDrawData* pData) {
     currentLoadingTime += pData->dt * 1000;
 
     // check if we are in a delay and return if we have to wait
-    if (currentLoadingTime <= currentDelay) {
-      return true;
-    }
+    if (currentLoadingTime <= currentDelay) return true;
 
     // convenience tmp
     const ProcedureStep* currentStepPtr = (*currentProcedure)[currentStep];
@@ -145,9 +139,9 @@ bool AircraftPresets::update(sGaugeDrawData* pData) {
       progressAircraftPreset->setAndWriteToSim(static_cast<double>(currentStep) / currentProcedure->size());
       progressAircraftPresetId->setAndWriteToSim(currentStepPtr->id);
       execute_calculator_code(currentStepPtr->actionCode.c_str(), &fvalue, &ivalue, &svalue);
-      std::cout << "AircraftPresets: Aircraft Preset Step " << currentStep << " Condition: "
-                << currentStepPtr->description
-                << " (delay between tests: " << currentStepPtr->delayAfter << ")" << std::endl;
+      LOG_INFO("AircraftPresets: Aircraft Preset Step " + std::to_string(currentStep)
+               + " Condition: " + currentStepPtr->description + " (delay between tests: "
+               + std::to_string(currentStepPtr->delayAfter) + ")");
       if (static_cast<bool>(fvalue)) {
         currentDelay = 0;
         currentStep++;
@@ -173,7 +167,6 @@ bool AircraftPresets::update(sGaugeDrawData* pData) {
                     << currentStepPtr->description << " TEST: \""
                     << currentStepPtr->expectedStateCheckCode << "\"" << std::endl;
         }
-
         currentDelay = 0;
         currentStep++;
         return true;
@@ -185,18 +178,15 @@ bool AircraftPresets::update(sGaugeDrawData* pData) {
     progressAircraftPresetId->setAndWriteToSim(currentStepPtr->id);
 
     // execute code to set expected state
-    std::cout << "AircraftPresets: Aircraft Preset Step " << currentStep << " Execute: "
-              << currentStepPtr->description
-              << " (delay after: " << currentStepPtr->delayAfter << ")" << std::endl;
+    LOG_INFO("AircraftPresets: Aircraft Preset Step " + std::to_string(currentStep) + " Execute: "
+             + currentStepPtr->description + " (delay after: " + std::to_string(currentStepPtr->delayAfter) + ")");
     execute_calculator_code(currentStepPtr->actionCode.c_str(), &fvalue, &ivalue, &svalue);
     currentStep++;
 
   }
   else if (loadingIsActive) {
     // request lvar has been set to 0 while we were executing a procedure ==> cancel loading
-    std::cout << "AircraftPresets:update() Aircraft Preset " << currentProcedureID
-              << " loading cancelled!"
-              << std::endl;
+    LOG_INFO("AircraftPresets:update() Aircraft Preset " + std::to_string(currentProcedureID) + " loading cancelled!");
     loadingIsActive = false;
   }
 
@@ -213,4 +203,3 @@ bool AircraftPresets::shutdown() {
   std::cout << "AircraftPresets::shutdown()" << std::endl;
   return true;
 }
-

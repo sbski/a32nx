@@ -191,7 +191,6 @@ private:
   iniGetOrDefault(const mINI::INIStructure &ini, const std::string &section, const std::string &key,
                   FLOAT64 defaultValue);
 
-  // formatter:off
   const LightingValues DEFAULT_50 = {50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0,
                                      50.0, 50.0, 50.0, 50.0, 50.0, 0.5, 0.5, 0.5, 0.5, 50.0, 50.0,
                                      50.0, 50.0, 50.0};

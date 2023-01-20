@@ -1,6 +1,8 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
+#ifdef EXAMPLES
+
 #ifndef FLYBYWIRE_EXAMPLEMODULE_H
 #define FLYBYWIRE_EXAMPLEMODULE_H
 
@@ -13,6 +15,7 @@ class MsfsHandler;
  * This is an example  and test module which is used to demonstrate the usage of the module system
  * and to debug the module and DataManager system.
  * It has no effect on the simulation - it should never write to the sim other than in DEBUG mode
+ * Should be commented out from the Gauge - remove -DEXAMPLES compiler flag.
  */
 class ExampleModule : public Module {
 private:
@@ -44,10 +47,11 @@ private:
   // Events
   EventPtr beaconLightSetEventPtr;
   SubscribableEventPtr toggleFlightDirectorEventPtr;
+  CallbackID toggleFlightDirectorCallbackID{};
   SubscribableEventPtr lightPotentiometerSetEventPtr;
-  CallbackID lightPotentiometerSetCallbackID;
+  CallbackID lightPotentiometerSetCallbackID{};
   SubscribableEventPtr lightPotentiometerSetEvent2Ptr;
-  CallbackID lightPotentiometerSetCallback2ID;
+  CallbackID lightPotentiometerSetCallback2ID{};
 
 public:
   ExampleModule() = delete;
@@ -66,5 +70,6 @@ public:
 
 };
 
-
 #endif //FLYBYWIRE_EXAMPLEMODULE_H
+
+#endif //EXAMPLES

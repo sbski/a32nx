@@ -8,15 +8,15 @@
 
 #include <MSFS/Legacy/gauges.h>
 
-class MsfsHandler;
-class DataManager;
+#include "MsfsHandler.h"
+#include "DataManager/DataManager.h"
 
 /**
  * Base class and interface for all modules to ensure that they are compatible with the MsfsHandler.
  * <p/>
  * Make sure to add an error (std::cerr) message if anything goes wrong and especially if
  * initialize(), preUpdate(), update() or postUpdate() return false.
- * MSFS does not support Exception so good logging and error messages are the only way to inform the
+ * MSFS does not support Exception so good logging and error messages is the only way to inform the
  * user/developer if somethings went wrong and where and what happened.
  * Non-excessive positive logging about what is happening is also a good idea and helps
  * tremendously with finding any issues as it will be easier to locate the cause of the issue.
@@ -26,7 +26,7 @@ protected:
   /**
    * The MsfsHandler instance that is used to communicate with the simulator.
    */
-  MsfsHandler *msfsHandler;
+  MsfsHandler* msfsHandler;
 
   /**
    * Flag to indicate if the module has been initialized.
@@ -35,13 +35,16 @@ protected:
 
 public:
 
-  Module() = delete;
+  Module() = delete; // no default constructor
+  Module(const Module &) = delete; // no copy constructor
+  Module &operator=(const Module &) = delete; // no copy assignment
+  virtual ~Module() = default;
 
   /**
    * Creates a new module and takes a reference to the MsfsHandler instance.
    * @param msfsHandler The MsfsHandler instance that is used to communicate with the simulator.
    */
-  explicit Module(MsfsHandler *msfsHandler);
+  explicit Module(MsfsHandler *backRef) : msfsHandler(backRef){ msfsHandler->registerModule(this); }
 
   /**
    * Called by the MsfsHandler instance once to initialize the module.
@@ -52,24 +55,30 @@ public:
 
   /**
    * Called first by the MsfsHandler instance during the PANEL_SERVICE_PRE_DRAW phase from the sim.
+   * This is called directly after the DataManager::preUpdate() method and can be used for additional
+   * pre-processing before the update() method is called.
    * @param pData sGaugeDrawData structure containing the data for the current frame.
    * @return false if an error occurred, true otherwise.
    */
-  virtual bool preUpdate(sGaugeDrawData *pData) = 0;
+  virtual bool preUpdate(sGaugeDrawData* pData) = 0;
 
   /**
-   * Called second by the MsfsHandler instance during the PANEL_SERVICE_PRE_DRAW phase from the sim.
+   * Called by the MsfsHandler instance during the PANEL_SERVICE_PRE_DRAW phase from the sim.
+   * This is called directly after the DataManager::update() method.
+   * This is the main update method and should be used to implement the main logic of the module.
    * @param pData sGaugeDrawData structure containing the data for the current frame.
    * @return false if an error occurred, true otherwise.
    */
-  virtual bool update(sGaugeDrawData *pData) = 0;
+  virtual bool update(sGaugeDrawData* pData) = 0;
 
   /**
-   * Called last by the MsfsHandler instance during the PANEL_SERVICE_PRE_DRAW phase from the sim.
+   * Called by the MsfsHandler instance during the PANEL_SERVICE_PRE_DRAW phase from the sim.
+   * This is called directly after the DataManager::postUpdate() method and can be used for additional
+   * post-processing after the update() method is called.
    * @param pData sGaugeDrawData structure containing the data for the current frame.
-   * @return
+   * @return false if an error occurred, true otherwise.
    */
-  virtual bool postUpdate(sGaugeDrawData *pData) = 0;
+  virtual bool postUpdate(sGaugeDrawData* pData) = 0;
 
   /**
    * Called by the MsfsHandler instance during the PANEL_SERVICE_PRE_KILL phase from the sim.
