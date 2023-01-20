@@ -652,7 +652,7 @@ export abstract class BaseFlightPlan {
      * @param waypoint the waypoint to insert
      */
     async insertWaypointBefore(index: number, waypoint: Fix) {
-        this.redistributeLegsAt(index);
+        this.redistributeLegsAt(index - 1);
 
         const leg = FlightPlanLeg.fromEnrouteFix(this.enrouteSegment, waypoint);
 
@@ -668,15 +668,11 @@ export abstract class BaseFlightPlan {
     async nextWaypoint(index: number, waypoint: Fix) {
         this.redistributeLegsAt(index);
 
-        const leg = FlightPlanLeg.fromEnrouteFix(this.enrouteSegment, waypoint);
+        const leg = FlightPlanLeg.fromEnrouteFix(this.enrouteSegment, waypoint, undefined, LegType.DF);
 
         const waypointExists = this.findDuplicate(waypoint, index);
 
-        if (waypointExists) {
-            await this.insertElementAfter(index, leg, false);
-        } else {
-            await this.insertElementAfter(index, leg, true);
-        }
+        await this.insertElementAfter(index, leg, !waypointExists);
     }
 
     // TODO make this private, adjust tests to test nextWaypoint instead
