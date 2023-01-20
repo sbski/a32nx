@@ -303,12 +303,13 @@ export class FlightPlanService {
      * Deletes an element (leg or discontinuity) at the specified index. Depending on the {@link FpmConfig} in use,
      * this can create a temporary flight plan if target is active.
      *
-     * @param index     the index of the element to delete
+     * @param index the index of the element to delete
      * @param planIndex which flight plan to make the change on
+     * @param alternate whether to edit the plan's alternate flight plan
      *
      * @returns `true` if the element could be removed, `false` if removal is not allowed
      */
-    static deleteElementAt(index: number, planIndex = FlightPlanIndex.Active): boolean {
+    static deleteElementAt(index: number, planIndex = FlightPlanIndex.Active, alternate = false): boolean {
         if (!this.config.ALLOW_REVISIONS_ON_TMPY && planIndex === FlightPlanIndex.Temporary) {
             throw new Error('[FMS/FPS] Cannot delete element in temporary flight plan');
         }
@@ -318,7 +319,9 @@ export class FlightPlanService {
             finalIndex = this.prepareDestructiveModification(planIndex);
         }
 
-        return this.flightPlanManager.get(finalIndex).removeElementAt(index);
+        const plan = alternate ? this.flightPlanManager.get(finalIndex).alternateFlightPlan : this.flightPlanManager.get(finalIndex);
+
+        return plan.removeElementAt(index);
     }
 
     /**

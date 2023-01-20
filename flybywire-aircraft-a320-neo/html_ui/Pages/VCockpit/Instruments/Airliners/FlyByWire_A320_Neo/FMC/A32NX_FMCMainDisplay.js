@@ -2698,7 +2698,7 @@ class FMCMainDisplay extends BaseAirliners {
         this._getOrSelectWaypoints(this.navigationDatabase.searchFix.bind(this.navigationDatabase), ident, callback);
     }
 
-    insertWaypoint(newWaypointTo, fpIndex, index, before = false, callback = EmptyCallback.Boolean, immediately) {
+    insertWaypoint(newWaypointTo, fpIndex, forAlternate, index, before = false, callback = EmptyCallback.Boolean, bypassTmpy) {
         if (newWaypointTo === "" || newWaypointTo === FMCMainDisplay.clrValue) {
             return callback(false);
         }
@@ -2711,35 +2711,23 @@ class FMCMainDisplay extends BaseAirliners {
                     if (!waypoint) {
                         return callback(false);
                     }
-                    if (immediately) {
+                    if (bypassTmpy) {
                         if (fpIndex === Fmgc.FlightPlanIndex.Active && this.flightPlanService.hasTemporary) {
                             this.setScratchpadMessage(NXSystemMessages.notAllowed);
                             return callback(false);
                         }
 
                         if (before) {
-                            this.flightPlanService.insertWaypointBefore(index, waypoint, fpIndex).then(() => callback(true));
+                            this.flightPlanService.insertWaypointBefore(index, waypoint, fpIndex, forAlternate).then(() => callback(true));
                         } else {
-                            this.flightPlanService.nextWaypoint(index, waypoint, fpIndex).then(() => callback(true));
+                            this.flightPlanService.nextWaypoint(index, waypoint, fpIndex, forAlternate).then(() => callback(true));
                         }
                     } else {
                         if (before) {
-                            this.flightPlanService.insertWaypointBefore(index, waypoint, fpIndex).then(() => callback(true));
+                            this.flightPlanService.insertWaypointBefore(index, waypoint, fpIndex, forAlternate).then(() => callback(true));
                         } else {
-                            this.flightPlanService.nextWaypoint(index, waypoint, fpIndex).then(() => callback(true));
+                            this.flightPlanService.nextWaypoint(index, waypoint, fpIndex, forAlternate).then(() => callback(true));
                         }
-
-                        // this.ensureCurrentFlightPlanIsTemporary(async () => {
-                        //     if (waypoint.additionalData && waypoint.additionalData.storedType !== undefined) {
-                        //         this.flightPlanManager.addUserWaypoint(waypoint, index, () => {
-                        //             return callback(true);
-                        //         }).catch(console.error);
-                        //     } else {
-                        //         this.flightPlanManager.addWaypoint(waypoint.databaseId, index, () => {
-                        //             return callback(true);
-                        //         }).catch(console.error);
-                        //     }
-                        // });
                     }
                 }).catch((err) => {
                 if (err instanceof McduMessage) {

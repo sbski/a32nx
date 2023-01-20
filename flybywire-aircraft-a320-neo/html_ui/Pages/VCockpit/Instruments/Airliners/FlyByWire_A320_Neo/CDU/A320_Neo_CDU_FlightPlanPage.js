@@ -394,7 +394,7 @@ class CDUFlightPlanPage {
                                     CDULateralRevisionPage.ShowPage(mcdu, wp, fpIndex, forPlan, inAlternate);
                                     break;
                                 case FMCMainDisplay.clrValue:
-                                    CDUFlightPlanPage.clearElement(mcdu, fpIndex, offset, forPlan, scratchpadCallback);
+                                    CDUFlightPlanPage.clearElement(mcdu, fpIndex, offset, forPlan, inAlternate, scratchpadCallback);
                                     break;
                                 case FMCMainDisplay.ovfyValue:
                                     mcdu.toggleWaypointOverfly(fpIndex, () => {
@@ -403,7 +403,7 @@ class CDUFlightPlanPage {
                                     break;
                                 default:
                                     if (value.length > 0) {
-                                        mcdu.insertWaypoint(value, forPlan, fpIndex, true, (success) => {
+                                        mcdu.insertWaypoint(value, forPlan, inAlternate, fpIndex, true, (success) => {
                                             if (!success) {
                                                 scratchpadCallback();
                                             }
@@ -419,7 +419,7 @@ class CDUFlightPlanPage {
                             if (value === "") {
                                 CDULateralRevisionPage.ShowPage(mcdu, wp, fpIndex, forPlan, inAlternate);
                             } else if (value.length > 0) {
-                                mcdu.insertWaypoint(value, forPlan, fpIndex, true, (success) => {
+                                mcdu.insertWaypoint(value, forPlan, inAlternate, fpIndex, true, (success) => {
                                     if (!success) {
                                         scratchpadCallback();
                                     }
@@ -462,11 +462,11 @@ class CDUFlightPlanPage {
                 scrollWindow[rowI] = waypointsAndMarkers[winI];
                 addLskAt(rowI, 0, (value, scratchpadCallback) => {
                     if (value === FMCMainDisplay.clrValue) {
-                        CDUFlightPlanPage.clearElement(mcdu, fpIndex, offset, forPlan, scratchpadCallback);
+                        CDUFlightPlanPage.clearElement(mcdu, fpIndex, offset, forPlan, inAlternate, scratchpadCallback);
                         return;
                     }
 
-                    mcdu.insertWaypoint(value, forPlan, fpIndex, true, (success) => {
+                    mcdu.insertWaypoint(value, forPlan, inAlternate, fpIndex, true, (success) => {
                         if (!success) {
                             scratchpadCallback();
                         }
@@ -502,7 +502,7 @@ class CDUFlightPlanPage {
 
                 addLskAt(rowI, 0, (value, scratchpadCallback) => {
                     if (value === FMCMainDisplay.clrValue) {
-                        CDUFlightPlanPage.clearElement(mcdu, fpIndex, offset, forPlan, scratchpadCallback);
+                        CDUFlightPlanPage.clearElement(mcdu, fpIndex, offset, forPlan, inAlternate, scratchpadCallback);
                     }
 
                     CDUHoldAtPage.ShowPage(mcdu, fpIndex);
@@ -700,15 +700,15 @@ class CDUFlightPlanPage {
         ]);
     }
 
-    static clearElement(mcdu, fpIndex, offset, forPlan, scratchpadCallback) {
-        if (mcdu.flightPlanService.hasTemporary) {
+    static clearElement(mcdu, fpIndex, offset, forPlan, forAlternate, scratchpadCallback) {
+        if (fpIndex === Fmgc.FlightPlanIndex.Active && mcdu.flightPlanService.hasTemporary) {
             mcdu.setScratchpadMessage(NXSystemMessages.notAllowed);
             scratchpadCallback();
             return;
         }
 
         // TODO maybe move this to FMS logic ?
-        if (fpIndex <= mcdu.flightPlanService.activeLegIndex) {
+        if (fpIndex === Fmgc.FlightPlanIndex.Active && fpIndex <= mcdu.flightPlanService.activeLegIndex) {
             // 22-72-00:67
             // Stop clearing TO or FROM waypoints when NAV is engaged
             if (mcdu.navModeEngaged()) {
@@ -719,7 +719,7 @@ class CDUFlightPlanPage {
         }
 
         try {
-            mcdu.flightPlanService.deleteElementAt(fpIndex);
+            mcdu.flightPlanService.deleteElementAt(fpIndex, forPlan, forAlternate);
         } catch (e) {
             console.error(e);
             mcdu.setScratchpadMessage(NXFictionalMessages.internalError);

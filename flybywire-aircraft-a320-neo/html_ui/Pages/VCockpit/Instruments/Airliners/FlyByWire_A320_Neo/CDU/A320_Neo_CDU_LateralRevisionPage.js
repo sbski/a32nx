@@ -91,7 +91,7 @@ class CDULateralRevisionPage {
                 nextWptLabel = "NEXT WPT{sp}";
                 nextWpt = "[{sp}{sp}{sp}{sp}][color]cyan";
                 mcdu.onRightInput[2] = async (value, scratchpadCallback) => {
-                    mcdu.insertWaypoint(value, forPlan, waypointIndexFP, false, (success) => {
+                    mcdu.insertWaypoint(value, forPlan, inAlternate, waypointIndexFP, false, (success) => {
                         if (!success) {
                             scratchpadCallback();
                         }
