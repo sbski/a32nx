@@ -4800,12 +4800,15 @@ class FMCMainDisplay extends BaseAirliners {
         return this._progBrgDist ? this._progBrgDist.ident : undefined;
     }
 
-    isWaypointInUse(icao) {
-        if (this.flightPlanManager.isWaypointInUse(icao)) {
+    /**
+     * @param wpt {import('msfs-navdata').Waypoint}
+     */
+    isWaypointInUse(wpt) {
+        if (this.flightPlanService.isWaypointInUse(wpt)) {
             return true;
         }
         // TODO check tuned navaids
-        if (this._progBrgDist && this._progBrgDist.icao === icao) {
+        if (this._progBrgDist && this._progBrgDist.icao === wpt.databaseId) {
             return true;
         }
         return false;

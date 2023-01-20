@@ -6,7 +6,7 @@
 import { FlightPlanIndex, FlightPlanManager } from '@fmgc/flightplanning/new/FlightPlanManager';
 import { FpmConfig, FpmConfigs } from '@fmgc/flightplanning/new/FpmConfig';
 import { FlightPlanLegFlags } from '@fmgc/flightplanning/new/legs/FlightPlanLeg';
-import { Fix } from 'msfs-navdata';
+import { Fix, Waypoint } from 'msfs-navdata';
 import { NavigationDatabase } from '@fmgc/NavigationDatabase';
 import { Coordinates, Degrees } from 'msfs-geo';
 import { EventBus } from 'msfssdk';
@@ -424,6 +424,38 @@ export class FlightPlanService {
 
     static get activeLegIndex(): number {
         return this.active.activeLegIndex;
+    }
+
+    static isWaypointInUse(waypoint: Waypoint) {
+        const activePlan = this.active;
+
+        for (const leg of activePlan.allLegs) {
+            if (leg.isDiscontinuity === false && leg.terminatesWithWaypoint(waypoint)) {
+                return true;
+            }
+        }
+
+        if (this.hasTemporary) {
+            const temporaryPlan = this.temporary;
+
+            for (const leg of temporaryPlan.allLegs) {
+                if (leg.isDiscontinuity === false && leg.terminatesWithWaypoint(waypoint)) {
+                    return true;
+                }
+            }
+        }
+
+        if (this.hasSecondary(1)) {
+            const secondaryPlan = this.secondary(1);
+
+            for (const leg of secondaryPlan.allLegs) {
+                if (leg.isDiscontinuity === false && leg.terminatesWithWaypoint(waypoint)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static ensureTemporaryExists() {

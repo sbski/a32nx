@@ -193,7 +193,7 @@ class FMCDataManager {
         if (!this.storedWaypoints[index]) {
             return true;
         }
-        if (this.fmc.isWaypointInUse(this.storedWaypoints[index].icao)) {
+        if (this.fmc.isWaypointInUse(this.storedWaypoints[index])) {
             return false;
         }
         delete this.storedWaypoints[index];
