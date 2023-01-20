@@ -20,7 +20,7 @@ endif ()
 # INFO_LVL 4
 # DEBUG_LVL 5
 # TRACE_LVL 6
-set(LOG_LEVEL 4)
+set(LOG_LEVEL 5)
 
 set(CMAKE_CXX_FLAGS "-c -D${AIRCRAFT} ${EXAMPLES} ${DEBUG} -DLOG_LEVEL=${LOG_LEVEL} -std=c++17 -Wall -Wextra --sysroot \"${MSFS_SDK}/WASM/wasi-sysroot\" -target wasm32-unknown-wasi  -D_MSFS_WASM=1 -D__wasi__ -D_LIBCC_NO_EXCEPTIONS -D_LIBCPP_HAS_NO_THREADS -D_WINDLL -D_MBCS -mthread-model single -fno-exceptions -fms-extensions -fvisibility=hidden")
 # -Wno-unused-function -Wno-unused-command-line-argument -Wno-ignored-attributes -Wno-macro-redefined
@@ -39,35 +39,19 @@ include_directories(src/Modules/Pushback)
 include_directories(src/Modules/AircraftPresets)
 
 add_executable(flybywire-a32nx-extra-backend
-        src/aircraft_prefix.h
-        src/lib/logging.h
-        src/lib/stringconcat.h
-        src/lib/math_utils.h
-        src/lib/Units.h
-        src/lib/simple_assert.h
-        src/lib/IDGenerator.h
-        src/MsfsHandler/DataManager/SimconnectExceptionStrings.h
-
         src/Gauge_Extra_Backend.cpp
-
-        src/MsfsHandler/MsfsHandler.cpp src/MsfsHandler/MsfsHandler.h
-        src/MsfsHandler/DataManager/DataManager.cpp src/MsfsHandler/DataManager/DataManager.h
-
-        src/MsfsHandler/DataManager/DataObjectBase.h
-        src/MsfsHandler/DataManager/ManagedDataObjectBase.h
-        src/MsfsHandler/DataManager/CacheableVariable.cpp src/MsfsHandler/DataManager/CacheableVariable.h
-        src/MsfsHandler/DataManager/NamedVariable.cpp src/MsfsHandler/DataManager/NamedVariable.h
-        src/MsfsHandler/DataManager/AircraftVariable.cpp src/MsfsHandler/DataManager/AircraftVariable.h
-        src/MsfsHandler/DataManager/SimObjectBase.h
-        src/MsfsHandler/DataManager/DataDefinitionVariable.hpp
-        src/MsfsHandler/DataManager/ClientDataAreaVariable.cpp src/MsfsHandler/DataManager/ClientDataAreaVariable.h
-        src/MsfsHandler/DataManager/Event.cpp src/MsfsHandler/DataManager/Event.h
-
-        src/MsfsHandler/Module.cpp src/MsfsHandler/Module.h
-        src/Modules/Example/ExampleModule.cpp src/Modules/Example/ExampleModule.h
-        src/Modules/LightingPresets/LightingPresets.cpp src/Modules/LightingPresets/LightingPresets.h
-        src/Modules/Pushback/Pushback.cpp src/Modules/Pushback/Pushback.h
-        src/Modules/Pushback/InertialDampener.cpp src/Modules/Pushback/InertialDampener.h
-        src/Modules/AircraftPresets/AircraftPresets.cpp src/Modules/AircraftPresets/AircraftPresets.h
-        src/Modules/AircraftPresets/AircraftProcedures.h
-       )
+        src/MsfsHandler/MsfsHandler.cpp
+        src/MsfsHandler/DataManager/DataManager.cpp
+        src/MsfsHandler/DataManager/CacheableVariable.cpp
+        src/MsfsHandler/DataManager/NamedVariable.cpp
+        src/MsfsHandler/DataManager/AircraftVariable.cpp
+        src/MsfsHandler/DataManager/ClientDataAreaVariable.cpp
+        src/MsfsHandler/DataManager/EventBase.cpp
+        src/MsfsHandler/DataManager/Event.cpp
+        src/MsfsHandler/Module.cpp
+        src/Modules/Example/ExampleModule.cpp
+        src/Modules/LightingPresets/LightingPresets.cpp
+        src/Modules/Pushback/Pushback.cpp
+        src/Modules/Pushback/InertialDampener.cpp
+        src/Modules/AircraftPresets/AircraftPresets.cpp
+    )

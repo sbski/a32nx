@@ -17,13 +17,13 @@
 #include "Units.h"
 #include "NamedVariable.h"
 #include "AircraftVariable.h"
-#include "DataDefinitionVariable.hpp"
+#include "DataDefinitionVariable.h"
+#include "EventBase.h"
 #include "Event.h"
-#include "SimObjectBase.h"
 
 typedef std::shared_ptr<NamedVariable> NamedVariablePtr;
 typedef std::shared_ptr<AircraftVariable> AircraftVariablePtr;
-typedef std::shared_ptr<Event> EventPtr;
+typedef std::shared_ptr<Event> SubscribableEventPtr;
 
 /**
  * DataManager is responsible for managing all variables and events.
@@ -46,13 +46,15 @@ private:
 
   /**
    * A vector of all registered SimObjects.
+   * Map over the request id to quickly find the SimObject.
    */
-  std::map<DWORD, std::shared_ptr<SimObjectBase>> simObjects{};
+  std::map<SIMCONNECT_DATA_REQUEST_ID, std::shared_ptr<SimObjectBase>> simObjects{};
 
   /**
-   * A vector of all registered events
+   * A vector of all registered events.
+   * Map over the event id to quickly find the event - make creating an event a bit less efficient.
    */
-  std::map<std::string, std::shared_ptr<Event>> events{};
+  std::map<SIMCONNECT_CLIENT_EVENT_ID, std::shared_ptr<Event>> events{};
 
   /**
    * Handle to the simconnect instance.
@@ -116,16 +118,6 @@ public:
  * @return true if successful, false otherwise
  */
   bool postUpdate([[maybe_unused]] sGaugeDrawData* pData);
-
-  /**
-   * Callback for SimConnect_GetNextDispatch events in the MsfsHandler used for data definition
-   * variable batches.
-   * Must map data request IDs to know IDs of data definition variables and return true if the
-   * requestId has been handled.
-   * @param pData Pointer to the data structure of gauge pre-draw event
-   * @return true if request ID has been processed, false otherwise
-   */
-  bool processSimObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA* pData);
 
   /**
    * Called by the MsfsHandler shutdown() method.
@@ -243,22 +235,37 @@ public:
 
   /**
    * Creates a new event and adds it to the list of managed events.
+   * Per default does not subscribe to the event. Use the subscribeToSim() method
+   * to subscribeToSim to the event.
    */
-  std::shared_ptr<Event> make_event(const std::string &eventName);
+  SubscribableEventPtr make_event(
+    const std::string &eventName,
+    bool immediateSubscribe = false,
+    bool maksEvent = false);
 
 private:
 
   /**
-   * This is called everytime we receive a message from the sim.
-   * Currently this only happens when manually calling requestPeriodicDataFromSim().
-   * Evtl. this can be used a callback directly called from the sim.
-   *
+   * This is called everytime we receive a message from the sim in getRequestedData().
    * @param pRecv
    * @param cbData
    *
    * @see https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Structures_And_Enumerations/SIMCONNECT_RECV.htm
    */
   void processDispatchMessage(SIMCONNECT_RECV* pRecv, [[maybe_unused]] DWORD* cbData);
+
+  /**
+   * Callback for SimConnect_GetNextDispatch events in the MsfsHandler used for data definition
+   * variable batches.
+   * Must map data request IDs to know IDs of data definition variables and return true if the
+   * requestId has been handled.
+   * @param data Pointer to the data structure of gauge pre-draw event
+   * @return true if request ID has been processed, false otherwise
+   */
+  void processSimObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA* data);
+
+  void processEvent(const SIMCONNECT_RECV_EVENT* pRecv);
+  void processEvent(const SIMCONNECT_RECV_EVENT_EX1* pRecv);
 };
 
 #endif // FLYBYWIRE_DATAMANAGER_H

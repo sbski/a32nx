@@ -7,9 +7,9 @@
 #include <iostream>
 
 #include "CacheableVariable.h"
-#include "Event.h"
+#include "EventBase.h"
 
-typedef std::shared_ptr<Event> EventPtr;
+typedef std::shared_ptr<EventBase> EventPtr;
 
 /**
  * Specialized class for aircraft cacheable variables (aka simvars or A:VARS).

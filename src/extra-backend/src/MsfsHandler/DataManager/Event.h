@@ -1,80 +1,60 @@
 // Copyright (c) 2022 FlyByWire Simulations
 // SPDX-License-Identifier: GPL-3.0
 
-#ifndef FLYBYWIRE_EVENT_H
-#define FLYBYWIRE_EVENT_H
+#ifndef FLYBYWIRE_A32NX_EVENT_H
+#define FLYBYWIRE_A32NX_EVENT_H
 
-#include <iostream>
-#include <string>
+#include <functional>
+#include <map>
 
-#include <MSFS/Legacy/gauges.h>
-#include <SimConnect.h>
-#include "IDGenerator.h"
+#include "EventBase.h"
 
-/**
- * Simple Event class to wrap SimConnect events.
- * This current implementation is currently only supporting sending events to the sim.
- * Registering for receiving events is not yet implemented.
- */
-class Event {
+// TODO: Improve Callbacks
+//  Because of the map of callbacks and callbacks being different for normal events and ex1 events
+//  the callback function requires all parameters to be passed. This is not optimal and should be
+//  improved in the future.
+
+typedef uint64_t CallbackID;
+typedef std::function<void(
+  int number, DWORD param0, DWORD param1, DWORD param2, DWORD param3,
+  DWORD param4)> CallbackFunction;
+
+class Event : public EventBase {
 private:
+  static constexpr SIMCONNECT_NOTIFICATION_GROUP_ID groupId = 0;
 
-  HANDLE hSimConnect;
+  IDGenerator callbackIdGen{};
 
-  /**
-   * The name of the event in the sim. This is used to register the event.
-   */
-  const std::string eventName;
+  std::map<CallbackID, CallbackFunction> callbacks;
 
-  /**
-   * The client's ID of the event. This is used to help the sim to map events to the clients ID.
-   */
-  const DWORD eventClientID;
+  bool isSubscribedToSim = false;
+  bool maskEvent;
+
 
 public:
-
   Event() = delete; // no default constructor
-  Event(const Event&) = delete; // no copy constructor
-  Event& operator=(const Event&) = delete; // no copy assignment
+  Event(const Event &) = delete; // no copy constructor
+  Event &operator=(const Event &) = delete; // no copy assignment
+  ~Event() override = default;
 
-  /**
-   * Constructor to create an event.
-   * @param hdlSimConnect The handle of the simconnect instance.
-   * @param eventName The name of the event in the sim.
-   * @param eventClientID The client's ID of the event to map with the sim event. .
-   */
-  Event(HANDLE hdlSimConnect, const std::string &eventName, DWORD eventClientID);
+  Event(
+    HANDLE hdlSimConnect,
+    const std::string &eventName,
+    SIMCONNECT_CLIENT_EVENT_ID eventClientId,
+    bool immediateSubscribe = false,
+    bool maskEvent = false);
 
-  /**
-   * Sends the event with the given data to the sim.
-   * @param data0 Parameter 0 of the event.
-   * @param data1 Parameter 1 of the event.
-   * @param data2 Parameter 2 of the event.
-   * @param data3 Parameter 3 of the event.
-   * @param data4 Parameter 4 of the event.
-   *
-   * This uses the "SimConnect_TransmitClientEvent_EX1" function.
-   */
-  void trigger_ex1(DWORD data0 = 0, DWORD data1 = 0, DWORD data2 = 0, DWORD data3 = 0,
-                   DWORD data4 = 0) const;
+  void subscribeToSim();
+  void unsubscribeFromSim();
 
-  /**
-   * Sends the event with the given data to the sim.
-   * @param data0 Parameter 0 of the event.
-   *
-   * This uses the "SimConnect_TransmitClientEvent" function.
-   */
-  [[maybe_unused]]
-  void trigger(DWORD data0 = 0) const;
+  [[nodiscard]]
+  CallbackID addCallback(const std::function<void(int, DWORD, DWORD, DWORD, DWORD, DWORD)> &callback);
+  bool removeCallback(CallbackID callbackId);
 
-  // Getter and setter
-public:
-  [[maybe_unused]] [[nodiscard]]
-  const std::string &getEventName() const { return eventName; }
+  void processEvent(const SIMCONNECT_RECV_EVENT* pEvent);
+  void processEvent(const SIMCONNECT_RECV_EVENT_EX1* pEvent);
 
-  [[maybe_unused]] [[nodiscard]]
-  DWORD getEventClientId() const { return eventClientID; }
-
+  [[nodiscard]] std::string str() const override;
 };
 
-#endif //FLYBYWIRE_EVENT_H
+#endif //FLYBYWIRE_A32NX_EVENT_H

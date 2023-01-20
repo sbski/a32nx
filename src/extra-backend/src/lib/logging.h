@@ -16,6 +16,7 @@
  * LOG_INFO("PANEL_SERVICE_PRE_INSTALL: " + panelService->getPanelServiceName());
  *
  * This will be improved and extended in the future.
+ * E.g. it could be extended to log to a file.
  */
 
 #define ZERO_LVL 0
@@ -88,17 +89,17 @@ public:
   }
 public:
   // disallow copies
-  Logger(Logger const &) = delete;            // copy
-  Logger &operator=(const Logger &) = delete; // copy assignment
-  Logger(Logger const &&) = delete; // move
-  Logger &operator=(const Logger &&) = delete;// move assignment
+  Logger(Logger const &) = delete;             // copy
+  Logger &operator=(const Logger &) = delete;  // copy assignment
+  Logger(Logger const &&) = delete;            // move
+  Logger &operator=(const Logger &&) = delete; // move assignment
 
-  void critical(const std::string& msg) { std::cerr << "critical: " << msg << std::endl; }
-  void error(const std::string& msg) { std::cerr << "error: " << msg << std::endl; }
-  void warn(const std::string& msg) { std::cerr << "warn: " << msg << std::endl; }
-  void info(const std::string& msg) { std::cout << "info: " << msg << std::endl; }
-  void debug(const std::string& msg) { std::cout << "debug: " << msg << std::endl; }
-  void trace(const std::string& msg) { std::cout << "trace: " << msg << std::endl; }
+  void critical(const std::string& msg) { std::cerr << "critical: " + msg; }
+  void error(const std::string& msg) { std::cerr << "error: "       + msg; }
+  void warn(const std::string& msg) { std::cerr << "warn: "         + msg; }
+  void info(const std::string& msg) { std::cout << "info: "        << msg << std::endl; }
+  void debug(const std::string& msg) { std::cout << "debug: "      << msg << std::endl; }
+  void trace(const std::string& msg) { std::cout << "trace: "      << msg << std::endl; }
 };
 
 inline Logger* logger = Logger::instance();

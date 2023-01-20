@@ -20,7 +20,7 @@ fi
 # INFO_LVL 4
 # DEBUG_LVL 5
 # TRACE_LVL 6
-LOG_LEVEL=4
+LOG_LEVEL=5
 LOGGING="LOG_LEVEL=${LOG_LEVEL}"
 
 # Define which flavor of aircraft should be compiled
@@ -28,12 +28,15 @@ LOGGING="LOG_LEVEL=${LOG_LEVEL}"
 AIRCRAFT="A32NX"
 
 # Uncomment if Examples should be compiled into the Gauge
-#EXAMPLES="-DEXAMPLES"
+EXAMPLES="-DEXAMPLES"
 
 set -ex
 
+# clean old object files out if they exist
+rm -rf "${DIR}/obj"
 # create temporary folder for o files
 mkdir -p "${DIR}/obj"
+# change into tmp folder
 pushd "${DIR}/obj"
 
 # compile c++ code
@@ -79,8 +82,8 @@ clang++ \
   "${DIR}/src/MsfsHandler/DataManager/CacheableVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/NamedVariable.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/AircraftVariable.cpp" \
-  "${DIR}/src/MsfsHandler/DataManager/DataDefinitionVariable.hpp" \
   "${DIR}/src/MsfsHandler/DataManager/ClientDataAreaVariable.cpp" \
+  "${DIR}/src/MsfsHandler/DataManager/EventBase.cpp" \
   "${DIR}/src/MsfsHandler/DataManager/Event.cpp" \
   "${DIR}/src/MsfsHandler/Module.cpp" \
   "${DIR}/src/Modules/Example/ExampleModule.cpp" \
@@ -109,3 +112,6 @@ wasm-ld \
   -lc++ -lc++abi \
   ${DIR}/obj/*.o \
   -o $OUTPUT
+
+# remove tmp folder
+rm -rf "${DIR}/obj"

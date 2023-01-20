@@ -17,10 +17,10 @@
  */
 class IDGenerator {
 private:
-  DWORD nextId = 1;
+  uint64_t nextId = 1;
 
 public:
-  inline DWORD getNextId() { return nextId++; };
+  inline uint64_t getNextId() { return nextId++; };
 };
 
 #endif // FLYBYWIRE_IDGENERATOR_H

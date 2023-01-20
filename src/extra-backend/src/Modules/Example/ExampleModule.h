@@ -10,7 +10,7 @@
 class MsfsHandler;
 
 /**
- * This is an example module which is used to demonstrate the usage of the module system
+ * This is an example  and test module which is used to demonstrate the usage of the module system
  * and to debug the module and DataManager system.
  * It has no effect on the simulation - it should never write to the sim other than in DEBUG mode
  */
@@ -43,6 +43,11 @@ private:
 
   // Events
   EventPtr beaconLightSetEventPtr;
+  SubscribableEventPtr toggleFlightDirectorEventPtr;
+  SubscribableEventPtr lightPotentiometerSetEventPtr;
+  CallbackID lightPotentiometerSetCallbackID;
+  SubscribableEventPtr lightPotentiometerSetEvent2Ptr;
+  CallbackID lightPotentiometerSetCallback2ID;
 
 public:
   ExampleModule() = delete;

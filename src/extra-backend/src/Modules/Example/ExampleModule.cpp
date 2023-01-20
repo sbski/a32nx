@@ -23,6 +23,45 @@ bool ExampleModule::initialize() {
 
   // Events
   beaconLightSetEventPtr = dataManager->make_event("BEACON_LIGHTS_SET");
+  toggleFlightDirectorEventPtr = dataManager->make_event("TOGGLE_FLIGHT_DIRECTOR");
+  toggleFlightDirectorEventPtr->subscribeToSim();
+  toggleFlightDirectorEventPtr
+  ->addCallback([&](int number, DWORD param0, DWORD param1, DWORD param2, DWORD param3, DWORD param4) {
+    LOG_DEBUG("Callback 1: TOGGLE_FLIGHT_DIRECTOR event received with " + std::to_string(number)
+              + " params:"
+              + " 0: " + std::to_string(param0)
+              + " 1: " + std::to_string(param1)
+              + " 2: " + std::to_string(param2)
+              + " 3: " + std::to_string(param3)
+              + " 4: " + std::to_string(param4)
+    );
+  });
+
+  lightPotentiometerSetEventPtr = dataManager->make_event("LIGHT_POTENTIOMETER_SET");
+  lightPotentiometerSetCallbackID = lightPotentiometerSetEventPtr
+    ->addCallback([&](int number, DWORD param0, DWORD param1, DWORD param2, DWORD param3, DWORD param4) {
+      LOG_DEBUG("Callback 1: LIGHT_POTENTIOMETER_SET event received with " + std::to_string(number)
+      + " params:"
+      + " 0: " + std::to_string(param0)
+      + " 1: " + std::to_string(param1)
+      + " 2: " + std::to_string(param2)
+      + " 3: " + std::to_string(param3)
+      + " 4: " + std::to_string(param4)
+      );
+    });
+  lightPotentiometerSetEventPtr->subscribeToSim();
+  lightPotentiometerSetEvent2Ptr = dataManager->make_event("LIGHT_POTENTIOMETER_SET");
+  lightPotentiometerSetCallback2ID = lightPotentiometerSetEvent2Ptr
+    ->addCallback([&](int number, DWORD param0, DWORD param1, DWORD param2, DWORD param3, DWORD param4) {
+      LOG_DEBUG("Callback 2: LIGHT_POTENTIOMETER_SET event received with " + std::to_string(number)
+                + " params:"
+                + " 0: " + std::to_string(param0)
+                + " 1: " + std::to_string(param1)
+                + " 2: " + std::to_string(param2)
+                + " 3: " + std::to_string(param3)
+                + " 4: " + std::to_string(param4)
+      );
+    });
 
   // LVARS
   debugLVARPtr = dataManager->make_named_var("DEBUG_LVAR", UNITS.Number, true, false, 0, 0);
@@ -80,6 +119,11 @@ bool ExampleModule::update([[maybe_unused]] sGaugeDrawData* pData) {
 
   // Use this to throttle output frequency
   if (msfsHandler->getTickCounter() % 100 == 0) {
+
+    // testing removing an even callback
+    //    if (msfsHandler->getTimeStamp() >= 30 && msfsHandler->getTimeStamp() < 31) {
+    //      lightPotentiometerSetEvent2Ptr->removeCallback(lightPotentiometerSetCallback2ID);
+    //    }
 
     //    std::cout << debugLVARPtr->str() << std::endl;
     //    std::cout << debugLVAR2Ptr->str() << std::endl;
