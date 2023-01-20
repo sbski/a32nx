@@ -194,10 +194,10 @@ export class EfisVectors {
                 }
 
                 this.transmitGroup(alternateVectors, alternateGroup);
-            } else {
+            } else if (alternateGroup !== mainGroup) {
                 this.transmitGroup([], alternateGroup);
             }
-        } else {
+        } else if (alternateGroup !== mainGroup) {
             this.transmitGroup([], alternateGroup);
         }
     }
