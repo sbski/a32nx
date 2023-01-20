@@ -118,7 +118,7 @@ class CDUFlightPlanPage {
             const wp = targetPlan.allLegs[i];
 
             if (wp.isDiscontinuity) {
-                waypointsAndMarkers.push({ marker: Markers.FPLN_DISCONTINUITY, fpIndex: i});
+                waypointsAndMarkers.push({ marker: Markers.FPLN_DISCONTINUITY, fpIndex: i, inAlternate: false });
                 continue;
             }
 
@@ -129,9 +129,7 @@ class CDUFlightPlanPage {
             waypointsAndMarkers.push({ wp, fpIndex: i, inAlternate: false });
 
             if (i === targetPlan.lastLegIndex) {
-                waypointsAndMarkers.push({ marker: Markers.END_OF_FPLN, fpIndex: i});
-                // TODO: Rewrite once alt fpln exists
-                waypointsAndMarkers.push({ marker: Markers.NO_ALTN_FPLN, fpIndex: i});
+                waypointsAndMarkers.push({ marker: Markers.END_OF_FPLN, fpIndex: i, inAlternate: false });
             }
         }
 
@@ -142,22 +140,23 @@ class CDUFlightPlanPage {
                 const wp = targetPlan.alternateFlightPlan.allLegs[i];
 
                 if (wp.isDiscontinuity) {
-                    waypointsAndMarkers.push({ marker: Markers.FPLN_DISCONTINUITY, fpIndex: i});
+                    waypointsAndMarkers.push({ marker: Markers.FPLN_DISCONTINUITY, fpIndex: i, inAlternate: true });
                     continue;
                 }
 
+                // TODO port over (fms-v2)
                 if (i >= targetPlan.alternateFlightPlan.activeLegIndex && wp.definition.type === 'HM') {
-                    waypointsAndMarkers.push({ holdResumeExit: wp, fpIndex: i });
+                    waypointsAndMarkers.push({ holdResumeExit: wp, fpIndex: i, inAlternate: true });
                 }
 
                 waypointsAndMarkers.push({ wp, fpIndex: i, inAlternate: true });
 
                 if (i === targetPlan.alternateFlightPlan.lastLegIndex) {
-                    waypointsAndMarkers.push({ marker: Markers.END_OF_FPLN, fpIndex: i});
-                    // TODO: Rewrite once alt fpln exists
-                    waypointsAndMarkers.push({ marker: Markers.NO_ALTN_FPLN, fpIndex: i});
+                    waypointsAndMarkers.push({ marker: Markers.END_OF_ALTN_FPLN, fpIndex: i, inAlternate: true });
                 }
             }
+        } else {
+            waypointsAndMarkers.push({ marker: Markers.NO_ALTN_FPLN, fpIndex: targetPlan.legCount + 1, inAlternate: true });
         }
 
         // Render F-PLAN Display
