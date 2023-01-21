@@ -13,6 +13,7 @@ import { VerticalFlightPlanBuilder } from './guidance/vnav/verticalFlightPlan/Ve
 import { initComponents, updateComponents, recallMessageById } from './components';
 import { WaypointBuilder } from './flightplanning/WaypointBuilder';
 import { Navigation } from './navigation/Navigation';
+import { CostIndex } from './guidance/vnav/CostIndex';
 
 function initFmgcLoop(baseInstrument: BaseInstrument, flightPlanManager: FlightPlanManager): void {
     initComponents(baseInstrument, flightPlanManager);
@@ -23,6 +24,7 @@ function updateFmgcLoop(deltaTime: number): void {
 }
 
 export {
+    CostIndex,
     getFlightPhaseManager,
     FlightPlanManager,
     ManagedFlightPlan,

@@ -539,6 +539,9 @@ class FMCMainDisplay extends BaseAirliners {
         this.destinationLatitude = undefined;
         this.destinationLongitude = undefined;
 
+        // Cost Index variables
+        this.liveSpeed = NaN;
+
         this.onAirport = () => { };
 
         if (this.navigation) {
@@ -652,8 +655,19 @@ class FMCMainDisplay extends BaseAirliners {
     onFlightPhaseChanged(prevPhase, nextPhase) {
         this.updateConstraints();
         this.updateManagedSpeed();
+        console.log('Flight Phase Changed:', prevPhase, nextPhase);
+        console.log('Status: ', FmgcFlightPhases.CRUISE, nextPhase);
 
         SimVar.SetSimVarValue("L:A32NX_CABIN_READY", "Bool", 0);
+
+        // Starts the the live Cost Index inderval if entering cruise. Ends the interval if it is a number
+        if (FmgcFlightPhases.CRUISE == nextPhase) {
+            // this.liveSpeed = setInterval(this.updateLiveCruise, 1000);
+            console.log('live cruise enabled', this.liveSpeed);
+        } else if (!isNaN(this.livespeed)) {
+            // clearInterval(liveSpeed);
+            console.log('live cruise disabled', this.liveSpeed);
+        }
 
         switch (nextPhase) {
             case FmgcFlightPhases.TAKEOFF: {
@@ -1002,6 +1016,11 @@ class FMCMainDisplay extends BaseAirliners {
         //const vM = _convertMachToKCas(m, _convertCtoK(Simplane.getAmbientTemperature()), SimVar.GetSimVarValue("AMBIENT PRESSURE", "millibar"));
         const vM = SimVar.GetGameVarValue("FROM MACH TO KIAS", "number", m);
         return v > vM ? [vM, true] : [v, false];
+    }
+    updateManagedCruise() {
+        if (!this.managedSpeedCruiseIsPilotEntered) {
+            this.managedSpeedCruise = this.getCrzManagedSpeedFromCostIndex();
+        }
     }
 
     updateManagedSpeeds() {
@@ -1632,19 +1651,36 @@ class FMCMainDisplay extends BaseAirliners {
         ]);
     }
 
+    /**
+     * TODO: Need to figure out how to calculate
+     * @returns Managed climb speed base on cost index
+     */
     getClbManagedSpeedFromCostIndex() {
-        const dCI = (this.costIndex / 999) ** 2;
-        return 290 * (1 - dCI) + 330 * dCI;
+        //const dCI = (this.costIndex / 999) ** 2;
+        //return 290 * (1 - dCI) + 330 * dCI;
+        return 290;
     }
 
+    /**
+     * TODO: implement
+     * @returns Managed cruise speed base on cost index
+     */
     getCrzManagedSpeedFromCostIndex() {
-        const dCI = (this.costIndex / 999) ** 2;
-        return 290 * (1 - dCI) + 310 * dCI;
+        return Fmgc.CostIndex.calculateLiveSpeed(this.costIndex);
     }
 
+    updateLiveCruise() {
+        this.managedSpeedCruise = Fmgc.CostIndex.calculateLiveSpeed(this.costIndex);
+    }
+
+    /**
+     * TODO: Need to figure out how to calculate
+     * @returns Managed descent speed base on cost index
+     */
     getDesManagedSpeedFromCostIndex() {
-        const dCI = this.costIndex / 999;
-        return 288 * (1 - dCI) + 300 * dCI;
+        //const dCI = this.costIndex / 999;
+        //return 288 * (1 - dCI) + 300 * dCI;
+        return 288;
     }
 
     getAppManagedSpeed() {
@@ -1923,6 +1959,11 @@ class FMCMainDisplay extends BaseAirliners {
         return false;
     }
 
+    /**
+     * Relied upon in flybywire-aircraft-a320-neo/html_ui/Pages/VCockpit/Instruments/Airliners/FlyByWire_A320_Neo/CDU/A320_Neo_CDU_PerformancePage.js and flybywire-aircraft-a320-neo/html_ui/Pages/A32NX_Core/A32NX_ATSU.jsl
+     * @param costIndex Cost index in kg/min
+     * @returns If Cost index was able to be updated
+     */
     tryUpdateCostIndex(costIndex) {
         const value = parseInt(costIndex);
         if (isFinite(value)) {
