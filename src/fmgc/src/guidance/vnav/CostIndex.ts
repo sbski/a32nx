@@ -260,9 +260,9 @@ export class CostIndex {
         const angleC:number = Math.asin(windSpeed * Math.sin(angleB) / airSpeed);
         // All angles in a triangle add up to pi or 180
         const angleA:number = Math.PI - Math.abs(angleB) - Math.abs(angleC);
-        // Law of sines: a / sin(A) = b / sin(B) -> a = b / sin(B) * sin(A)
         // console.log(track, airSpeed, windDirection, windSpeed, MathUtils.RADIANS_TO_DEGREES * angleA, MathUtils.RADIANS_TO_DEGREES * angleB, MathUtils.RADIANS_TO_DEGREES * angleC);
         // console.log(angleA, angleB, angleC);
+        // Law of sines: a / sin(A) = b / sin(B) -> a = b / sin(B) * sin(A)
         return airSpeed * Math.sin(angleA) / Math.sin(angleB);
     }
 
@@ -351,7 +351,7 @@ export class CostIndex {
                 }
             }
         }
-        const resultValues = results.values();
+        // const resultValues = results.values();
         // results.reduce((iMax, x, i, arr) => (x < arr[iMax] ? i : iMax), 1000);
         for (let i = 0; i < results.length; i++) {
             console.log(`${speeds[i].toString()}\t${results[i].toString()}`);
