@@ -31,7 +31,7 @@ The goal is to make easy things easy and hard things possible.
 It is not aimed at any specific use case or systems - it does not abstract the
 aircraft or its systems. This will be done in the actual modules.
 
-Helps new developers to get started with C++ WASM development in the FlyByWire
+It helps new developers to get started with C++ WASM development in the FlyByWire
 Code base without an overwhelming incomprehensible framework.
 
 Continuously improve the framework to make it easier to use and more powerful
@@ -55,18 +55,14 @@ This part does not take care of any data or logic from or to the simulator. If
 a developer chooses to only use this part of the framework, MSFS SDK and 
 SimConnect have to be used directly.
 
-### DataManager
+### DataManager / Data Objects 
 The DataManager is a central data store which allows to store and retrieve data
-from the simulator. It provides different kind of variables which abstract the 
+from the simulator. It provides different kind of data objects / variables which abstract the 
 sim's data types and allows to easily retrieve and send data from the simulator.
 
 Details see below.
 
 ## Components
-
-### Aircraft Prefix
-
-<span style="color:yellow">TODO</span>
 
 ### Gauge
 A gauge is the central entry point for the simulator into the WASM module.
@@ -101,11 +97,11 @@ Also see:
 <span style="color:cyan">src/extra-backend/src/MsfsHandler/MsfsHandler.h</span>
 
 The MsfsHandler is the central component acts as a dispatcher for the custom 
-module. It manages the SImConnect connection, all module updates, owns the 
-DataManager and provides some imported care data variables to the modules.
+module. It manages the SimConnect connection, all module updates, owns the 
+DataManager and provides some imported core data variables to the modules.
 
 Each module has to be registered with the MsfsHandler (done automatically in the
-module's constructor). The MsfsHandler will then call the update functions of the
+Module's constructor). The MsfsHandler will then call the update functions of the
 module and provides access to the DataManager and the raw sim-data if required. 
 
 It provides the following calls to the module at the appropriate time:
@@ -120,7 +116,7 @@ It is not expected that a Module-developer will have to modify the MsfsHandler.
 ### DataManager
 
 The DataManager is a central data store which allows to store and retrieve data
-from the simulator. It provides different kind of variables which abstract the 
+from the simulator. It provides different kinds of variables which abstract the 
 various sim SDK API elements and data types.
 
 It currently provides the following data types:
@@ -134,15 +130,17 @@ Currently missing:
 - ClientDataArea Variable: Custom defined SimObjects base on memory mapped data 
   between clients
   - not yet implemented
-- Receiving events: SimConnect events which are received from the sim
-  - not yet implemented
                            
 The below described variables can be used without the DataManager, however the 
 DataManager provides not only automatic updates and writing of the variables, 
 but also convenience functions to create and register variables and events in 
 the DataManager itself and also de-duplicating variables. 
+                          
+#### DataObjectBase
 
-#### Variables
+The base class for all data objects.
+
+#### ManagedDataObjectBase
 MSFS SDK and SimConnect provide different kinds of variable each with different
 APIs on how to read and write them to the sim. 
 
@@ -153,8 +151,8 @@ Each variable has various ways to be updated and written back to the sim:
 
 - Manual read/write: The developer can manually read and write the variable from and to 
   the sim at any time
-- Auto read: The variable can be configured to be automatically read from the sim (preUpdate)
-- Auto write: The variable can be configured to be automatically written to the sim (postUpdate)
+- Auto read: The variable can be configured to be automatically read from the sim (preUpdate) via the DataManager
+- Auto write: The variable can be configured to be automatically written to the sim (postUpdate) via the DataManager
 - Max Age in Ticks: The variable can be configured to be automatically read from the sim 
   if it is older than a certain number of ticks (preUpdate)
 - Max Age in Seconds: The variable can be configured to be automatically read from the sim if 
@@ -164,17 +162,17 @@ Each variable has various ways to be updated and written back to the sim:
 The CacheableVariable is the base class for AircraftVariable and NamedVariable
 which can be cached to avoid multiple calls to the sim for the same variable.
 
-It is still possible tp explicitly read and write the variable from and to the 
+It is still possible to explicitly read and write the variable from and to the 
 sim if required. 
 
 **Reading**
                
-| method           | description                                                                                               |
-|:-----------------|:----------------------------------------------------------------------------------------------------------|
-| get()            | Returns cached value - never reads directly from sim                                                      |
-| updateFromSim()  | Returns updated cached value - reads from sim if update criteria are met (maxAge)                         |
-| readFromSim()    | Reads the value from the sim, updates cache, clears dirty flag - does not checks update criteria (maxAge) |
-| rawReadFromSim() | The raw MSFS SDK call to read from the sim. **Must be implemented by specialized classes**                | 
+| method           | description                                                                                              |
+|:-----------------|:---------------------------------------------------------------------------------------------------------|
+| get()            | Returns cached value - never reads directly from sim                                                     |
+| updateFromSim()  | Returns updated cached value - reads from sim if update criteria are met (maxAge)                        |
+| readFromSim()    | Reads the value from the sim, updates cache, clears dirty flag - does not check update criteria (maxAge) |
+| rawReadFromSim() | The raw MSFS SDK call to read from the sim. **Must be implemented by specialized classes**               | 
 
 See the documentation of CacheableVariable for more details.
 
@@ -183,15 +181,15 @@ See the documentation of CacheableVariable for more details.
 | method             | description                                                                                                          |
 |--------------------|----------------------------------------------------------------------------------------------------------------------|
 | set()              | Sets cached value - never writes directly to sim - sets dirty flag if set with a different value as the cached value |
-| updateDataToSim()      | Updates a value to the sim if it is dirty.                                                                           |
-| writeDataToSim()       | Writes the current cached value to the sim. Clears the dirty flag.                                                   |
+| updateDataToSim()  | Updates a value to the sim if it is dirty.                                                                           |
+| writeDataToSim()   | Writes the current cached value to the sim. Clears the dirty flag.                                                   |
 | setAndWriteToSim() | Sets the current value and writes it to the sim. Clears the dirty flag.                                              |
 | rawWriteToSim()    | The raw MSFS SDK call to write the sim. **Must be implemented by specialized classes**                               |
                 
 See the documentation of CacheableVariable for more details.
 
 ##### NamedVariable
-The NamedVariable is a variable which is mapped to a LVAR. It is the most simple
+The NamedVariable is a variable which is mapped to a LVAR. It is the simplest
 variable type and can be used to store and retrieve custom numeric data from the 
 sim.
 
@@ -214,8 +212,8 @@ clang++ \
 ```
 
 ##### AircraftVariable
-The AircraftVariable is a variable which is mapped to a simvar. As simvars are
-read-only it is required to use an event to write the variable back to the sim.
+The AircraftVariable is a variable which is mapped to a aircraft simvar. As simvars 
+are read-only it is required to use an event to write the variable back to the sim.
 
 It allows to specify either an event-name or an instance of an Event object to
 write data back to the sim.
@@ -228,7 +226,7 @@ No prefix is added to the variable name.
 The DataDefinitionVariable is a variable (in fact a set of variables) which 
 is mapped to a custom SimObject which can be defined by adding separate data 
 definition for single variables (objects) to a container of data definitions 
-(custom imObject).
+(custom SimObject).
 
 As data definition sim objects use memory mapped data between clients they are 
 very efficient but a bit harder to set up and use.
@@ -236,12 +234,12 @@ very efficient but a bit harder to set up and use.
 A data definition variable consisting of only writable simvars can be used to
 write data back to the sim without the need to define an event.
 
-Writing back a read only simvar will produce an error (visible in the Console). 
+Writing back a read only simvar will produce an error (visible in the console). 
 
 See the DataDefinitionVariable class documentation for more details.
 
 A DataDefinitionVariable requires unique IDs for the data definition and the
-request. These IDs are used to identify the data definition and the data reveived 
+request. These IDs are used to identify the data definition and the data received 
 from the sim. Make sure these IDs are unique with the gauge.
 
 Use the DataManager to create these variables, and it will automatically assign
@@ -257,18 +255,13 @@ THe MSFS SDK also allows to define custom SimObjects using memory mapped data
 between clients to send and receive arbitrary data to and from the sim.
 
 #### Events
-The Event class is a simple wrapper around the SimConnect event API. It allows 
+The Event class is a  wrapper around the SimConnect event API. It allows 
 to map client events to sim events via registering the clients event id with
 the sim.
 
-The Event class also provides a simple way to construct an event and send it to
-the sim. 
-
-#### ListenerEvents
-<span style="color:yellow">Not yet implemented</span>
-The ListenerEvent class is a wrapper around the SimConnect event API which also 
-allows registering a callback function which is called when the event is received
-from the sim.
+An event can be triggered (send to the sim) or registered with the sim to receive
+events from the sim. Callbacks can be added to the Event object to handle the
+events.
 
 ## Example Code
 Good examples of how to use the framework can be found in the modules:
@@ -288,6 +281,9 @@ Good examples of how to use the framework can be found in the modules:
     accordingly
   - Uses the MSFS SDK API call to execute calculator code directly for reading 
     and setting the state of aircraft systems. 
+
+- ExampleModule
+  - Is used to demonstrate various features of the framework and also to debug and test it
   
 ## Building
 Assuming you are able to build the aircraft as a whole this describes how to add
