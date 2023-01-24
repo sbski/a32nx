@@ -18,7 +18,12 @@ export class CostIndex {
      * @param costIndex in kg/m
      * @returns Econ cruise speed in KAIS
      */
-    static calculateLiveSpeed(costIndex: number, weight = SimVar.GetSimVarValue('L:A32NX_FM_GROSS_WEIGHT', 'Number')): number {
+    static calculateLiveSpeed(costIndex: number, previousSpeed = Math.floor(Arinc429Word.fromSimVarValue('L:A32NX_FAC_1_V_MAN').value) - 10): number {
+        const weight = SimVar.GetSimVarValue('L:A32NX_FM_GROSS_WEIGHT', 'Number') * 2.20462;
+        if (costIndex === 666) {
+            console.log(`${weight}\t${previousSpeed}\t${SimVar.GetSimVarValue('L:A32NX_ENGINE_FF:1', 'Number')}\t${SimVar.GetSimVarValue('L:A32NX_ENGINE_FF:2', 'Number')}`);
+            return previousSpeed + 0.1;
+        }
         let workingADIRS = 0;
         workingADIRS += +!!(Arinc429Word.fromSimVarValue('L:A32NX_ADIRS_IR_1_MAINT_WORD').value === 4) * 1;
         workingADIRS += +!!(Arinc429Word.fromSimVarValue('L:A32NX_ADIRS_IR_2_MAINT_WORD').value === 4) * 2;
@@ -35,7 +40,6 @@ export class CostIndex {
         let isaDev = 0;
         let trueAirSpeed = 0;
         let groundSpeed = 0;
-        weight *= 2.20462;
         if (weight === 0) {
             return 289;
         }
@@ -142,22 +146,22 @@ export class CostIndex {
 
         // const dCI = (this.costIndex / 999) ** 2;
         // return 290 * (1 - dCI) + 310 * dCI;
-        console.log('track', track);
-        console.log('windDirection', windDirection);
+        // console.log('track', track);
+        // console.log('windDirection', windDirection);
         // console.log('huh?', windDirection, MathUtils.DEGREES_TO_RADIANS, windDirection * MathUtils.DEGREES_TO_RADIANS);
 
-        track *= MathUtils.DEGREES_TO_RADIANS;
-        windDirection *= MathUtils.DEGREES_TO_RADIANS;
+        // track *= MathUtils.DEGREES_TO_RADIANS;
+        // windDirection *= MathUtils.DEGREES_TO_RADIANS;
 
-        console.log('rad track', track);
-        console.log('rad windDirection', windDirection);
+        // console.log('rad track', track);
+        // console.log('rad windDirection', windDirection);
 
         const theta = Common.getTheta(altitude, isaDev);
         // const theta2 = Common.getTheta2(theta, mach);
         const delta = Common.getDelta(theta);
         // const delta2 = Common.getDelta2(delta, mach);
         temperature = MathUtils.convertCtoK(temperature);
-
+        console.log('GDS', Arinc429Word.fromSimVarValue('L:A32NX_FAC_1_V_MAN').value);
         console.log('weight', weight * 1000);
         let cas = this.costIndexToCAS(costIndex, altitude / 100, weight * 1000, isaDev, track, windDirection, windSpeed, pressure, temperature);
         let tas = MathUtils.convertKCasToKTAS(cas, temperature, pressure);
@@ -203,6 +207,7 @@ export class CostIndex {
         console.log('A32NX_ADIRS_IR_2_MAINT_WORD', Arinc429Word.fromSimVarValue('L:A32NX_ADIRS_IR_2_MAINT_WORD').value);
         console.log('A32NX_ADIRS_IR_3_MAINT_WORD', Arinc429Word.fromSimVarValue('L:A32NX_ADIRS_IR_3_MAINT_WORD').value);
 
+        console.log('Engine FF', SimVar.GetSimVarValue('L:A32NX_ENGINE_FF:1', 'Number'), SimVar.GetSimVarValue('L:A32NX_ENGINE_FF:2', 'Number'));
         console.log('speed', tas);
         return cas;
     }
@@ -217,14 +222,14 @@ export class CostIndex {
      */
     static calculateFuelFlow(tas: number, altitude: number, weight: number, isaDev: number, temperature: number): number {
         const theta = Common.getTheta(altitude, isaDev);
-        console.log('Mach, Temperature', tas, temperature);
+        // console.log('Mach, Temperature', tas, temperature);
         const mach = MathUtils.convertKTASToMach(tas, temperature);
         const theta2 = Common.getTheta2(theta, mach);
         const delta = Common.getDelta(theta);
         const delta2 = Common.getDelta2(delta, mach);
 
         const thrust = FlightModel.getDrag(weight, mach, delta, false, false, FlapConf.CLEAN);
-        console.log(mach, thrust);
+        // console.log(mach, thrust);
         // Divide by 2 to get thrust per engine
         const correctedThrust = (thrust / delta2) / 2;
         // Since table 1506 describes corrected thrust as a fraction of max thrust, divide it
@@ -315,9 +320,10 @@ export class CostIndex {
         const fac1 = Arinc429Word.fromSimVarValue('L:A32NX_FAC_1_V_MAN').value;
         const fac2 = Arinc429Word.fromSimVarValue('L:A32NX_FAC_2_V_MAN').value;
 
-        const lowerBound = Math.floor(Math.min(fac1, fac2)) - 100;
+        const lowerBound = Math.floor(Math.min(fac1, fac2)) - 10;
         const upperBound = 350;
         const results = [];
+        const fuelFlows = [];
         const speeds = [];
         // const theta = Common.getTheta(altitude, isaDev);
         // const theta2 = Common.getTheta2(theta, mach);
@@ -344,6 +350,8 @@ export class CostIndex {
                 console.log('Fuel Flow  is NaN');
             } else {
                 results.push(Math.abs(fuelFlow / groundSpeed));
+                fuelFlows.push(fuelFlow);
+                speeds.push(airSpeed);
                 if (Math.abs(fuelFlow / groundSpeed) < min) {
                     min = fuelFlow / groundSpeed;
                     indexofMin = i;
@@ -354,7 +362,7 @@ export class CostIndex {
         // const resultValues = results.values();
         // results.reduce((iMax, x, i, arr) => (x < arr[iMax] ? i : iMax), 1000);
         for (let i = 0; i < results.length; i++) {
-            console.log(`${speeds[i].toString()}\t${results[i].toString()}`);
+            console.log(`${speeds[i].toString()}\t${fuelFlows[i]}\t${results[i].toString()}`);
         }
         // console.log(indexofMin);
         return indexofMin;

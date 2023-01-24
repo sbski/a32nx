@@ -540,7 +540,7 @@ class FMCMainDisplay extends BaseAirliners {
         this.destinationLongitude = undefined;
 
         // Cost Index variables
-        this.liveSpeed = NaN;
+        this.liveSpeed = undefined;
 
         this.onAirport = () => { };
 
@@ -662,10 +662,11 @@ class FMCMainDisplay extends BaseAirliners {
 
         // Starts the the live Cost Index inderval if entering cruise. Ends the interval if it is a number
         if (FmgcFlightPhases.CRUISE == nextPhase) {
-            // this.liveSpeed = setInterval(this.updateLiveCruise, 1000);
+            this.managedSpeedCruise = 400;
+            this.liveSpeed = setInterval(this.updateLiveCruise, 1000, 666, this.managedSpeedCruise);
             console.log('live cruise enabled', this.liveSpeed);
         } else if (!isNaN(this.livespeed)) {
-            // clearInterval(liveSpeed);
+            clearInterval(liveSpeed);
             console.log('live cruise disabled', this.liveSpeed);
         }
 
@@ -1670,7 +1671,16 @@ class FMCMainDisplay extends BaseAirliners {
     }
 
     updateLiveCruise() {
-        this.managedSpeedCruise = Fmgc.CostIndex.calculateLiveSpeed(this.costIndex);
+        //console.log(this.costIndex);
+        if (this.managedSpeedCruise > 190) {
+            this.managedSpeedCruise = 190;
+        }
+        this.managedSpeedCruise = Fmgc.CostIndex.calculateLiveSpeed(666, this.managedSpeedCruise);
+        if (this.managedSpeedCruise >= 350) {
+            this.managedSpeedCruise = Math.round(Arinc429Word.fromSimVarValue('L:A32NX_FAC_1_V_MAN').value * 10) / 10 - 10;
+            clearInterval(liveSpeed);
+        }
+        this.updateManagedProfile();
     }
 
     /**
